@@ -7,6 +7,7 @@ A personal life orchestrator: a typed, agent-operable scaffold of one person's l
 1. **Stand the test of time.** Grows with the person and with new tools. Agents, models, and harnesses churn every few months; the data and its contracts last decades. Own the data, rent the agents.
 2. **Simplicity.** No over-engineering. Every component must justify its existence against the decay test below.
 3. **Lowest friction.** ADHD-first. Immediate benefit, never a chore. Capture is one text. The system reaches out; the user is never required to come to it.
+4. **Enhance, don't replace.** Claudio is the context layer, never the harness. Claude Code, Cowork, OpenClaw, Hermes-like assistants, and whatever comes next are consumers to feed, not competitors to rebuild. Boundary test, applied at every decision: *does this component feed an agent, or is it the agent?* If it runs the loop, routes the messages, or schedules the work, it is not ours to build. Re-check this constantly — it is the failure mode of both prior attempts.
 
 ## The decay test
 
@@ -16,7 +17,8 @@ Every design decision is checked against this. Hardcoded agent knowledge fails i
 
 ## What this is not
 
-- Not a custom agent harness, LLM-calling layer, or orchestration engine — stock harnesses (Claude Code today) run everything.
+- Not a custom agent harness, LLM-calling layer, orchestration engine, message gateway, or scheduler — stock harnesses (Claude Code today) run everything.
+- Not an assistant product. Claudio feeds assistants; the better external agents get, the more valuable claudio becomes.
 - Not a load-bearing UI. Interfaces are disposable views over the scaffold.
 - Not a pre-specified catalog of agents. Workers plug in and swap out as tools improve.
 

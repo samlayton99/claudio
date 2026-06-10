@@ -47,18 +47,19 @@ Postgres schema is half the type system (types, constraints, foreign keys as tra
 
 ## The API (L1)
 
-The API is the database: stored functions for writes, views for reads. One thin MCP server wraps the same functions for consumers that can't speak SQL (remote interfaces, future tools). Agents on the mini may query directly; the in-DB contract holds either way. No HTTP API layer — that was v1's mistake, needed only because its agent runtime was remote.
+The API is the database: stored functions for writes, views for reads. Agents on the mini may query directly; the in-DB contract holds either way. No HTTP API layer — that was v1's mistake, needed only because its agent runtime was remote.
+
+The MCP server wrapping these functions is the **front door** for external agents — the main way Claude Code, Cowork, and future tools consume claudio. Its context-assembly tools (`get_context(role, ...)`, `search_people(...)`, `recent_log(...)`, `capture(...)`) are the heart of the product: how any agent, present or future, pulls the right slice of a life cheaply.
 
 Consequence: this requires Postgres (stored functions, comments, triggers). SQLite is ruled out.
 
 ## Worker taxonomy (L2)
 
 - **Pipes** — deterministic sync scripts. No LLM.
-- **Gardeners** — maintain the scaffold: file inbox, dedup people, refresh wiki, sync catalog, propose promotions/demotions, system hygiene ("X digest unread 6 weeks — kill it?").
-- **Assistants** — use the scaffold to improve the life: briefs, planning, triage, drafting, nudges, procrastination checks.
-- **Orchestrator** — the conversational front (iMessage primary): routes intent, dispatches workflows and Claude Code sessions, answers from role-scoped context.
+- **Gardeners** — the only agents claudio defines (as skill files run by stock harnesses), and they serve the scaffold itself: file inbox, dedup people, refresh wiki, sync catalog, propose promotions/demotions, system hygiene ("X digest unread 6 weeks — kill it?").
+- **Assistants / orchestrators** — NOT built here (see principle 4). Briefs, planning, triage, drafting, conversation: these are external agents and harnesses fed through L1. Claudio may ship skill files that any harness can run (e.g. a morning-brief skill), but never the loop, gateway, or scheduler that runs them.
 
-Invariant: gardeners keep the scaffold cheap for assistants to query — summaries, freshness, indexes. That is where token efficiency comes from.
+Invariant: gardeners keep the scaffold cheap for consumers to query — summaries, freshness, indexes. That is where token efficiency comes from.
 
 ## Surfaces (L3)
 

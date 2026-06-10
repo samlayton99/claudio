@@ -11,4 +11,5 @@ Active frontier of the design. Each has a current lean; none is settled.
 7. **Backups.** Local-first means backup is our job. pg_dump to git/cloud nightly? Needs a decision before real data accumulates.
 8. **Wiki structure.** Flat pages + links vs directories per role/person. Gardener-maintained either way. Defer until pages exist.
 9. **Computer-use enforcement (future).** Locking content on computer/phone once computer use matures. Capability deferred; the consent pattern (proposals + autonomy levels) is designed now so enforcement slots in later.
-10. **Poke.** External text assistant — can't be pointed at the scaffold. Lean: replace, don't integrate.
+10. **Poke and other closed assistants.** Per principle 4: feed if possible (MCP, handed context), coexist if closed. Never rebuild.
+11. **Context interface design.** The central L1 question now: what context tools does the MCP front door expose first, and at what granularity? Pull (`get_context(role)`) vs pre-assembled briefs vs raw query passthrough; how much shaping happens in SQL views vs in the consuming agent.
