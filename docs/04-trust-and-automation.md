@@ -5,7 +5,7 @@ How the system builds and runs itself without ever being able to break itself.
 ## Trust circles
 
 - **Inner circle** — system artifacts the system cannot change: protocols, L1 function definitions, schema migrations, system prompts, built-in workflows and gardeners, the orchestrator slot.
-- **Outer circle** — the sandbox where claudio extends itself: custom workflows, adapters, dashboards, prompts. Agent-buildable, user-approved, fully swappable.
+- **Outer circle** — the sandbox where claudio extends itself: custom workflows, adapters, dashboards, prompts. Agent-buildable, user-approved, fully swappable. **Starts empty** — it fills only through the provisioning pipeline.
 
 Enforcement is **deterministic infrastructure, not prompts**:
 
@@ -50,6 +50,7 @@ Every edge connection is an adapter (protocol 8): it owns 100% of the translatio
 - **assembler** — the read-side keystone: executes `get_context` (procedure in `05`): budgeted SQL graph expansion, LLM relevance only at the frontier, synthesis with citations. Its own eval corpus.
 - **merge** — person dedup proposals from unmatched handles.
 - **wiki** — person/role pages, summaries, backlinks, orphan detection (see `05`).
+- **verifier** — independently fact-checks wiki pages against their cited sources, in a fresh context that is never the page's author. Unsourced or contradicted claims become proposals for the user (see `05`, The portrait).
 - **catalog sync** — schema ↔ `SCHEMA.md`, always true.
 - **tool scout** — watches for better MCP servers/tools, proposes them into `tools`.
 - **hygiene** — usage review, promote/demote proposals, token-spend review ("this digest costs X/mo and goes unread").

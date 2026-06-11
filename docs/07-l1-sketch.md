@@ -1,6 +1,6 @@
 # L1 Sketch
 
-L1 starts **empty**: a function is added only when a real consumer needs it. These are candidates, not commitments.
+L1 is core, built deliberately at MVP step 1. These are the candidate functions to start from — added as consumers need them, never speculatively. (It is the **outer circle** that starts empty, not L1 — see `04`.)
 
 ## Write candidates
 

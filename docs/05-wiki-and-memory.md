@@ -2,8 +2,19 @@
 
 Two prose stores, one per plane.
 
-- **Life wiki** (`wiki/`) — narrative knowledge of the life: person pages, role pages, ongoing situations, projects, trips. Read by the user and by agents.
+- **Life wiki** (`wiki/`) — the portrait (below): the canonical written image of the life. Read by the user and by agents.
 - **System memory** (`memory/`) — the gardeners' continual learning: filing lessons, source quirks, what worked. Deliberately small. Pruning rule: a recurring lesson gets **promoted** into a directive or a code fix, never hoarded as prose.
+
+## The portrait
+
+The life wiki is not merely operational — it is the life and soul of the system: the complete written image of who the person is. From it, it should be obvious who they care about most, their priorities, their goals and progress, their history, who has been there for them and who has wronged them, their projects, failures, and successes, what they are learning, who they want to meet. A root self page anchors it; role, person, goal, and topic pages carry the weight; everything well-linked. It grows gradually, atom by atom, and is correctable — by the user above all.
+
+Wikipedia discipline applies:
+
+- **Citations.** Factual claims carry dated inline refs to log atoms and tier-0 sources. Citing is pointing, not restating — "one fact, one home" holds.
+- **Page history.** Git is the audit trail: every edit is a commit tagged with the acting agent or user.
+- **Attribution for judgment.** Characterizations of people and feelings ("wronged me," "was there for me") are user-authored or user-approved, sourced to the user's own statements. Agents may propose such edits with cited evidence; they never assert the moral ledger on their own. Taste is king, applied to narrative.
+- **Independent verification.** The verifier gardener re-checks pages against their cited sources in a fresh context — never the page's author (writer/checker separation). Unsourced or contradicted claims are flagged and brought to the user as proposals.
 
 ## The boundary rule (DB vs wiki)
 
