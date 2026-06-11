@@ -25,7 +25,9 @@ A hijacked agent can write bad *content* through valid, audited, reversible sysc
 
 **The boundary is tested, not assumed:** a scheduled red-team suite runs *as* the agent role and asserts the negative space (cannot `CREATE TABLE`, cannot `UPDATE` tables directly, cannot write `core/`, cannot read core credentials, cannot edit its own plist). Every grant or L1 change must keep it green.
 
-**Known residual risks:** read-and-exfiltrate by a hijacked worker holding any network-capable tool (mitigated by least-capability tool allowlists per worker, enforced by harness config the worker cannot edit); and approval fatigue — the gate is only as strong as the habit of reading proposals, which is why the hygiene loop keeps proposal volume low.
+**Known residual risks:** read-and-exfiltrate by a hijacked worker holding any network-capable tool (closed by per-user egress rules — see `08-security.md`); and approval fatigue — the gate is only as strong as the habit of reading proposals, which is why the hygiene loop keeps proposal volume low.
+
+Full security design — sensitivity tiers (RLS), outbound gating, entry-point authentication, egress control, kill switch, privacy stewardship — lives in `08-security.md`.
 
 A coding agent building claudio itself (human at the keyboard) uses core credentials; an agent spawned *by* the system never does.
 

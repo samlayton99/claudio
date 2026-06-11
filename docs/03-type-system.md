@@ -55,4 +55,4 @@ Consumption order: rollups first, drill into atoms, follow pointers to raw rarel
 
 Groups (dropped — roles encode the collectives), health, possessions, places, a calendar mirror, a message archive, values (profile doc + directives). All start as tagged log entries or stay in their source systems. The schema's shape is an output of actual life, not foresight.
 
-**Future high-sensitivity domains** — bank accounts/purchases, medical history — will roll in eventually and require a **security tier** the current design reserves room for: a sensitivity level on rows/kinds, stricter grants, encryption at rest for those tables. Designed later; slotted for now.
+**Future high-sensitivity domains** — bank accounts/purchases, medical history — will roll in eventually. The security tier they need is designed: sensitivity labels on rows + worker clearances enforced by Row-Level Security (see `08-security.md`). The domains themselves remain future.
