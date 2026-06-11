@@ -24,6 +24,7 @@ The product is the **contract**, not the agents: a self-describing relational sc
 
 **System plane** (the system's model of itself):
 - `sources` — registered windows (gmail, gcal, imessage, slack, transcripts, ...) + sync state.
+- `tools` — registered capabilities (MCP servers, connectors): what's available, where used, last evaluated. Feeds the tool-scout hygiene loop.
 - `workflows` — registered automations + schedule + enabled flag.
 - `interfaces` — registered touchpoints + usage events.
 - `runs` — execution history of every pipe/agent/workflow (incl. Claude Code sessions).
@@ -56,8 +57,8 @@ Consequence: this requires Postgres (stored functions, comments, triggers). SQLi
 ## Worker taxonomy (L2)
 
 - **Pipes** — deterministic sync scripts. No LLM.
-- **Gardeners** — the only agents claudio defines (as skill files run by stock harnesses), and they serve the scaffold itself: file inbox, dedup people, refresh wiki, sync catalog, propose promotions/demotions, system hygiene ("X digest unread 6 weeks — kill it?").
-- **Assistants / orchestrators** — NOT built here (see principle 4). Briefs, planning, triage, drafting, conversation: these are external agents and harnesses fed through L1. Claudio may ship skill files that any harness can run (e.g. a morning-brief skill), but never the loop, gateway, or scheduler that runs them.
+- **Gardeners** — the only agents claudio defines (as skill files run by stock harnesses), and they serve the scaffold itself: file inbox, dedup people, refresh wiki, sync catalog, propose promotions/demotions, system hygiene ("X digest unread 6 weeks — kill it?"), and **tool scouting** — watch for better MCP servers/tools and propose them into the registry so the orchestrator and spawned agents always have the current best hands.
+- **Assistants / orchestrator** — assembled, never built (see principle 4). The orchestrator slot is filled by stock parts — Agent SDK / a Hermes-like assistant / whatever wins — fed through L1; claudio supplies its context and skill files (e.g. a morning-brief skill) but never the loop, gateway, or scheduler.
 
 Invariant: gardeners keep the scaffold cheap for consumers to query — summaries, freshness, indexes. That is where token efficiency comes from.
 
