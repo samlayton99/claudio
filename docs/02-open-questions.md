@@ -1,15 +1,11 @@
 # Open Questions
 
-Active frontier of the design. Each has a current lean; none is settled.
+What genuinely remains. (Resolved questions live in the other docs and git history.)
 
-1. **System-plane minimalism.** Line drawn at registries + run logs; no orchestration engine (no in-DB job queue, retries, dependency graphs — the harness owns execution). Does session management need more than this?
-2. **Role as the partition key.** Claim: role-scoped context assembly is the central relevance/token-efficiency mechanism. Is role the right slice, or is context sometimes project-shaped? (Roles are filters, never walls — people cross roles constantly.)
-3. **The approval channel.** Proposals need exactly one home that actually gets looked at: iMessage thread, browser queue, or both. This choice determines whether the hygiene loop lives or dies.
-4. **Autonomy dial, initial settings.** File inbox: free. Merge people: propose. Migrate schema: propose. Send communications: propose, always. Where else?
-5. **Old dashboard fate.** Mine for patterns vs port the objectives/pushes/reflection loop vs run in parallel. Lean: mine, don't migrate; rebuild the reflection habit later as a skill if missed.
-6. **First loop.** Lean: iMessage capture + morning brief — exercises the full spine (pipe, inbox, gardener, assistant, both message directions) and attacks the capture problem. Alternative: email triage (more pain relief, less spine).
-7. **Backups.** Local-first means backup is our job. pg_dump to git/cloud nightly? Needs a decision before real data accumulates.
-8. **Wiki structure.** Flat pages + links vs directories per role/person. Gardener-maintained either way. Defer until pages exist.
-9. **Computer-use enforcement (future).** Locking content on computer/phone once computer use matures. Capability deferred; the consent pattern (proposals + autonomy levels) is designed now so enforcement slots in later.
-10. **Poke and other closed assistants.** Per principle 4: feed if possible (MCP, handed context), coexist if closed. Never rebuild.
-11. **Context interface design.** The central L1 question now: what context tools does the MCP front door expose first, and at what granularity? Pull (`get_context(role)`) vs pre-assembled briefs vs raw query passthrough; how much shaping happens in SQL views vs in the consuming agent.
+1. **Approval channel defaults.** All proposals surface in the panel; which kinds also push via iMessage? Lean: anything time-sensitive or blocking a workflow.
+2. **Autonomy dial, initial settings.** Filing intake: free. Merges, migrations, outbound, new automations: propose. Anything else that should start free?
+3. **Backups.** Nightly `pg_dump` — to where (git, cloud, both)? Wiki/memory are git-versioned already. Decide before real data accumulates.
+4. **L1 function list + context packet shape.** The concrete spec work: exact functions, exact packet fields.
+5. **Panel v1 scope.** Minimum set: approvals, registries, people editor, wiki browser, run log — confirm or trim.
+6. **Wiki frontmatter spec.** Review Obsidian/agent-memory prior art first (see `05`).
+7. **Computer-use enforcement** (lock content on devices). Deferred; the consent pattern (proposals + trust circles) already accommodates it.
