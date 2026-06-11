@@ -6,10 +6,11 @@
 
 | Set | Granted to | Functions |
 |---|---|---|
-| **agent** | every worker role | `capture`, `file_intake`, `hold_intake`, `discard_intake`, `create_person`, `add_handle`, `create_task`, `complete_task`, `drop_task`, `amend_task`, `create_expectation`, `resolve_expectation`, `log_entry`, `amend_log`, `add_link` (inferred), `remove_link` (inferred), `register_page`, `move_page`, `post_message`, `claim_message`, `read_message`, `resolve_message`, `propose`, `start_run`, `finish_run`, all reads |
-| **user** (dictation-gated) | orchestrator + panel | `set_directive`, `retire_directive`, `add_link`/`remove_link` (asserted), `upsert_goal`, `upsert_role`, `update_person` (may touch `verified_fields`), `resolve_held_intake` |
-| **panel** | `claudio_panel`, `claudio_core` | `approve_message`, `reject_message`, `apply_actions`, `merge_people`, `merge_atoms` (proposal path), `set_component_status` |
-| **core** | `claudio_core` only | `register_component` (inner), `purge`, migrations/DDL, `role_clearances` writes |
+| **agent** | `claudio_agent` (NOLOGIN base; every `w_*` role inherits) | `capture`, `file_intake`, `hold_intake`, `discard_intake`, `create_person`, `add_handle`, `update_person` (rejects `verified_fields`), `create_task`, `complete_task`, `drop_task`, `amend_task`, `create_expectation`, `resolve_expectation`, `log_entry`, `amend_log`, `add_link` (inferred), `remove_link` (inferred), `register_page`, `move_page`, `upsert_metric`, `post_message`, `claim_message`, `read_message`, `resolve_message`, `propose`, `start_run`, `finish_run`, all reads |
+| **user** (dictation-gated) | orchestrator + panel | `set_directive`, `retire_directive`, `add_link`/`remove_link` (asserted), `upsert_goal`, `upsert_role`, `update_person` (may touch `verified_fields`), `retire_role`, `resolve_held_intake` |
+| **panel** | `claudio_panel`, `claudio_core` (panel also holds the agent + user sets — approve-time apply runs under its own grants) | `approve_message`, `reject_message`, `apply_actions`, `merge_people`, `merge_atoms`, `set_component_status` |
+| **core** | `claudio_core` only | `register_component` (both circles — registration is always a core-deploy act), `purge`, migrations/DDL, `role_clearances` writes |
+| narrow extras | single roles | `merge_atoms` additionally to `w_merge` (auto-merge bar ≥0.9 + identical time/participants enforced server-side); `reap_expired_claims` to `w_watchdog` only (exempt from queue scoping, lease-age-guarded) |
 
 The **dictation gate**: user-set functions take `dictation_intake_id`; the function verifies the intake row's sender is a verified user handle, `service='iMessage'`, received ≤ 10 min ago. The panel satisfies the gate by role instead. Text from anyone else can never become law (P5).
 
@@ -23,7 +24,7 @@ One canonical encoding everywhere: `[{"fn": "<L1 name>", "args": {...}}, ...]`, 
 |---|---|
 | `capture(adapter, raw, sender, locator, raw_ref) → intake_id` | Dumb, instant, durable (P3). Dedup on `(adapter, locator)`. |
 | `file_intake(intake_id, actions) → filed_refs` | Opens with `UPDATE intake SET status='filed' WHERE id=$1 AND status='pending'`; zero rows ⇒ abort (concurrent filer loses cleanly). Batch executes atomically; partial failure rolls back everything including the status flip. **`set_directive` is not a legal sub-action** — directives only pass the dictation gate. |
-| `hold_intake(intake_id, question_message_id)` / `discard_intake(intake_id, reason)` | Same conditional-transition guard. Held rows re-enter the filer sweep when their linked question resolves (`resolve_held_intake` records the user's answer). |
+| `hold_intake(intake_id, question_message_id)` / `discard_intake(intake_id, reason)` | Same conditional-transition guard. `resolve_held_intake(intake_id, answer)` records the user's answer **and flips `held` → `pending`**, so the row re-enters the filer's next sweep with the answer attached. |
 | `create_person(...)` | Raises `claudio.handle_conflict` if any handle is owned (match, don't create). |
 | `merge_people(keep, drop)` | Panel-set. Locks both rows in id order; on `(source,handle)` collision the keep side wins and the duplicate row is dropped; rejects self-merge, archived `keep`, or re-merging a prior target. |
 | `merge_atoms(canonical, duplicates[])` | Target must be canonical (`canonical_of IS NULL`); duplicates must not be merge targets; no self/cycles. Agents may call only at the auto-merge bar (≥0.9, identical time+participants); else propose. |
@@ -34,7 +35,7 @@ One canonical encoding everywhere: `[{"fn": "<L1 name>", "args": {...}}, ...]`, 
 | `retire_role(role_id) → proposal_id` | Always a cascade-preview proposal (suspend scoped components, close adapters, re-home open tasks) carried as a batch-shape `actions` array; applied by `apply_actions` on approval. |
 | `register_page(path, kind, title, entity_type, entity_id)` / `move_page(old, new)` | The `documents` registration half of wiki writes; the file half is the core-owned `wiki-tool` (05). `move_page` rewrites inbound wikilinks atomically (tool-mediated). |
 | `propose(summary, actions, evidence, quoted) → message_id` | `privilege_class` and `requires_approval` are **derived server-side** from `actions[].fn` against a fixed classification — the proposer's opinion of its own danger is ignored. Sensitivity floor = max of cited rows. |
-| `approve_message(id)` | Panel-set. Applies the proposal's `actions` **synchronously in the same transaction** under the panel role — no second trust domain, immediate feedback. Standing approvals: if the derived `privilege_class` matches an active `approval_class` directive, the panel logic auto-approves (deterministic, revocable, P5). Core-class actions never auto-approve and only a core session may apply them. |
+| `approve_message(id)` | Panel-set. Applies the proposal's L1 `actions` **synchronously in the same transaction** under the panel role — no second trust domain, immediate feedback. **External (non-L1) halves** — e.g. the gcal write itself — are not applied here: approval posts a `handoff` back to the proposing workflow's queue, whose own pipeline step performs the connector write under its own tools. Standing approvals: if the derived `privilege_class` matches an active `approval_class` directive, the panel server auto-approves (deterministic, revocable, P5 — mechanism in `06`). Core-class actions never auto-approve and only a core session may apply them. |
 | `set_component_status(id, status)` | Panel-set. The registry is the source of truth; the reconciler pipe converges launchd plists to it. |
 | `purge(table, row_id, reason)` | Core-only. Hard-deletes row + edges + document anchors; the purge *fact* is audited; backups age out ≤ 90 days. |
 

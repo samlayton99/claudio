@@ -40,7 +40,7 @@ L1's `register_page`/`move_page` own the `documents` rows; the file half is **`w
 2. **Dedup at creation**: title + alias search (`person_handles` `source='alias'`) first; near-match ⇒ proposal, not a page.
 3. **Flat folders, link hierarchy**: directories by kind only; hierarchy lives in `index` pages (items belong to multiple hierarchies; folder taxonomies rot).
 4. **One fact, one home** (lint heuristic + gardener rewrite).
-5. **Lint is a pipe** (w0, daily): frontmatter valid, `[[wikilinks]]` resolve, kinds/sections honored, sizes in range, registered in `documents`, no sensitivity-2 patterns, backlink sections current, orphan scan. **Lint parses files directly — there is no `document_links` mirror table** (the files are authoritative; promote a table only when a real SQL graph query shows up).
+5. **Lint is a pipe** (w1, daily — `wiki/` is w1-only): frontmatter valid, `[[wikilinks]]` resolve, kinds/sections honored, sizes in range, registered in `documents`, no sensitivity-2 patterns, backlink sections current, orphan scan. **Lint parses files directly — there is no `document_links` mirror table** (the files are authoritative; promote a table only when a real SQL graph query shows up).
 6. **Freshness computed**: `documents.freshness` vs new atoms on the anchor; drift queues refresh.
 
 ## Wiki gardener procedure (w1, daily)

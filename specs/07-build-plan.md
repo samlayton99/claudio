@@ -20,7 +20,7 @@ Migrations (01), L1 function sets + grants matrix (02), audit + RLS (forced, inv
 The edge (capture-first inbound, sender verification, outbound + external dead-man), gcal adapter, filer (passes eval bar), orchestrator (dictation gate live), watchdog + reaper, morning brief (degraded mode tested), todo & expectation scanner. Seed roles/goals/directives + root wiki page. Interim held-flow: questions via the edge, answers by text. *Gate: 7 consecutive days — brief delivered 7/7 (≥1 via forced degraded path), capture-by-text files correctly, an induced schedule miss alerts within 15 min, an induced send failure alerts via the dead-man, zero silent failures.*
 
 **P3 — Trust the writes**
-Merge gardener, panel v0 (approvals with derived classes + taint rendering, registry, people, intake, runs), `apply_actions` on approve, standing approvals, `retire_role` cascade end-to-end. *Gate: "two Mikes" resolves by text; a multi-action proposal approves and applies atomically; a live injected email files as data with `meta.suspected_injection`; a standing approval auto-applies a solo gcal block and is revocable.*
+Merge gardener, panel v0 (approvals with derived classes + taint rendering, registry, people, intake, runs), `apply_actions` on approve, standing approvals, `retire_role` cascade end-to-end. *Gate: "two Mikes" disambiguated by text, merge applied via panel approval; a multi-action proposal approves and applies atomically; a live injected email files as data with `meta.suspected_injection`; a standing approval auto-applies a solo gcal block and is revocable.*
 
 **P4 — The portrait**
 wiki-tool + `register_page`/`move_page`, wiki gardener, lint, catalog gardener; seed person/role pages; weekly digest. *Gate: 2 weeks of growth, zero un-triaged lint failures, zero judgment-claim violations; a user correction sticks and the verifier (manual run) confirms citations.*
@@ -29,7 +29,7 @@ wiki-tool + `register_page`/`move_page`, wiki gardener, lint, catalog gardener; 
 Query-trigger machinery (cursors), meeting setter, the intro→gcal chain (S1) under a standing approval, provisioning pipeline end-to-end (first outer component: built, approved, core-deployed, observed), alignment gardener (≤3 questions/week, re-ask rule). *Gate: S1 runs from a real text; one outer component live; alignment asks ≥1 question Sam rates as "good catch".*
 
 **P6 — Widen**
-gmail/slack/transcript/notion adapters, old-dashboard adapter, custom dashboards (S9 tiles from `metrics`), meeting scanner (S10), tool scout, hygiene reviews, verifier on cron if drift observed, Cowork migration of hot workers if cost data demands.
+gmail/slack/transcript/notion adapters, old-dashboard adapter, custom dashboards (S9 tiles from `metrics`), meeting scanner (S10 — provisioned as an outer-circle workflow, not core), tool scout, hygiene reviews, verifier on cron if drift observed, Cowork migration of hot workers if cost data demands.
 
 ## Scenario → phase traceability
 

@@ -33,7 +33,7 @@ One long-running deterministic pipe in Sam's GUI session (TCC: Full Disk Access,
 
 The one non-disposable UI; the approval gate's home. v0 scope — plain, fast, boring:
 
-- **Approvals**: open proposals, server-derived privilege class, evidence, `quoted` rendered as foreign text. Approve applies synchronously; standing-approval classes shown with a revoke control.
+- **Approvals**: open proposals, server-derived privilege class, evidence, `quoted` rendered as foreign text. Approve applies synchronously; standing-approval classes shown with a revoke control. The panel **server** (not the UI) polls open proposals on a short interval and auto-approves those whose derived class matches an active `approval_class` directive — that is the standing-approval actor.
 - **Registry**: components, status, last run, cost trend; enable/disable (`set_component_status`).
 - **People**: list/edit/merge (edits set `verified_fields`).
 - **Intake**: held items + the filer's questions; answer applies via `resolve_held_intake`.
@@ -44,4 +44,4 @@ Stack: minimal Next.js, runs as `claudio-p`, binds 127.0.0.1 with a bearer token
 
 ## Custom dashboards (disposable surfaces)
 
-Provisioned via the pipeline (propose → approve → built → **deployed by core**, workers never write code paths) → registered with its own DB role (SELECT on named views only). Tiles read `metrics` + views (expectations leaderboard, ignored-messages trend, urgent-replies queue); any write action posts proposals. Regenerable from the catalog; deleting one costs nothing.
+Provisioned via the pipeline (propose → approve → built → **deployed by core**, workers never write code paths) → registered with its own DB role: `SELECT` on named views plus `propose`/`post_message` and nothing else. Tiles read `metrics` + views (expectations leaderboard, ignored-messages trend, urgent-replies queue); any write action is a proposal. Regenerable from the catalog; deleting one costs nothing.

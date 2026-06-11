@@ -22,7 +22,7 @@ create table kinds (
 );
 ```
 
-Seed vocab: `log`: meeting, conversation, session, trip, capture, communication, observation, artifact, agent_action · `link`: member, participant, about, advances, scoped_to, part_of, derived_from, blocks · `relationship`: knows, family, introduced_by, colleague · `page`: person, role, topic, event, index, digest · `message`: handoff, proposal, notification, alert, question.
+Seed vocab: `log`: meeting, conversation, session, trip, capture, communication, observation, artifact, agent_action · `link`: member, participant, about, advances, scoped_to, part_of, derived_from, blocks · `relationship`: knows, family, introduced_by, colleague · `page`: person, role, topic, event, index, digest · `message`: handoff, proposal, notification, alert, question · `metric`: unanswered_count, median_reply_lag_s, messages_in, messages_out.
 
 `about` = generic aboutness (atom→secondary role, task→person-as-subject). `advances` = the taste edge (role/task/atom → goal); `get_context.taste.goals` traverses it.
 
@@ -133,8 +133,9 @@ create table intake (
 );
 create unique index intake_dedup on intake (adapter, locator) where locator is not null;
 -- Disposition transitions are conditional: ... WHERE id=$1 AND status='pending' — a concurrent
--- filer loses cleanly. Adapter capture defaults are capped at sensitivity 1 (the filer's clearance);
--- anything captured restricted routes to the panel, not the filer.
+-- filer loses cleanly. resolve_held_intake records the user's answer AND flips held → pending,
+-- which is how held rows re-enter the filer's sweep. Adapter capture defaults are capped at
+-- sensitivity 1 (the filer's clearance); anything captured restricted routes to the panel.
 
 create table documents (
   path        text primary key,
@@ -207,7 +208,7 @@ create table components (
   definition_path text,
   trigger         jsonb not null default '{"type":"manual"}',
     -- {"type":"cron","expr":...} | {"type":"queue","name":...} | {"type":"query","predicate":...,"cursor":...} | {"type":"manual"}
-  config          jsonb not null default '{}',   -- role_map, semantics, model, cost ceiling, clearance, batch caps
+  config          jsonb not null default '{}',   -- role_map, semantics, model, cost ceiling, batch caps (clearance lives ONLY in role_clearances)
   reliability     text not null default 'standard' check (reliability in ('standard','critical')),
   ...conventions
 );
