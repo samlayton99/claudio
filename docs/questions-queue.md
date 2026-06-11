@@ -1,24 +1,30 @@
-# Questions Queue
+# Questions Queue — consolidated for v3
 
-Open items for Sam. Defaults are chosen and specced — answering changes the spec; silence keeps the default.
+Section A: open questions YOU left in `sam-spec-review.md`, each with my proposed answer (these become v3 unless you object). Section B: my open questions for you. Section C: carried defaults still standing.
 
-## New since spec v2 (review-driven changes you should sanity-check)
+## A. Your open questions, my proposed answers
 
-1. **OS users as clearance tiers.** Reviews found the single-service-user design collapses the privilege lattice (same-uid credential theft) and that chat.db/iMessage-send legally require your GUI session (TCC). v2: `sam` (core + the deterministic iMessage edge), `claudio-p` (panel), `claudio-w1`/`claudio-w0` (worker tiers). Slightly more setup, kernel-enforced boundaries. OK?
-2. **External dead-man service.** P6 needs an alarm independent of the alarm channel: the edge heartbeats to a hosted dead-man (e.g. Healthchecks.io) after each successful send cycle; a miss alerts out-of-band. One small cloud dependency in a local-first system — accept?
-3. **Standing approvals.** User-granted directives (`scope_type='approval_class'`) let the panel auto-apply named, server-classified proposal classes — proposed seed: `gcal_solo_block` (your intro→calendar chain runs silently; attendee-bearing events still propose). Grant it?
-4. **Dictation privileges via chat.** Verified-iMessage texts from you can set directives, assert links, edit goals (the dictation gate). SMS and all other senders never can. Comfortable with chat-as-law at that scope, or should some of it stay panel-only?
-5. **Orchestrator reply latency.** No router daemon (P4) means queue-triggered workers: ~10–20s text-reply latency in v0. Acceptable, or revisit?
+1. **External writes / approval through agent endpoints? "Special tunnel?"** (02, 06, and your later "on second thought" note.) Your second thought is right, and here's the principled version: **the approval act must happen on a claudio-owned trusted surface** (panel, or the dedicated chat channel at equal clearance) because the approve-click IS the privilege boundary — outsourcing it hands a third party the keys. But **execution of approved external work is fully outsourced**: on approval, claudio posts a handoff to the owning agent's queue (the email agent drafts/sends through its own preconfigured channel, the gcal workflow writes through its own tools). Claudio = central brain + approval surface; external agents = hands, each owning its own outbound. The "tunnel" is the existing queue + handoff mechanism — no new machinery.
+2. **Dedicated entry channel vs outsourcing to Poke et al.** Dedicated, claudio-owned, required — your security instinct is correct: the entry point is simultaneously the untrusted-intake boundary AND the dictation gate; outsourcing it gives a third party your voice. It's a configurable *slot* (iMessage edge in v0; email/chat variants later), but always claudio-owned ground-zero. Poke-class assistants can still be *consumers* of claudio context — they just can't be the mouth.
+3. **Usage-monitor agent = purpose-graph agent?** Yes — one taste-owner, which I'd name **the mirror**: (a) interactive mode — elicits and maintains the purpose contract with you; (b) observational mode — watches actual usage/behavior against that contract, promotes/cuts automations, proposes windows. One agent owning taste keeps the model of *you* coherent; the alignment gardener stays mechanical (queries + drift flags) and feeds the mirror rather than owning judgment.
+4. **Atom granularity / daily pulse / flood days** (your "not resolved"). Proposal: atoms stay episode-based (a 200-text day is still N conversations = N atoms, each pointing at raw); **a daily pulse rollup** (tier-2, generated each night: "state of the day" with links to every atom) gives the consolidation you want; drowning is solved at the *packet* level — `get_context` orders by importance × recency and the pulse keeps low-importance volume one pointer away instead of in the window. Live updates: open windows (today's unclosed threads) are visible via intake, not atoms. If this doesn't satisfy, it's our first practice-iteration target.
+5. **Router daemon for the chat path?** Half-concede: the iMessage edge already is a fast-poll resident process — v3 will name it honestly as the one permitted router, for *conversational latency only*. No general routing daemon for workflows (held through two security reviews; latency there doesn't touch UX).
+6. **Merge thresholds tunable?** Yes — all thresholds (merge confidence, filer confidence, question caps, notification budget, cron times, model tiers) move to a **central parameters registry split core/outer**, exactly per your general note. Iterated in practice.
+7. **Role retirement vs wiki.** Confirmed bug in v2.1, will fix: retiring a role never archives wiki pages; history stays traversable; active-roles is a default *filter*, and scaffold agents may look past it.
+8. **Hosting portability.** Design rule for v3: core is POSIX + Postgres + cron-semantics; every macOS-specific dependency (TCC, launchd, keychain, pf) is quarantined inside the edge + deploy layer with a documented Linux/VPS mapping (systemd, etc.). Mac mini is the proving ground, never a load-bearing assumption. (Future-company hosting stays food for thought — nothing in the design fights it.)
+9. **Context packet verbosity / need-to-know.** Add `opts.verbosity` (skeleton | standard | verbose) + the existing clearance system already enforces need-to-know on sensitive rows. Default standard; agents ask for verbose explicitly.
+10. **Master password.** Keep, with one amendment to your sketch: the verifier must be a *hash check*, never an agent (an agent can be socially engineered; a hash can't). Passphrase + panel session = the two factors. ADHD-compliant: it gates only inner-circle changes, which are rare.
+11. **Write-capable vs read-only agents in handshake.** Resolved deterministically rather than by probing: capability is *issued*, never self-declared — an external agent has zero write access until claudio grants its role, so a malicious agent "hiding" write access has nothing to hide; the user permission gate sits at issuance. The handshake's job reduces to declaring *requested* scopes, which the user sees at approval.
 
-## Carried defaults
+## B. My open questions for you
 
-6. **Wiki frontmatter spec** — minimal + unfrozen pending prior-art review (`05`).
-7. **Wiki file sensitivity gap** — files ≤ sensitivity 1, restricted stays DB-only; `wiki/` mounted to w1 only. Upgrade path: per-clearance subtrees. (`04`)
-8. **Worker billing** — launchd + `claude -p`, cheap models, cost ceilings; revisit with real cost data at P2 exit (billing facts volatile).
-9. **gcal-as-draft** — ended events log `meta.tentative=true` unless corroborated/confirmed. Tune?
-10. **Chat atom granularity** — thread-day default, adapter-configurable.
-11. **Notification budget** — 5 proactive/day; reminders, alerts, time-sensitive questions exempt.
-12. **Backups** — restic → Backblaze B2 (encrypted) + private git remote; 90-day retention (purge completes within window).
-13. **Old-dashboard adapter timing** — P6; pull earlier if you still use it daily.
-14. **Relationship vocab seed** — `knows, family, introduced_by, colleague`; conservative creation per your note.
-15. **Panel stack** — minimal Next.js, localhost + bearer token (localhost alone is not auth).
+1. **Purpose contract sensitivity.** I propose the purpose db (goals, values, attribute_goalposts, priorities + the source markdown) lives at sensitivity 2 — raw contract readable only by the mirror and clearance-2 surfaces; what flows into everyday packets is *distilled derivatives* (the priorities list, goal links). Confirm?
+2. **First elicitation session.** The purpose contract now sits at the top of the hierarchy, which makes the mirror's first session a real build dependency (it seeds everything). When do you want to do it, and in what medium — long-form chat, voice-transcribed, or starting from a document you write alone first?
+3. **The kill criterion.** My honest-answer condition (below, in chat): at P3 exit, if weekly maintenance time exceeds weekly time saved, we stop or shrink. Will you agree to that as a standing gate in the build plan?
+4. **Steady-state budget ceiling.** Pick a monthly number for the system's token spend (drives model-routing defaults and the downward-pressure guardrails). My placeholder: $50/mo steady state.
+5. **Wiki page bar arbitration.** "Would Sam in 6 months find this interesting" — early on, marginal calls default to *no page* (P7) with the content still reachable via atoms. Confirm default-no?
+6. **DesignSync.** I now have tooling to sync panel components with a claude.ai/design project — that's the "iterate with claude design" path for the panel when we get there. Noted, nothing needed now.
+
+## C. Carried defaults still standing
+
+OS-users-as-clearance-tiers · external dead-man heartbeat service · standing approvals seed (`gcal_solo_block`) · gcal-as-draft (`meta.tentative`) · thread-day chat atoms (subject to A4 iteration) · backups restic→B2, 90-day retention · relationship vocab seed (now generalized per your flag rule: conservative, OS-edited, documented, default-unknown) · panel = Next.js localhost + token.
