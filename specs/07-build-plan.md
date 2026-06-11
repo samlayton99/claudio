@@ -12,7 +12,8 @@ Build order law: **structure first, types and contracts second, functionality an
 
 - Inner circle ships only via core sessions with migrations + tests; outer only via the provisioning pipeline; workers never write code paths.
 - Every component lands with: registry row, parameters, runs wiring, watchdog expectation, negative tests for new privilege, reconciler plist.
-- **Independent audits run at every phase gate**: structural-completeness + over-engineering trim + the malicious-superintelligence review (`04`). Scope cut at a gate is written to `docs/questions-queue.md`, never silently dropped.
+- **Independent audits run at every phase gate**: structural-completeness + over-engineering trim + the malicious-superintelligence review (`04`) + the dependency sweep (`03`). Scope cut at a gate is written to `docs/questions-queue.md`, never silently dropped.
+- **Drills are automated, not assigned**: restore-test is a monthly cron with checksum + alert; kill-switch verification is scripted with a calendar nudge. Humans do not drill (ux-rings).
 - Evals are not law: they grow and change with scope. Restraint/security cases stay at a 100% bar.
 - Continuous naming check: anything an agent calls gets a descriptive name or it doesn't merge.
 
@@ -26,22 +27,22 @@ Build order law: **structure first, types and contracts second, functionality an
 ## Phases
 
 **P0 — Structure + ground truth (no code)**
-Repo layout (`core/`, `custom/`, `wiki/` chapters, `archive/`), corpus normalized and labeled together, **the mirror's first elicitation session** → purpose contract v1 + priorities (front-load the irreplaceable — honesty audit). *Gate: 25+ labeled fixtures, every example expressible in L1 calls; purpose contract exists and Sam signs it.*
+Repo layout (`core/`, `custom/`, `wiki/` chapters, `archive/`), corpus normalized and labeled together, **the first elicitation session** (run manually as a core session — the w2 mirror context doesn't exist yet) → purpose-contract markdown v1 + priorities (front-load the irreplaceable — honesty audit). *Gate: 25+ labeled fixtures, every example expressible in L1 calls; purpose contract exists and Sam signs it.*
 
 **P1 — Types & contracts**
-Migrations (3 planes), L1 function sets + grants, jsonb schema validation, audit + RLS (forced, invoker) + `role_clearances` + `parameters`, OS tiers, red-team suite, backup + restore-test, kill switch. *Gate: red-team green across tiers; restore drill passes; `get_context('role','prod')` correct on seed data; generated types compile.*
+Migrations (3 planes), L1 function sets + grants, jsonb schema validation, audit + RLS (forced, invoker) + `role_clearances` + `parameters`, **staged tiers: two OS users** (`04`), red-team suite, backup + monthly restore-test cron, kill switch. **Seed the contract**: purpose markdown → `purpose` rows. *Gate: red-team green for the deployed stage; restore cron passes; `get_context('role','prod')` correct on seed data incl. taste; generated types compile.*
 
 **P2 — First loop (daily value)**
-The edge (capture-first, sender verification, dead-man), gcal window, filer (eval bar), orchestrator (dictation gate), watchdog + reaper, morning brief (degraded-mode tested), scanner, pulse. Seed roles/directives + chapter MOCs + root pages from About_Me + purpose contract. *Gate: 7 consecutive days — brief 7/7 (≥1 forced-degraded), capture-by-text files, induced miss alerts ≤15 min, induced send failure alerts via dead-man, queue properties proven under induced crash (lease reaping, no double-fire), zero silent failures.*
+The edge (capture-first, sender verification, spool, dead-man, taste-confirm flow), gcal window (read-only ICS), filer (eval bar; critical; poison quarantine), orchestrator (stages taste, never writes it), watchdog, morning brief (degraded-mode tested; hold-questions ride it), scanner, pulse. Seed roles/directives + **verified user handles** + chapter MOCs + root pages from About_Me. *Gate: 7 consecutive days — brief 7/7 (≥1 forced-degraded), capture-by-text files, a dictated directive commits via read-back-confirm, induced miss alerts ≤15 min, induced send failure alerts via dead-man, queue properties proven under induced crash (claim-time reaping, no double-fire), zero silent failures.*
 
-**P3 — Trust the writes**
-Merge gardener, panel v0 (approvals + derived classes + taint, chat, registry/audit page, people, intake, parameters, runs), standing approvals, `retire_role` cascade. *Gate: two-Mikes by text + panel-approved merge; multi-action proposal applies atomically; live injected email files as data; standing approval auto-applies a solo gcal block and is revocable. Kill-criterion check #1.*
+**P3 — Trust the writes (+ staged hardening completes)**
+Merge gardener, panel v0 (what-will-execute approvals, chat, registry/audit page, people, intake, parameters, runs), `w_approver` + standing approvals (arg-predicates), phone approvals for low-risk classes, `retire_role` cascade, **full OS tier split + pf + Tailscale**. *Gate: two-Mikes by text + approved merge; multi-action proposal applies atomically with the rendered view matching execution; live injected email files as data AND its span renders fenced downstream; standing approval auto-applies a solo gcal block, rejects an attendee-bearing one, and is revocable; an approval completed from the phone. Kill-criterion check #1.*
 
 **P4 — The biography**
 wiki-tool + page functions, wiki gardener (delta-only), lint (citations + anti-slop), **verifier on weekly cron**, state-of-life digests, demotion sweep. *Gate: 2 weeks growth — zero un-triaged lint failures, zero judgment-claim violations, citation sampling clean, a panel correction sticks as an immutable span, page count sublinear in atoms.*
 
 **P5 — Workflows & alignment**
-Query triggers + cursors, meeting setter, the S1 intro→gcal chain under standing approval, provisioning pipeline end-to-end (first outer component), alignment gardener, **the mirror's observational mode**. *Gate: S1 from a real text; one outer component live; alignment asks ≥1 question Sam rates "good catch"; mirror's first usage report leads to one real promote/cut.*
+Query triggers + cursors (cycle guard), meeting setter, the S1 intro→gcal chain under standing approval, provisioning pipeline end-to-end (first outer component), alignment gardener, **the mirror's observational mode** (+ taste-write provenance review), neglect mode. *Gate: S1 from a real text; one outer component live; alignment asks ≥1 question Sam rates "good catch"; mirror's first usage report leads to one real promote/cut; **the induced 3-week-neglect eval passes — the system recovers with one rollup, no cleanup project**. Kill-criterion check #2.*
 
 **P6 — Widen**
 gmail/slack/transcript/notion/folder windows, old-dashboard window, custom dashboards, meeting scanner (outer), scout (tools + windows), hygiene reviews, embeddings if the promotion trigger fires, Cowork migration if cost data demands, handshake's first real external agent.

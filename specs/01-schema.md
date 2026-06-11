@@ -80,6 +80,7 @@ create table purpose_versions (
 - **Write access**: user-set functions only (dictation gate / panel / mirror elicitation sessions, `02`/`03`). No agent, gardener, or workflow can modify the contract. Nothing in the system overrides it.
 - **Lived-vs-proclaimed is derived, never stored mutable**: `v_purpose_alignment` (purpose row → linked-activity share, last-advanced, drift flags from `metrics`) is computed; discrepancy history is recorded as observation atoms + the wiki purpose/progress chapters. (P9: a derived view cannot go stale independently.)
 - What flows into everyday packets is the distilled slice (priorities list, goal/value statements via `advances`); the raw source document is mirror/core/panel-readable only.
+- **Absent/stale degraded mode**: packets are valid with empty `taste.purpose`; the alignment gardener no-ops with a `contract_missing_or_stale` metric; `v_purpose_alignment` surfaces `purpose_versions` age so contract staleness is itself a drift flag the mirror consumes.
 
 ## Life plane
 
@@ -179,8 +180,11 @@ create table intake (
 );
 create unique index intake_dedup on intake (adapter, locator) where locator is not null;
 -- Conditional transitions (WHERE status='pending') make concurrent filers lose cleanly.
--- resolve_held_intake records the answer AND flips held → pending. Captures are capped at
--- sensitivity 1; restricted-class captures route to the panel.
+-- resolve_held_intake records the answer AND flips held → pending. Holds carry a TTL
+-- (parameter): aged-out holds auto-file as kind='unknown' low-confidence atoms with
+-- meta.unresolved_hold=true — visible and correctable, never parked forever (the user is
+-- never inside the ingest spine unboundedly). Captures cap at sensitivity 1; restricted
+-- routes to the panel. Filing errors quarantine the ROW, never the filer.
 
 create table documents (
   path        text primary key,          -- 'wiki/people/jane-doe.md'
@@ -315,8 +319,12 @@ create table messages (
   sensitivity       smallint not null default 0,
   ...conventions
 );
--- Approval transitions: session_user ∈ (panel, core) only. Queue scoping: own queue only; 'user'
--- readable by edge + panel. Leases: expired claims reaped to 'posted' + alert. Delivery ≠ read.
+-- Approval transitions: session_user ∈ (panel, core, edge-for-low-risk-classes, w_approver-for-
+-- standing-classes) per the grants matrix (02). Queue scoping: own queue only; 'user' readable by
+-- edge + panel. Leases: expired claims reaped at claim time; watchdog backstops. Delivery ≠ read.
+-- Handoffs carry expires_at (per-class parameter) — stale approvals never fire late. Proposals
+-- dedup on (from_actor, privilege_class, content_hash) — absence never produces a duplicate pile.
+-- privilege_class is derived PER ACTION; the fn→class map + arg-predicates are core-ring parameters.
 
 create table audit (
   id bigserial primary key, at timestamptz not null default now(),

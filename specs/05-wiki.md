@@ -10,6 +10,8 @@ Ten chapter MOCs — stable overlay maps, the one structure pattern that survive
 
 `people` · `personal-life` · `significant-events` · `professional` · `purpose` (beliefs over time; lived-vs-proclaimed discrepancies) · `progress` · `interests` · `lessons-learned` · `pitfalls` (problems I keep causing myself) · `how-to-work-with-sam` (agent-facing: the system learns the person)
 
+**`how-to-work-with-sam` is taste-plane, not wiki-plane** (red-team finding 5: a page that steers agent behavior is a directive surface and must be governed like one): it is *rendered from* the directives table + user-asserted spans — gardeners never free-delta it, and behavioral guidance lives only behind the dictation gate. What gardeners may propose for it goes through proposals like any taste write.
+
 Rules: **every page reachable from a chapter in ≤ 2 hops**; every page names its chapter at creation (`documents.chapter`); below chapters, structure emerges only at squeeze points — never pre-built taxonomy. Folders stay flat by kind; hierarchy lives in chapter/index pages.
 
 ## Page discipline (anti-accretion — the #1 documented AI-wiki failure)
@@ -41,7 +43,7 @@ DB rows stay skinny (≤500-char summaries) but must be *descriptive* — naming
 
 ## Write path
 
-`register_page`/`move_page` (L1) own `documents`; the file half is `wiki-tool` (core-owned CLI, the sanctioned writer — file op + L1 call + atomic link rewrite on rename). Lint (w1, daily) is the enforcement: frontmatter valid, links resolve, chapters honored, sizes in range, citations exist, no sensitivity-2 content, anti-slop, orphan scan (orphan = unreachable from a chapter in ≤2 hops). No `document_links` mirror; no graph features — search and chapter navigation are the real read paths.
+`register_page`/`move_page` (L1) own `documents`; the file half is `wiki-tool` (core-owned CLI, the sanctioned writer). Crash order is defined, not wished: **DB first, file second, lint reconciles drift** — filesystem and database cannot be jointly atomic, so the invariant is "a registered page may briefly lack its file, never the reverse." Lint (w1, daily) is the enforcement: frontmatter valid, links resolve, chapters honored, sizes in range, citations exist, no sensitivity-2 content, anti-slop, orphan scan (orphan = unreachable from a chapter in ≤2 hops). No `document_links` mirror; no graph features — search and chapter navigation are the real read paths.
 
 Frontmatter v0 (few, composable keys — resist growth): `title, kind, chapter, entity, tags, updated, read_moment, sensitivity(≤1)`.
 

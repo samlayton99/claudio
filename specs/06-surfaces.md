@@ -9,7 +9,8 @@ Every window is a component (`kind='window'`) implementing:
 - **`sync()`** (pipe, cron): tier-0 deltas → `capture()` (or direct `record_atom` for unambiguous structured sources). Idempotent by constraint (locator uniqueness), flock-guarded.
 - **Window closing**: chat-like windows close atom windows (thread-day default) and emit one capture per closed window; the filer writes the atom.
 - **`role_map`**: the inheritance default (`01` §Inheritance) — the window is a dependent type narrowing the candidate set. Every window may map to `general`.
-- **`semantics`**: per-source trust/meaning (gcal `commitment_strength: tentative` — planner-as-draft; ended events log `meta.tentative` unless corroborated/confirmed).
+- **`semantics`**: per-source trust/meaning (gcal `commitment_strength: tentative` — planner-as-draft; ended events log `meta.tentative` unless corroborated/confirmed). v0 gcal rides a **read-only ICS URL** (zero OAuth ceremony — ux-rings Ring-0 cut); the OAuth connector arrives only when write-back does.
+- **`replayable: true|false`**: declared per window; replayable sources re-scan to the last captured locator after any outage.
 - **Source-side `metrics`**: deterministic per-message stats (unanswered counts, reply lag by thread/role) — granular analytics, no atom explosion; feeds dashboards and alignment.
 - **Sensitivity default**, capped at 1.
 
@@ -21,21 +22,23 @@ One **required**, claudio-owned, deterministic pipe with ground-zero permissions
 
 **Inbound (capture-first):** every message → `capture()` durably *before anything else* → sender verification (allowlisted handle + verified service; SMS = data, never commands) → verified-user messages post to the orchestrator queue with the `intake_id` (the dictation artifact); everyone else's → filer intake.
 
-**Outbound:** the only sender. Conversational replies (fast poll) + proactive pushes (budget parameter; reminders/alerts/time-sensitive questions exempt). Resolves only on send-API success; retries; external dead-man heartbeat. **Progress indicators**: long orchestrator runs surface "working on it" states so latency never reads as silence (internal latency is fine; perceived deadness is not).
+**Outbound:** the only sender. Conversational replies (fast poll) + proactive pushes (budget parameter; reminders/alerts/time-sensitive questions exempt). Resolves only on send-API success; retries; external dead-man heartbeat; on-disk spool when the DB is unreachable. **Progress indicators**: long orchestrator runs surface "working on it" states so latency never reads as silence.
 
-**Orchestrator** (w1, queue ~10s): a configurable stock harness handed the packet + message. Tools: L1 MCP (agent + user sets, dictation-gated) + read-only connectors. No send tools. High-risk actions → proposal + panel link. Chat holds clearance equal to the panel; panel wins conflicts.
+**Two deterministic user-action flows live here** (no LLM in either commit path): the **taste-confirm flow** — staged taste writes render verbatim ("Set directive: '…' — reply YES"), a fresh confirming message commits via `confirm_taste_write` — and **phone approvals** for low-risk proposal classes, rendering the server-generated what-will-execute text, reply-to-approve bound to the message id. Together with hold-questions riding the brief, the phone covers the entire daily decision surface; the panel is for depth, never a daily requirement (ux-rings cascade A).
+
+**Orchestrator** (w1, queue ~10s): a configurable stock harness handed the packet + message. Tools: L1 MCP (agent set; taste is *staged* via the confirm flow — no direct taste-write grants, red-team finding 1) + read-only fixed-endpoint connectors. No send tools. High-risk actions → proposal + panel link. Chat holds clearance equal to the panel; panel wins conflicts.
 
 ## Panel (the permanent surface — ultimate authority)
 
 The human window into the system; inputs here are the highest-authority taste. **Every panel write is tagged user-asserted and overrides anything** — a wiki edit from the panel is a permanent artifact (immutable span); a person edit sets `verified_fields`; a parameter change is law. v1 is core functionality (plain, fast, searchable); design iterates later via Claude Design (DesignSync).
 
-- **Approvals**: open proposals, derived privilege class, evidence, `quoted` as visibly-foreign text; standing-approval classes with revoke controls; the panel server polls and auto-approves matching classes.
+- **Approvals**: the server-rendered **what-will-execute view** (`02`: per-action classes, `$ref`s resolved to `{id,name}`, in-batch creations with field values, confusable-name flags) — the agent summary is decoration; `quoted`/evidence as visibly-foreign text; standing-approval classes with revoke controls (applied by `w_approver`, `03` — the panel is pure surface).
 - **Chat**: a full chat interface to the orchestrator — ask questions, run custom research over atoms/wiki/runs, drive the system. Same dictation authority as the verified channel.
 - **Registry / audit page**: every agent, automation, workflow, window — what the system defines their role as, their scopes, their usage in practice (`v_component_health`), cost trends; enable/disable.
 - **People / Intake / Runs & queues / Parameters** (outer ring editable; core ring visible, core-session editable).
 - **Wiki**: rendered browse with loud freshness + one-tap "this is wrong" per page (`05`).
 
-Stack: minimal Next.js, `claudio-p`, 127.0.0.1 + bearer token + Host check (localhost is not auth). Tailscale later if proven needed.
+Stack: minimal Next.js, `claudio-p`, 127.0.0.1 + bearer token + Host check (localhost is not auth). **Tailscale ships at P3** — approvals become load-bearing there, and a desk-bound approval surface starves the proposal economy.
 
 ## Handshake (onboarding external agents — the decay test for outsiders)
 
