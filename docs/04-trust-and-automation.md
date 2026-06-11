@@ -7,13 +7,27 @@ How the system builds and runs itself without ever being able to break itself.
 - **Inner circle** — system artifacts the system cannot change: protocols, L1 function definitions, schema migrations, system prompts, built-in workflows and gardeners, the orchestrator slot.
 - **Outer circle** — the sandbox where claudio extends itself: custom workflows, adapters, dashboards, prompts. Agent-buildable, user-approved, fully swappable. **Starts empty** — it fills only through the provisioning pipeline.
 
-Enforcement is **deterministic infrastructure, not prompts**:
+Enforcement is **deterministic infrastructure, not prompts** — modeled on how an OS holds the kernel/user boundary. Threat model: assume agents will eventually be hijacked, because intake is untrusted input by construction (every email and text is adversary-writable and lands in agent context). The boundary must hold anyway.
 
-1. **Two Postgres roles.** `claudio_core` (DDL, migrations, core registry writes — held only by human-driven sessions) vs `claudio_agent` (can call L1 functions, write life-plane data, register outer-circle components; no DDL, no core mutations). `GRANT`s make the line unbreakable — no agent can talk its way past a permission it does not hold.
-2. **Repo split.** `core/` (writable only by human-driven sessions) vs `custom/` (the sandbox). File permissions + a git hook enforce it.
-3. **Optional passphrase** gating core-mutating operations.
+| OS mechanism | Claudio equivalent |
+|---|---|
+| Privilege rings | Two macOS users: `core` (human sessions) and an agent user all spawned workers run as |
+| Memory protection | File perms: `core/` read-only to the agent user; `custom/`, `wiki/`, `memory/` agent-writable |
+| Syscall table | L1 functions as `SECURITY DEFINER`: validate args, run with definer privileges, write audit |
+| Process credentials | `claudio_agent` DB role: `EXECUTE` on L1 + `SELECT` on views, **zero direct table-write grants**, no DDL. Core credentials in Keychain, unreadable by the agent user |
+| Immutable unit files | Workers' launchd plists + tool allowlists owned by core — a worker cannot modify its own launch config or grant itself tools |
+| syslog | Append-only audit table (no routine UPDATE/DELETE grants) |
+| fsck / Tripwire | Deterministic integrity pipe: `git status` + permission check over `core/` on schedule, alert on drift |
 
-Spawned agents always receive the agent credential and the sandbox. A coding agent building claudio itself (human at the keyboard) uses core credentials; an agent spawned *by* the system never does.
+A hijacked agent can write bad *content* through valid, audited, reversible syscalls; it cannot alter schema, registries, audit history, or the functions themselves.
+
+**The cardinal rule (confused deputy defense):** text can never escalate privilege. Crossing into the inner circle requires a human act on a trusted surface — a panel approval click or the passphrase — something no string in any context window can synthesize. Even an injection that rides agent-produced data into a core-privileged session stalls at this gate. The panel is the hardware interrupt; it must stay boring and trustworthy.
+
+**The boundary is tested, not assumed:** a scheduled red-team suite runs *as* the agent role and asserts the negative space (cannot `CREATE TABLE`, cannot `UPDATE` tables directly, cannot write `core/`, cannot read core credentials, cannot edit its own plist). Every grant or L1 change must keep it green.
+
+**Known residual risks:** read-and-exfiltrate by a hijacked worker holding any network-capable tool (mitigated by least-capability tool allowlists per worker, enforced by harness config the worker cannot edit); and approval fatigue — the gate is only as strong as the habit of reading proposals, which is why the hygiene loop keeps proposal volume low.
+
+A coding agent building claudio itself (human at the keyboard) uses core credentials; an agent spawned *by* the system never does.
 
 ## The workflow unit
 
