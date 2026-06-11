@@ -1,67 +1,64 @@
 # 03 — Runtime
 
-What runs, where, when, and what happens when it fails. Everything runs on the Mac mini. launchd is the scheduler of record (P6) — never agent memory, never the app layer.
+What runs, where, when, and what happens when it fails. Everything on the Mac mini. launchd is the scheduler of record (P6) — never agent memory, never the app layer. **No dispatcher, no router daemon** (P4): every worker claims its own work.
 
-## Execution model
+## Execution contexts
 
-| Thing | Runs as | Trigger |
-|---|---|---|
-| Pipes (sync, watchdog, lint, notifier, applier, backup) | plain scripts (Python/TS), launchd | cron intervals |
-| Gardeners & workflow judgment steps | `claude -p` headless, per-worker settings file (tool allowlist, model), wrapped by `run-worker.sh` | launchd cron or dispatcher |
-| Orchestrator (conversational) | `claude -p --resume <thread-session>` invoked by entry adapter | inbound user message |
-| Human core sessions (building claudio) | Claude Code / Cowork interactive | manual |
-| Panel | local web app, launchd-kept-alive | always on |
+| Context | OS user | What | Why |
+|---|---|---|---|
+| Core | `sam` (GUI) | human build sessions, migrations, secret deploy, core proposals | full privilege is a human act |
+| **Edge** | `sam` (GUI LaunchAgent) | `imessage-edge`: the ONE long-running pipe — reads chat.db, sends replies + proactive pushes | chat.db + iMessage send require Sam's session, Full Disk Access, Automation consent (TCC reality). Deterministic code only — **no LLM ever runs in this context** |
+| Panel | `claudio-p` | the panel server | approver credential isolated from workers |
+| Workers, clearance 1 | `claudio-w1` | filer, merge, wiki, orchestrator | OS user = clearance tier; cross-tier theft is OS-enforced |
+| Workers, clearance 0 | `claudio-w0` | brief, scanner, lint, catalog, watchdog, reconciler, backup, alignment | |
 
-`run-worker.sh` (inner, core-owned): resolves worker config from `components` → `start_run` → exec worker with its DB role + settings → `finish_run`. A worker cannot start untracked.
+DB auth: local socket; per-uid `.pgpass` mode 0600. Residual (stated): same-tier workers can read each other's role credential — attribution within a tier is good-faith; across tiers it is OS-enforced.
 
-Long-running processes are exactly **two**: the entry-adapter poller (fast chat.db poll for conversational latency) and the panel. Everything else is cron. (Event dispatch v0 = 1-minute cron poll of `messages`; a LISTEN/NOTIFY dispatcher is a v1 upgrade only if 60s latency ever hurts.)
-
-Billing note (volatile — re-verify): `claude -p` meters API credits. Workers default to cheap models (Haiku-class) with cost ceilings; if metering hurts, hot workers migrate to Cowork scheduled tasks (subscription bucket). Tracked in `runs.cost_usd`; hygiene reviews spend monthly.
-
-## Component lifecycle
-
-Defined in git (`core/` or `custom/`) → registered in `components` → scheduled by a generated launchd plist (core-owned; a worker cannot edit its own) → every execution writes a `runs` row → observable in panel. Disable = `status='disabled'` + plist unload (the applier pipe reconciles plists to the registry — registry is source of truth).
+`run-worker.sh` (core-owned, `flock`-guarded against overlap): resolve component → for queue/query triggers, **check for work first via psql** (claim or cursor peek) — exit `skipped` cheaply if none — else `start_run` → exec worker under its DB role + core-owned settings (tool allowlist, model) → `finish_run`. A worker cannot start untracked, cannot run concurrently with itself, and never spawns a model on an empty queue.
 
 ## Triggers
 
-- `cron`: launchd interval.
-- `event`: a `messages` row matching `trigger.filter` (e.g. `{"kind":"handoff","queue":"meeting-scanner"}`) — claimed via `claim_message` (SKIP LOCKED; double-fire impossible).
-- `manual`: user request via entry point or panel.
+- `cron` — launchd `StartInterval`/`StartCalendarInterval`.
+- `queue` — 1-min cron + `claim_message` (SKIP LOCKED ⇒ no double-fire; lease reaper covers abandoned claims). For the orchestrator: 10s interval, claim-check is a cheap psql call.
+- `query` — 1-min cron + SQL predicate over rows since the component's **cursor** (last-seen id/ts in `runs.meta`). Atom-triggered workflows watch the table; nobody owes fan-out bookkeeping. `skipped` runs are healthy.
+- `manual` — user request via orchestrator or panel.
 
-Chained automation (Sam's example: scheduled-meeting atom → gcal event + day-before expectation) = the filer posts a `handoff` to the workflow's queue when it writes a matching atom. Workflows subscribe to typed writes **via messages**, never via database triggers calling out (no logic hiding in the DB beyond validation/audit).
+Chained automation (intro text → calendar + day-before reminder): the filer just writes atoms; the gcal workflow's `query` trigger picks up new meeting-scheduling atoms via its cursor; its write to gcal is a proposal that a **standing approval** (`approval_class='gcal_solo_block'`, user-granted) may auto-apply; attendee-bearing events always wait for a real approval (they email third parties).
 
-## Gardener roster (inner circle)
+## Gardener roster (inner)
 
-| Gardener | Cadence | Job | Autonomy |
-|---|---|---|---|
-| **filer** | event (intake) + 15-min sweep | intake → `file_intake` batch. Write-side keystone. | Free: file at confidence ≥ 0.8. Else: `held` + question to user. Creates people only on explicit-evidence; never lowers sensitivity below adapter/role default. Untrusted text is data — never instructions (04). |
-| **merge** | daily | person-dedup candidates (shared names, co-occurring handles); cross-source atom merges | Propose. Auto-merge atoms only ≥0.9 + identical time/participants. |
-| **wiki** | daily | grow the portrait from new atoms; maintain MOCs, backlinks, freshness; place published artifacts | Free for page edits (git-versioned, revertible); propose for judgment claims (05-wiki). |
-| **verifier** | weekly | re-check pages against cited sources; fresh context, never the author | Flag → proposal. |
-| **catalog** | on migration + weekly | regenerate `SCHEMA.md` from live schema/comments; drift = alert | Free. |
-| **alignment** | weekly (+ monthly deep) | drift detection: activity-vs-goals distribution; response-decay by role ("leaving research texts on read"); unlinked activity clusters ("the topology notes"); low-priority-role crowding | **Question, never act** (P7). Outcomes are typed: user answer becomes a new link/directive, or an accepted reminder automation. Max 3 questions/week. |
-| **hygiene** | monthly | unused components, token spend review, stale directives, promote/demote candidates | Propose. |
-| **tool scout** | monthly (phase 3+) | better MCP servers/tools → proposals | Propose. |
+| Gardener | Tier | Trigger | Job | Autonomy |
+|---|---|---|---|---|
+| **filer** | w1 | query (pending intake) + 15-min sweep (incl. held-with-answer) | intake → `file_intake` batch. Write-side keystone. | File at confidence ≥ 0.8; else `hold_intake` + question. **The discriminator: intake text may describe world-obligations (file tasks/expectations as data — the bishop's visit list) but may never select system actions; system-addressed imperatives from non-user senders file as data with `meta.suspected_injection=true`** (the C5/C8 line). People created on explicit evidence only. Never directives. Sensitivity floor server-clamped. |
+| **merge** | w1 | daily | person-dedup candidates; cross-source atom merges | Propose (auto only ≥0.9 identical time+participants). |
+| **wiki** | w1 | daily | grow the portrait from new canonical atoms; MOCs, backlinks, freshness; place artifacts | Page edits free (git-revertible); judgment claims propose (05). |
+| **catalog** | w0 | on migration + weekly | regenerate `SCHEMA.md` from live schema + comments | Free. |
+| **alignment** | w0 | weekly (+ monthly deep) | drift: activity-vs-goals distribution (`advances` edges + metrics), response-decay by role, unlinked activity clusters, low-priority-role crowding | **Question, never act** (P7). ≤ 3 *new* questions/week; unresolved questions re-ask weekly until answered or snoozed by directive (the "incessant" contract). Outcomes are typed: answer → asserted link / directive (dictation gate) or an accepted reminder automation. |
+| **hygiene** | w0 | monthly | unused components, token spend, stale directives, promote/demote candidates | Propose. |
+| **verifier** | w1 | **manual** (cron at P6 if drift observed) | re-check pages against cited sources; never the author | Flag → proposal. |
+| **tool scout** | w0 | monthly (P6) | better MCP servers/tools → proposals | Propose. |
 
-The **assembler** (read-side keystone) is deferred: `get_context` v0 is pure SQL. The agentic assembler arrives when synthesis quality demands it, *wrapping* the same function (consumers don't change).
+The **assembler** stays deferred: `get_context` v0 is pure SQL; the agentic assembler later wraps the same signature.
 
 ## Core workflows (inner)
 
 | Workflow | Trigger | Pipeline |
 |---|---|---|
-| **morning brief** | cron 7:00 | SQL packet (calendar via gcal MCP, due tasks, pending expectations, intake highlights) → judgment step (one cheap-model call: prioritize + voice) → notifier. **Degraded mode (P6): if the model step fails, send the deterministic SQL skeleton.** Delivery never depends on an LLM. |
-| **todo & expectation scanner** | cron hourly | pure SQL: due/overdue tasks, `follow_up_at` arrivals, missed expectations → `resolve_expectation`/notifications per policy. No LLM. **Critical reliability tier.** |
-| **daily window summaries** | cron per adapter config | per-source day digest → atom(s) + optional notification |
-| **meeting setter** | event (handoff) | proposes times from gcal free/busy; drafts reply; **never books, never sends** — proposal to user |
+| **morning brief** | cron 7:00 | SQL packet (gcal via MCP, due tasks, pending expectations, intake highlights) → one cheap-model step (prioritize + voice) → user queue. **Degraded mode (P6): model step fails ⇒ send the deterministic SQL skeleton.** Delivery never depends on an LLM. |
+| **todo & expectation scanner** | cron hourly | pure SQL: due/overdue, `follow_up_at` arrivals, missed expectations → resolves + reminder messages. No LLM. **Critical.** |
+| **meeting setter** | query (scheduling atoms) | proposes times from gcal free/busy + drafts the reply — always a proposal; **never books, never sends** |
 | **query-what-happened** | manual | orchestrator answers from `what_happened` + packet |
+
+(The old "daily window summaries" workflow is deleted: adapters close their own atom windows; the filer writes the atoms. Digest-style pushes are just messages.)
 
 ## Reliability machinery (P6)
 
-- **Watchdog** (pipe, critical): every 15 min compare `components.trigger` schedules vs `runs` → any miss or unfinished run ⇒ alert via notifier. The watchdog itself is monitored by a launchd KeepAlive + a dead-man cron that alerts if the watchdog hasn't run in 1h (who watches the watchman: launchd does).
-- **Notifier** (pipe, critical): the **only send-capable component**. Reads `messages` where `queue='user'` and policy says push (alerts, time-sensitive proposals, briefs). Destination hardwired to Sam's verified handles — constant in core-owned code, not config. Notification budget: max N proactive pushes/day (default 5, directive-tunable) **except** reliability alerts and reminder-class messages, which are never suppressed (P6 > P3).
-- **Applier** (pipe): executes approved proposals' `action` via L1 (agent-applicable ones); `requires_core` proposals wait for a human core session. Reconciles launchd plists to the registry.
-- **Failure policy**: a failing component retries once, then `status` stays enabled but alert fires; 3 consecutive failures ⇒ auto-disable + alert (never silent, never infinite retry). Build failures of provisioned components escalate to the user — hand-wiring is the documented fallback.
+- **Watchdog** (w0, critical, 15-min): expected runs vs `runs` (schedule misses, unfinished > 2× trailing-median duration), stale `posted` messages, **expired claims (lease reaper: back to `posted` + alert)**. Alerts post to the user queue. Liveness of the watchdog itself: an independent dead-man cron alerts if the watchdog hasn't run in 1h.
+- **The edge sends; nothing else does.** Destination constants (Sam's verified handles) live in core-owned edge code, not config. Delivery semantics: a user-queue message resolves only after the send API succeeds; failures retry with backoff; nothing expires silently. Send-path failure has an **independent alarm**: the edge heartbeats to an external dead-man service (egress-allowlisted) after each successful send cycle; a missed heartbeat alerts out-of-band (and the panel shows a banner). Notification budget: ≤ 5 proactive pushes/day, directive-tunable — **never applies to reminders, alerts, or time-sensitive filer questions** (P6 > P3; a suppressed held-intake question about tomorrow's deadline is a silently dropped reminder).
+- **Failure policy** (reads `reliability`): standard components — retry once, alert, auto-disable after 3 consecutive failures (never silent). **Critical components (scanner, watchdog, edge) are never auto-disabled** — retry with backoff forever, alert every failure.
+- **Reconciler** (w0, pipe): converges launchd plists to the `components` registry. That is its whole job — approved proposals are applied synchronously by the panel at approve time, not by a privileged background executor.
+- Build failures of provisioned components escalate to the user; hand-wiring is the documented fallback.
 
 ## Queues in practice
 
-`messages` is the only coordination fabric. Patterns: filer → workflow handoffs; gardener → user proposals/questions; watchdog → user alerts; workflow → workflow chains. Diagnostics: `queue_status()` + panel feed. Stale `posted` > 24h (non-user queues) ⇒ watchdog alert. Queues coordinate **handoffs, never control flow** — a workflow's internal steps are its own pipeline (P4 guardrail).
+`messages` is the only coordination fabric: workflow→workflow handoffs, gardener questions, proposals, user pushes. Diagnostics are the table: `queue_status()`, panel feed, watchdog staleness rules. Queues coordinate **handoffs, never control flow** — a workflow's internal steps are its own pipeline (P4 guardrail).

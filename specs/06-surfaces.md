@@ -1,43 +1,47 @@
 # 06 — Surfaces
 
-Edges of the system. One contract: **messiness dies at the mouth** — adapters own 100% of translation; inward they speak only L1.
+Edges of the system. One contract: **messiness dies at the mouth** — adapters own 100% of translation; inward they speak only L1. This is core product function #1 (ingest everything) and the outbound half of function #3.
 
 ## Adapter contract
 
 Every adapter is a component (`kind='adapter'`) implementing:
 
-- **`sync()`** (pipes, cron): pull tier-0 deltas → `capture()` rows (or direct `log_entry` for unambiguous structured sources like ended gcal events). Idempotent: re-running never duplicates (dedup on source locator).
-- **Role mapping** (`config.role_map`): the inheritance default — prod-slack ⇒ `prod`; school email ⇒ `student`; iMessage ⇒ multiple candidates. Sam's framing is law: the window acts as a *dependent type narrowing the candidate set* before the filer judges.
-- **Source semantics** (`config.semantics`): per-source trust/meaning knobs. Examples: gcal `commitment_strength: tentative` (Sam uses gcal as a draft/planner — ended events log with `meta.tentative=true` unless corroborated by another source or confirmed); chat `atom_window: thread-day`.
-- **Source-side metrics** (`config.metrics`): deterministic per-message stats computed during sync — unanswered counts, response lag by thread/role — written to `runs.meta` / a metrics view. Powers dashboards (ignored-messages tiles, expectation leaderboards) without per-message atoms.
-- **Sensitivity default** for captured rows.
+- **`sync()`** (pipe, cron): pull tier-0 deltas → `capture()` (or direct `log_entry` for unambiguous structured sources — ended gcal events). Idempotent by construction: `intake (adapter, locator)` and `log` locator uniqueness make re-runs no-ops; `flock` prevents overlap.
+- **Window closing**: chat-like adapters close atom windows (thread-day by default) and emit one `capture` per closed window. The filer writes the atom. (No separate summarizer workflow — one owner for atomization.)
+- **Role mapping** (`config.role_map`): the inheritance default — prod-slack ⇒ `prod`; school email ⇒ `student`; iMessage ⇒ candidate set. The window is a *dependent type narrowing the candidate set* before the filer judges.
+- **Source semantics** (`config.semantics`): per-source trust/meaning. gcal: `commitment_strength: tentative` — Sam plans in gcal; ended events log with `meta.tentative=true` unless corroborated by another source or confirmed. Chat: `atom_window: thread-day`.
+- **Source-side metrics**: deterministic per-message stats during sync (unanswered counts, reply lag by thread/role) upserted into `metrics`. Granular analytics; no per-message atoms. Powers dashboards and the alignment gardener.
+- **Sensitivity default** for captures, capped at 1 (the filer's clearance); restricted-class captures route to the panel.
 
-v0 adapters: **iMessage** (chat.db reader — exists as MCP; wrapped), **gcal**. Phase 2+: gmail, slack, transcripts (recording pin), notion, old dashboard (its Supabase becomes an input stream; later an output surface), substack, local folders (Sam's notes-watcher example), location (his maps example).
+v0 adapters: **iMessage** (the edge, below), **gcal**. Then: gmail, slack, transcripts, notion, old dashboard (input stream first, output surface later), substack, local note folders, location.
 
-## Entry point (iMessage, primary)
+## The edge (iMessage, primary entry + only sender)
 
-The one fast-poll long-running pipe.
+One long-running deterministic pipe in Sam's GUI session (TCC: Full Disk Access, Automation). No LLM in this context, ever.
 
-1. New message → sender handle vs **command allowlist** (Sam's verified handles, core-owned constant).
-2. Allowlisted → command path: invoke orchestrator = `claude -p --resume <session(thread, day)>` with the message + `get_context` packet; reply via notifier. Session continuity: one session per thread per day (resume), so conversation holds context without unbounded growth.
-3. Not allowlisted → `capture()` as data. **Never commands.** (Texts from others are intake, not instructions.)
-4. High-risk commands (anything `requires_core`, purges, approvals) → never executed from chat; orchestrator replies with a panel link + pending proposal. Optional passphrase gate later.
+**Inbound (capture-first):**
+1. Every new message → `capture()` immediately — durable before anything else (P3/P6: an API outage can delay a reply, never lose a text).
+2. Sender verification: handle on the command allowlist **and** `service='iMessage'` (SMS is spoofable ⇒ data, never commands).
+3. Verified-Sam messages → post to the orchestrator's queue with the `intake_id` (the dictation artifact). The Sam↔claudio thread is exempt from thread-day atomization.
+4. Everyone else's messages → normal intake for the filer.
 
-The orchestrator slot runs a stock harness (P4); its tool surface: L1 MCP + read-only connector tools. **No send tools** — its outbound is `propose` / notifier-mediated reply to Sam only.
+**Outbound:** the only send path. Reads the user queue: conversational replies (fast poll), proactive pushes (budget ≤ 5/day, directive-tunable; reminders/alerts/time-sensitive questions exempt — never suppressed). Resolves a message only after the send API succeeds; retries with backoff; heartbeats to the external dead-man after each successful cycle. Destinations are constants in core-owned code.
+
+**Orchestrator** (w1, queue-triggered ~10s): stock harness via `claude -p --resume <session(thread,day)>`, handed the packet + message. Tools: L1 MCP (agent + user sets, dictation-gated) + read-only connectors. No send tools, no open network. Replies and proposals go out through the edge. High-risk actions → proposal + panel link, never executed from chat.
 
 ## Panel (the permanent surface)
 
-The one non-disposable UI. v0 scope — plain, fast, boring:
+The one non-disposable UI; the approval gate's home. v0 scope — plain, fast, boring:
 
-- **Approvals**: open proposals with evidence; `quoted` content rendered visibly as foreign text (taint). Approve/reject. This is the hardware interrupt — it must stay legible.
-- **Registry**: components, status, last run, cost trend; enable/disable.
-- **People**: list/edit/merge (asserted edits set `verified_fields`).
-- **Runs & queues**: feed, failures, stale handoffs.
-- **Intake**: held items with the filer's question.
-- **Wiki**: rendered browse of `wiki/` with backlinks.
+- **Approvals**: open proposals, server-derived privilege class, evidence, `quoted` rendered as foreign text. Approve applies synchronously; standing-approval classes shown with a revoke control.
+- **Registry**: components, status, last run, cost trend; enable/disable (`set_component_status`).
+- **People**: list/edit/merge (edits set `verified_fields`).
+- **Intake**: held items + the filer's questions; answer applies via `resolve_held_intake`.
+- **Runs & queues**: feed, failures, stale handoffs, watchdog state.
+- **Wiki**: rendered browse.
 
-Stack: minimal Next.js (Sam's stack), localhost-only, connects as `claudio_panel`. No public exposure; Tailscale later if remote need is proven. Every panel write goes through L1 like everyone else.
+Stack: minimal Next.js, runs as `claudio-p`, binds 127.0.0.1 with a bearer token (kept in Sam's keychain, entered once per browser session) + Host-header check — **localhost is not authentication**; a hijacked worker must not be able to curl an approval. Tailscale later only if remote need is proven. Every panel write goes through L1.
 
 ## Custom dashboards (disposable surfaces)
 
-Provisioned via the pipeline (propose → approve → coding agent builds in `custom/` → registered): each gets its own DB role (SELECT on named views only), renders read-only tiles (expectations leaderboard, ignored-messages trend, urgent-replies queue — Sam's examples), and any write action posts L1 calls/proposals. Regenerable from the catalog; deleting one costs nothing.
+Provisioned via the pipeline (propose → approve → built → **deployed by core**, workers never write code paths) → registered with its own DB role (SELECT on named views only). Tiles read `metrics` + views (expectations leaderboard, ignored-messages trend, urgent-replies queue); any write action posts proposals. Regenerable from the catalog; deleting one costs nothing.

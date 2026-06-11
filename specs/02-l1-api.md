@@ -1,68 +1,70 @@
 # 02 — L1 API
 
-The syscall layer: `SECURITY DEFINER` Postgres functions in schema `l1`. Agents hold `EXECUTE` on these plus `SELECT` on granted views — zero direct table writes. Every function: validates args → checks rate counter → writes → audits → returns ids. Errors raise with structured messages (`claudio.*` SQLSTATE classes); callers never need to parse prose.
+**The context is the API.** L1 is the syscall layer: `SECURITY DEFINER` Postgres functions in schema `l1`, every one pinned `SET search_path = pg_catalog, l1`. Consumers hold `EXECUTE` on their function set plus `SELECT` on `security_invoker` views — zero direct table writes, reads always under their own RLS clearance. Every function: validate args → enforce write-rate ceiling (trailing-minute audit count) → clamp sensitivity floor → write → audit (`session_user`) → return ids. Errors raise structured `claudio.*` states; no prose parsing.
 
-## Write functions
+## Function sets (privilege groups — the grants matrix)
+
+| Set | Granted to | Functions |
+|---|---|---|
+| **agent** | every worker role | `capture`, `file_intake`, `hold_intake`, `discard_intake`, `create_person`, `add_handle`, `create_task`, `complete_task`, `drop_task`, `amend_task`, `create_expectation`, `resolve_expectation`, `log_entry`, `amend_log`, `add_link` (inferred), `remove_link` (inferred), `register_page`, `move_page`, `post_message`, `claim_message`, `read_message`, `resolve_message`, `propose`, `start_run`, `finish_run`, all reads |
+| **user** (dictation-gated) | orchestrator + panel | `set_directive`, `retire_directive`, `add_link`/`remove_link` (asserted), `upsert_goal`, `upsert_role`, `update_person` (may touch `verified_fields`), `resolve_held_intake` |
+| **panel** | `claudio_panel`, `claudio_core` | `approve_message`, `reject_message`, `apply_actions`, `merge_people`, `merge_atoms` (proposal path), `set_component_status` |
+| **core** | `claudio_core` only | `register_component` (inner), `purge`, migrations/DDL, `role_clearances` writes |
+
+The **dictation gate**: user-set functions take `dictation_intake_id`; the function verifies the intake row's sender is a verified user handle, `service='iMessage'`, received ≤ 10 min ago. The panel satisfies the gate by role instead. Text from anyone else can never become law (P5).
+
+## The batch shape
+
+One canonical encoding everywhere: `[{"fn": "<L1 name>", "args": {...}}, ...]`, with `{"$ref": i}` referring to the id returned by sub-action *i* (e.g. a `log_entry` citing the `create_person` above it). Used by `file_intake`, `propose(actions)`, `apply_actions`. Sub-actions execute the **same functions with the same guards** as standalone calls — the batch adds atomicity, never privilege. Caps: ≤ 20 sub-actions, ≤ 100 rows per batch (component-overridable downward).
+
+## Write functions (selected semantics)
 
 | Function | Notes |
 |---|---|
-| `capture(adapter, raw, sender jsonb) → intake_id` | The universal entry. Dumb and instant (P3). |
-| `file_intake(intake_id, actions jsonb) → filed_refs` | The filer's atomic apply: a batch of typed sub-actions (`create_person`, `add_handle`, `create_task`, `create_expectation`, `log_entry`, `add_link`, `set_directive`, `resolve_expectation`) validated and executed in ONE transaction; intake row stamped `filed` + `filed_refs`. Partial failure rolls back whole batch. Unknown sub-action → reject. |
-| `create_person(name, summary, handles, links, sensitivity) → id` | Raises `claudio.handle_conflict` if any handle already owned (forces match-don't-create). |
-| `add_handle(person_id, source, handle, verified)` | |
-| `merge_people(keep_id, drop_id)` | Panel/core only; re-points handles + links; archives drop row. Agents use `propose`. |
-| `create_task(description, due, person_id, primary_role_id, source_ref, links, sensitivity) → id` | |
-| `complete_task(id)` / `drop_task(id, reason)` | |
-| `create_expectation(description, person_id, due, follow_up, follow_up_at, primary_role_id, source_ref, links, sensitivity) → id` | |
-| `resolve_expectation(id, status, resolved_by)` | `met`/`missed`/`dropped`; missed + `follow_up='auto_task'` ⇒ creates the follow-up task in the same tx. |
-| `log_entry(ts, ts_end, kind, summary, detail, refs, primary_role_id, links, sensitivity) → id` | |
-| `amend_log(id, patch jsonb)` | Snapshots prior version to audit. |
-| `merge_atoms(canonical_id, duplicate_ids[])` | Sets `canonical_of`, accumulates refs+links. Agents at confidence ≥0.9 same-time-same-participants; else propose. |
-| `add_link(from, to, kind, origin, confidence, description) → id` | `origin='asserted'` requires panel/core. Inferred over existing asserted = no-op. |
-| `remove_link(id)` | Agents: inferred only. |
-| `set_directive(statement, scope_type, scope_id, expires_at) → id` | Agent calls allowed only from entry-point context (user dictation); otherwise propose. |
-| `retire_role(role_id) → proposal_id` | Never direct: always emits a cascade-preview proposal (components to suspend, adapters to close, open tasks to re-home). Apply on approval. |
-| `post_message(queue, kind, payload, requires_approval) → id` | |
-| `claim_message(id)` / `read_message(id)` / `resolve_message(id, status, result)` | Claim uses `FOR UPDATE SKIP LOCKED`. |
-| `propose(summary, action jsonb, evidence jsonb) → message_id` | Sugar: `post_message('user','proposal',…,true)`. `action.requires_core` marks proposals only a core session may apply. |
-| `approve_message(id)` / `reject_message(id, reason)` | **panel/core roles only** (trigger-enforced). |
-| `register_component(id, kind, circle, definition_path, trigger, config) → id` | Agent role: `circle='outer'` only (CHECK inside). Inner registration is a core-session act. |
-| `start_run(component_id) → run_id` / `finish_run(run_id, outcome, tokens, cost, summary, error)` | Worker wrapper calls these; a run without `finish_run` after 2× expected duration ⇒ watchdog alert. |
-| `purge(table_name, row_id, reason)` | **core only.** Hard-deletes row + its links + document refs; logs the purge fact to audit. |
+| `capture(adapter, raw, sender, locator, raw_ref) → intake_id` | Dumb, instant, durable (P3). Dedup on `(adapter, locator)`. |
+| `file_intake(intake_id, actions) → filed_refs` | Opens with `UPDATE intake SET status='filed' WHERE id=$1 AND status='pending'`; zero rows ⇒ abort (concurrent filer loses cleanly). Batch executes atomically; partial failure rolls back everything including the status flip. **`set_directive` is not a legal sub-action** — directives only pass the dictation gate. |
+| `hold_intake(intake_id, question_message_id)` / `discard_intake(intake_id, reason)` | Same conditional-transition guard. Held rows re-enter the filer sweep when their linked question resolves (`resolve_held_intake` records the user's answer). |
+| `create_person(...)` | Raises `claudio.handle_conflict` if any handle is owned (match, don't create). |
+| `merge_people(keep, drop)` | Panel-set. Locks both rows in id order; on `(source,handle)` collision the keep side wins and the duplicate row is dropped; rejects self-merge, archived `keep`, or re-merging a prior target. |
+| `merge_atoms(canonical, duplicates[])` | Target must be canonical (`canonical_of IS NULL`); duplicates must not be merge targets; no self/cycles. Agents may call only at the auto-merge bar (≥0.9, identical time+participants); else propose. |
+| `log_entry(ts, ts_end, kind, summary, detail, refs, primary_role_id, links, sensitivity, meta) → id` | `meta` exposed (gcal `tentative`, `suspected_injection`, …). Same for `create_task` / `create_expectation`. |
+| `amend_log(id, patch)` | Prior version snapshotted to audit; agents cannot lower sensitivity or edit rows above their clearance. |
+| `resolve_expectation(id, status, resolved_by)` | `missed` + `follow_up='auto_task'` creates the follow-up task in the same tx. |
+| `update_person(id, patch, dictation_intake_id?)` | Agent calls reject any field listed in `verified_fields`; user-set calls may touch them and extend the list. |
+| `retire_role(role_id) → proposal_id` | Always a cascade-preview proposal (suspend scoped components, close adapters, re-home open tasks) carried as a batch-shape `actions` array; applied by `apply_actions` on approval. |
+| `register_page(path, kind, title, entity_type, entity_id)` / `move_page(old, new)` | The `documents` registration half of wiki writes; the file half is the core-owned `wiki-tool` (05). `move_page` rewrites inbound wikilinks atomically (tool-mediated). |
+| `propose(summary, actions, evidence, quoted) → message_id` | `privilege_class` and `requires_approval` are **derived server-side** from `actions[].fn` against a fixed classification — the proposer's opinion of its own danger is ignored. Sensitivity floor = max of cited rows. |
+| `approve_message(id)` | Panel-set. Applies the proposal's `actions` **synchronously in the same transaction** under the panel role — no second trust domain, immediate feedback. Standing approvals: if the derived `privilege_class` matches an active `approval_class` directive, the panel logic auto-approves (deterministic, revocable, P5). Core-class actions never auto-approve and only a core session may apply them. |
+| `set_component_status(id, status)` | Panel-set. The registry is the source of truth; the reconciler pipe converges launchd plists to it. |
+| `purge(table, row_id, reason)` | Core-only. Hard-deletes row + edges + document anchors; the purge *fact* is audited; backups age out ≤ 90 days. |
 
-## Read functions / views
+## Read surface
 
 | Surface | Notes |
 |---|---|
-| `get_context(anchor_type, anchor_id, opts) → jsonb` | **The** function. v0 is pure SQL (deterministic, fast, no LLM); the assembler agent later *wraps* it for synthesis-quality packets. Packet shape below. |
-| `search_people(q)` | Name + handle + alias search. |
-| `what_happened(from_ts, to_ts, filters) → atoms` | Canonical atoms only (merged duplicates excluded). |
-| `due_tasks(scope)` / `pending_expectations(scope)` | Scope = role / person / all. |
-| `queue_status(actor)` | My mailbox + things I'm waiting on + stale handoffs. |
-| Views | `v_stale_expectations`, `v_unfiled_intake`, `v_run_misses` (watchdog source), `v_open_proposals`, `v_orphan_documents`, `v_component_health` (last run, outcome, cost trend). |
-
-All reads pass through RLS — a worker's packet physically cannot contain rows above its clearance.
+| `get_context(anchor_type, anchor_id, opts) → jsonb` | Anchors: `role · person · goal · component`. v0 is pure SQL (deterministic, no LLM); the agentic assembler later wraps the same signature. |
+| `search_people(q)` | Names + handles + aliases (`source='alias'`). |
+| `what_happened(from, to, filters)` | Canonical atoms only. |
+| `due_tasks(scope)` / `pending_expectations(scope)` | `blocks` links surface here: a task blocked by a pending expectation is annotated, not hidden. |
+| `queue_status(actor)` | Own queue only; `user` queue readable by edge + panel. |
+| Views (all `security_invoker`) | `v_unfiled_intake` (includes held-with-resolved-question), `v_open_proposals`, `v_run_misses`, `v_component_health`, `v_stale_expectations`, `v_source_metrics`. |
 
 ## The context packet
 
 ```jsonc
 {
-  "anchor":      { "type": "role", "id": "prod", "summary": "...", "doc": "wiki/roles/prod.md" },
-  "taste":       { "directives": [...in scope...], "goals": [...linked, active...] },
+  "anchor":      { "type": "role", "id": "prod", "summary": "...", "page": "wiki/roles/prod.md" },
+  "taste":       { "directives": [...in scope...], "goals": [...via advances links...] },
   "obligations": { "tasks_due": [...], "expectations_pending": [...], "time_sensitive": [...] },
-  "state":       { "recent_atoms": [...last N, canonical...], "rollups": ["wiki/roles/prod.md", ...] },
+  "state":       { "recent_atoms": [...canonical...], "rollups": ["wiki/roles/prod.md", ...] },
   "capabilities":{ "workflows": [...scoped_to anchor...], "tools": [...] },
-  "people":      [...members, by recency...],          // when anchor is a role
+  "people":      [...members by recency...],
   "budget":      { "requested": 4000, "spent_estimate": 2810 }
 }
 ```
 
-Rules: every item carries `id` + `source_ref` (citable, drillable). Items ordered by recency × due-ness. `opts.budget_tokens` truncates sections by fixed priority: taste → obligations → state → people → capabilities (taste is never truncated — P5). Rollup *paths* are returned, not contents; the consumer reads files it wants (keeps the packet small and the choice with the consumer).
+Every item carries `id` + `source_ref` (citable, drillable). Truncation priority under `opts.budget_tokens`: capabilities → people → state → obligations; **taste is never truncated** (P5). Component anchors pull workflow-scoped directives — the morning brief reads its own law. Rollup *paths* returned, not contents.
 
 ## MCP front door
 
-One thin MCP server (`claudio-mcp`, inner circle) exposing exactly the L1 surface as tools — no extra logic, no caching, no state. Tool descriptions are generated from the Postgres `COMMENT ON` for each function (decay test: docs cannot drift from reality). Connects as the per-consumer worker role (clearance applies). Local stdio for on-mini harnesses; never network-exposed in v0.
-
-## Rate limits
-
-Inside every L1 write: bump `rate_counters(actor, minute_window)`; raise `claudio.rate_limited` beyond per-role ceilings (default 60 writes/min, 600 reads/min via view wrapper; per-component override in `config`). Bounds hijacked-worker blast radius deterministically (`04-security.md`).
+`claudio-mcp` (inner): exposes exactly the caller's L1 function set as tools, descriptions generated from `COMMENT ON` (docs cannot drift — decay test). Connects as the consumer's worker role over the local socket; clearance and grants apply identically. No extra logic, no cache, no network exposure.
