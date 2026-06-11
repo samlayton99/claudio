@@ -26,6 +26,16 @@ need (user request or hygiene proposal) → proposal → **user approves** → c
 - Nothing is created, altered, or deleted without user approval.
 - Everything built is viewable, editable, and replaceable by the user. Plug and play; every piece swappable.
 - **Build failures escalate to the user** — no infinite silent retries. Some plumbing gets hand-wired; the system saying "I couldn't wire this, over to you" is correct behavior.
+- All proposals surface in the panel; time-sensitive or blocking ones also push via the primary entry point.
+
+## Agent coordination (queues)
+
+The queue is **data**; the waking is the harness's job. A system-plane `messages` table: `queue` (a topic or an agent id), `from_actor`, `payload/ref`, lifecycle as timestamps (`posted_at, claimed_at, read_at, done_at`), `status`, `result_ref`.
+
+- **Public queues** are topics any qualified agent claims (`FOR UPDATE SKIP LOCKED` — race-free claiming is a solved Postgres problem). **Personal queues** are addressed to an agent id.
+- **Pings are Postgres `LISTEN/NOTIFY`** — native, in-database, no message bus built. A tiny deterministic dispatcher pipe listens and launches the target agent via the harness; scheduled agents also check their queue on wake.
+- Read-receipts and completion-pings are queryable state: the poster sees posted→read→done as timestamps; the watchdog flags stale rows; "why is this held up" is a SQL query. The diagnostic trail is the table itself.
+- **Guardrail (principle 4):** queues coordinate handoffs between components and waits — never control flow. A workflow's internal steps stay in its own pipeline; no retry logic or DAG machinery lives in the queue. The moment it grows those, we have rebuilt the harness.
 
 ## Adapters
 
@@ -36,7 +46,8 @@ Every edge connection is an adapter (protocol 8): it owns 100% of the translatio
 **Workflows:** morning brief · per-window daily summaries · todo manager (scans tasks + expectations for deadlines and follow-ups) · meeting setter (proposes times, never books) · query-what-happened.
 
 **Gardeners:**
-- **filer** — the keystone agent: turns each `intake` item into typed L1 calls + links (one note can yield a new person + an expectation-with-follow-up + a task). Low-confidence extractions become proposals, not writes. Built against an eval corpus of 20–30 real labeled examples collected *before* implementation.
+- **filer** — the write-side keystone: turns each `intake` item into typed L1 calls + links (one note can yield a new person + an expectation-with-follow-up + a task). Low-confidence extractions become proposals, not writes. Built against an eval corpus of 20–30 real labeled examples collected *before* implementation.
+- **assembler** — the read-side keystone: executes `get_context` (procedure in `05`): budgeted SQL graph expansion, LLM relevance only at the frontier, synthesis with citations. Its own eval corpus.
 - **merge** — person dedup proposals from unmatched handles.
 - **wiki** — person/role pages, summaries, backlinks, orphan detection (see `05`).
 - **catalog sync** — schema ↔ `SCHEMA.md`, always true.
@@ -51,6 +62,13 @@ Every edge connection is an adapter (protocol 8): it owns 100% of the translatio
 - Every scheduled run writes a `runs` row.
 - The **watchdog** is a deterministic pipe: expected runs vs actual runs, alert on any miss. Dead-man's-switch, zero LLM.
 - One silently missed morning brief costs more trust than the rest of the system earns.
+
+## Backups (tiered to match data volume)
+
+- **Structured data** (tiny — years of atoms is tens of MB): nightly `pg_dump` + monthly snapshots.
+- **Raw archive** (the volume — transcripts, exports, anything stored at tier 0 by claudio itself): content-addressed `archive/` dir, backed up incrementally with restic to encrypted cloud storage; refs point into it so it stays callable.
+- **Prose + code** (wiki, memory, repo): git, pushed to a private remote — the cross-link web is just text.
+- **Restore test** is a scheduled pipe: load the latest dump into a scratch DB, sanity-query it. A backup never restored is a hope, not a backup.
 
 ## Token economy
 

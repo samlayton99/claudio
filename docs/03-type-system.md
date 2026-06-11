@@ -46,10 +46,13 @@ Consumption order: rollups first, drill into atoms, follow pointers to raw rarel
 ## Conventions (the primitives)
 
 - Every table: `id`, `created_at`, `updated_at`, `meta jsonb`.
+- Summary columns are `CHECK`-length-bounded (~500 chars): compaction enforced by the type system, depth pushed to the wiki (see `05`).
 - Provenance on every row: `created_by` (actor), `source`. Enforced by trigger, not discipline.
 - Status everywhere; retire, never delete.
 - New attributes start in `meta`; promotion via gardener proposal (protocol 7).
 
 ## Deliberately absent (promote on demonstrated need)
 
-Groups (dropped — roles encode the collectives), health, finances, possessions, places, a calendar mirror, a message archive, values (profile doc + directives). All start as tagged log entries or stay in their source systems. The schema's shape is an output of actual life, not foresight.
+Groups (dropped — roles encode the collectives), health, possessions, places, a calendar mirror, a message archive, values (profile doc + directives). All start as tagged log entries or stay in their source systems. The schema's shape is an output of actual life, not foresight.
+
+**Future high-sensitivity domains** — bank accounts/purchases, medical history — will roll in eventually and require a **security tier** the current design reserves room for: a sensitivity level on rows/kinds, stricter grants, encryption at rest for those tables. Designed later; slotted for now.
