@@ -1,71 +1,82 @@
 # 02 — L1 API
 
-**The context is the API.** L1 is the syscall layer: `SECURITY DEFINER` Postgres functions in schema `l1`, every one pinned `SET search_path = pg_catalog, l1`. Consumers hold `EXECUTE` on their function set plus `SELECT` on `security_invoker` views — zero direct table writes, reads always under their own RLS clearance. Every function: validate args → enforce write-rate ceiling (trailing-minute audit count) → clamp sensitivity floor → write → audit (`session_user`) → return ids. Errors raise structured `claudio.*` states; no prose parsing.
+**The context is the API.** L1 is the syscall layer: `SECURITY DEFINER` Postgres functions in schema `l1`, search_path-pinned. Consumers hold `EXECUTE` on their function set plus `SELECT` on `security_invoker` views — zero direct table writes. Every function: validate (args + jsonb schemas) → rate ceiling → sensitivity clamp → write → audit (`session_user`) → return. Structured `claudio.*` error states.
 
-## Function sets (privilege groups — the grants matrix)
+**Internal vs external writes — the trust boundary in one sentence:** L1 writes touch only the scaffold (internal); **external writes** (email sends, calendar posts, anything leaving for the world) are never claudio's — they belong to the owning agent/workflow, fire only after approval, via handoff (`03`). Claudio is the brain and the approval surface; external agents are the hands.
+
+## Function sets (the grants matrix)
 
 | Set | Granted to | Functions |
 |---|---|---|
-| **agent** | `claudio_agent` (NOLOGIN base; every `w_*` role inherits) | `capture`, `file_intake`, `hold_intake`, `discard_intake`, `create_person`, `add_handle`, `update_person` (rejects `verified_fields`), `create_task`, `complete_task`, `drop_task`, `amend_task`, `create_expectation`, `resolve_expectation`, `log_entry`, `amend_log`, `add_link` (inferred), `remove_link` (inferred), `register_page`, `move_page`, `upsert_metric`, `post_message`, `claim_message`, `read_message`, `resolve_message`, `propose`, `start_run`, `finish_run`, all reads |
-| **user** (dictation-gated) | orchestrator + panel | `set_directive`, `retire_directive`, `add_link`/`remove_link` (asserted), `upsert_goal`, `upsert_role`, `update_person` (may touch `verified_fields`), `retire_role`, `resolve_held_intake` |
-| **panel** | `claudio_panel`, `claudio_core` (panel also holds the agent + user sets — approve-time apply runs under its own grants) | `approve_message`, `reject_message`, `apply_actions`, `merge_people`, `merge_atoms`, `set_component_status` |
-| **core** | `claudio_core` only | `register_component` (both circles — registration is always a core-deploy act), `purge`, migrations/DDL, `role_clearances` writes |
-| narrow extras | single roles | `merge_atoms` additionally to `w_merge` (auto-merge bar ≥0.9 + identical time/participants enforced server-side); `reap_expired_claims` to `w_watchdog` only (exempt from queue scoping, lease-age-guarded) |
+| **agent** | `claudio_agent` (NOLOGIN base; all `w_*` inherit) | `capture`, `file_intake`, `hold_intake`, `discard_intake`, `create_person`, `add_handle`, `update_person` (rejects `verified_fields`), `create_task`, `complete_task`, `drop_task`, `amend_task`, `create_expectation`, `resolve_expectation`, `record_atom`, `amend_atom`, `add_link` (inferred), `invalidate_link` (inferred), `register_page`, `move_page`, `upsert_metric`, `post_message`, `claim_message`, `read_message`, `resolve_message`, `propose`, `start_run`, `finish_run`, all reads |
+| **user** (dictation-gated) | orchestrator, mirror, panel | `set_directive`, `retire_directive`, `add_link`/`invalidate_link` (asserted), `upsert_purpose`, `new_purpose_version`, `upsert_role`, `update_person` (may touch `verified_fields`), `retire_role`, `resolve_held_intake` |
+| **panel** | `claudio_panel`, `claudio_core` (panel also holds agent + user sets) | `approve_message`, `reject_message`, `apply_actions`, `merge_people`, `merge_atoms`, `set_component_status` |
+| **core** | `claudio_core` only | `register_component` (both circles; registration is a core-deploy act), `purge`, migrations/DDL, `role_clearances` + core `parameters` writes |
+| narrow extras | single roles | `merge_atoms` → `w_merge` (auto-bar enforced server-side); `reap_expired_claims` → `w_watchdog` |
 
-The **dictation gate**: user-set functions take `dictation_intake_id`; the function verifies the intake row's sender is a verified user handle, `service='iMessage'`, received ≤ 10 min ago. The panel satisfies the gate by role instead. Text from anyone else can never become law (P5).
+**Dictation gate**: user-set functions take `dictation_intake_id`; the function verifies the sender is a verified user handle on the verified channel, received ≤ 10 min ago (parameter). Panel satisfies by role; the mirror satisfies during an elicitation session the user is actively in. Text from anyone else can never become law. Chat and panel hold equal clearance; **panel wins conflicts** — its writes are tagged user-asserted and are the ultimate taste.
+
+**Naming rule** (P1/decay): function and table names ARE the vocabulary — `record_atom` not `log_entry`, `atoms` not `log`. Every `COMMENT ON FUNCTION` carries 2–3 example invocations including an edge case; `SCHEMA.md` carries sample rows. Names favor descriptive over short.
 
 ## The batch shape
 
-One canonical encoding everywhere: `[{"fn": "<L1 name>", "args": {...}}, ...]`, with `{"$ref": i}` referring to the id returned by sub-action *i* (e.g. a `log_entry` citing the `create_person` above it). Used by `file_intake`, `propose(actions)`, `apply_actions`. Sub-actions execute the **same functions with the same guards** as standalone calls — the batch adds atomicity, never privilege. Caps: ≤ 20 sub-actions, ≤ 100 rows per batch (component-overridable downward).
+`[{"fn": "<L1 name>", "args": {...}}, ...]` with `{"$ref": i}` for intra-batch ids. Used by `file_intake`, `propose(actions)`, `apply_actions`. Sub-actions run the same functions with the same guards — atomicity, never privilege. Caps from `parameters` (default ≤20 sub-actions, ≤100 rows).
 
 ## Write functions (selected semantics)
 
 | Function | Notes |
 |---|---|
-| `capture(adapter, raw, sender, locator, raw_ref) → intake_id` | Dumb, instant, durable (P3). Dedup on `(adapter, locator)`. |
-| `file_intake(intake_id, actions) → filed_refs` | Opens with `UPDATE intake SET status='filed' WHERE id=$1 AND status='pending'`; zero rows ⇒ abort (concurrent filer loses cleanly). Batch executes atomically; partial failure rolls back everything including the status flip. **`set_directive` is not a legal sub-action** — directives only pass the dictation gate. |
-| `hold_intake(intake_id, question_message_id)` / `discard_intake(intake_id, reason)` | Same conditional-transition guard. `resolve_held_intake(intake_id, answer)` records the user's answer **and flips `held` → `pending`**, so the row re-enters the filer's next sweep with the answer attached. |
-| `create_person(...)` | Raises `claudio.handle_conflict` if any handle is owned (match, don't create). |
-| `merge_people(keep, drop)` | Panel-set. Locks both rows in id order; on `(source,handle)` collision the keep side wins and the duplicate row is dropped; rejects self-merge, archived `keep`, or re-merging a prior target. |
-| `merge_atoms(canonical, duplicates[])` | Target must be canonical (`canonical_of IS NULL`); duplicates must not be merge targets; no self/cycles. Agents may call only at the auto-merge bar (≥0.9, identical time+participants); else propose. |
-| `log_entry(ts, ts_end, kind, summary, detail, refs, primary_role_id, links, sensitivity, meta) → id` | `meta` exposed (gcal `tentative`, `suspected_injection`, …). Same for `create_task` / `create_expectation`. |
-| `amend_log(id, patch)` | Prior version snapshotted to audit; agents cannot lower sensitivity or edit rows above their clearance. |
-| `resolve_expectation(id, status, resolved_by)` | `missed` + `follow_up='auto_task'` creates the follow-up task in the same tx. |
-| `update_person(id, patch, dictation_intake_id?)` | Agent calls reject any field listed in `verified_fields`; user-set calls may touch them and extend the list. |
-| `retire_role(role_id) → proposal_id` | Always a cascade-preview proposal (suspend scoped components, close adapters, re-home open tasks) carried as a batch-shape `actions` array; applied by `apply_actions` on approval. |
-| `register_page(path, kind, title, entity_type, entity_id)` / `move_page(old, new)` | The `documents` registration half of wiki writes; the file half is the core-owned `wiki-tool` (05). `move_page` rewrites inbound wikilinks atomically (tool-mediated). |
-| `propose(summary, actions, evidence, quoted) → message_id` | `privilege_class` and `requires_approval` are **derived server-side** from `actions[].fn` against a fixed classification — the proposer's opinion of its own danger is ignored. Sensitivity floor = max of cited rows. |
-| `approve_message(id)` | Panel-set. Applies the proposal's L1 `actions` **synchronously in the same transaction** under the panel role — no second trust domain, immediate feedback. **External (non-L1) halves** — e.g. the gcal write itself — are not applied here: approval posts a `handoff` back to the proposing workflow's queue, whose own pipeline step performs the connector write under its own tools. Standing approvals: if the derived `privilege_class` matches an active `approval_class` directive, the panel server auto-approves (deterministic, revocable, P5 — mechanism in `06`). Core-class actions never auto-approve and only a core session may apply them. |
-| `set_component_status(id, status)` | Panel-set. The registry is the source of truth; the reconciler pipe converges launchd plists to it. |
-| `purge(table, row_id, reason)` | Core-only. Hard-deletes row + edges + document anchors; the purge *fact* is audited; backups age out ≤ 90 days. |
+| `capture(adapter, raw, sender, locator, raw_ref)` | Dumb, instant, durable. Dedup on `(adapter, locator)`. |
+| `file_intake(intake_id, actions)` | Conditional open (`status='pending'` → `filed`); atomic batch; rollback restores pending. **Quote-at-write**: load-bearing facts (commitments, dates, amounts, names) go into `atoms.quotes` verbatim (P8). `set_directive` is not a legal sub-action. |
+| `hold_intake(id, question_message_id)` / `discard_intake(id, reason)` | Conditional transitions. `resolve_held_intake(id, answer)` records the answer and flips `held` → `pending`. |
+| `record_atom(ts, ts_end, kind, summary, detail, quotes, refs, primary_role_id, links, sensitivity, meta)` | The atom writer (was `log_entry`). |
+| `amend_atom(id, patch)` | Prior version snapshotted to audit; agents cannot lower sensitivity. |
+| `create_person(...)` | `claudio.handle_conflict` if any handle is owned — match, don't create. |
+| `merge_people(keep, drop)` | Panel-set. Locks in id order; handle collisions resolve to keep; rejects self/archived/re-merge. |
+| `merge_atoms(canonical, dups[])` | Target canonical; dups not targets; no cycles. Agent path only at the auto-bar (parameter). |
+| `invalidate_link(id, superseded_by?)` | Supersedence, not deletion: sets `invalidated_at`; history stays queryable (research-traversal §3.6). Asserted links: user-set only. |
+| `upsert_purpose(...)` / `new_purpose_version(body)` | **User-set only.** The contract changes through the user, period. |
+| `retire_role(role_id) → proposal_id` | Cascade-preview proposal (suspend scoped components, close windows, re-home open tasks). **Never touches wiki pages or atoms** — active-roles is a filter, not an eraser. |
+| `register_page(path, kind, title, chapter, entity, read_moment)` / `move_page(old, new)` | Page creation demands its chapter and its read-moment (anti-accretion, `05`); move rewrites inbound links atomically (wiki-tool). |
+| `propose(summary, actions, evidence, quoted)` | `privilege_class` + `requires_approval` derived server-side from `actions[].fn`; proposer's opinion ignored. Sensitivity = max of cited rows. |
+| `approve_message(id)` | Panel-set; applies L1 actions synchronously in-transaction. External halves: approval posts a `handoff` to the proposing workflow's queue — the owning agent performs the external write through its own tools. Standing approvals auto-approve matching derived classes (panel server polls; revocable). Core-class never auto-approves. |
+| `set_component_status(id, status)` | Panel-set; registry is truth; reconciler converges plists. |
+| `purge(table, row_id, reason)` | Core-only; fact audited; backups age out ≤ retention. |
+
+**The re-ground rule (P8, enforced in workflow contracts):** before any irreversible or external action, the acting workflow re-reads tier-0 via `refs` — never acts from a summary alone.
 
 ## Read surface
 
+Ergonomics (research-validated): every read takes `response_format: concise|detailed` (concise ≈ ⅓ tokens) + pagination with token-cap defaults from `parameters`; **no bare UUIDs in any response** — always `{id, name}` pairs; every item renders its event timestamp and age inline (temporal reasoning is memory systems' measured weak spot).
+
 | Surface | Notes |
 |---|---|
-| `get_context(anchor_type, anchor_id, opts) → jsonb` | Anchors: `role · person · goal · component`. v0 is pure SQL (deterministic, no LLM); the agentic assembler later wraps the same signature. |
-| `search_people(q)` | Names + handles + aliases (`source='alias'`). |
-| `what_happened(from, to, filters)` | Canonical atoms only. |
-| `due_tasks(scope)` / `pending_expectations(scope)` | `blocks` links surface here: a task blocked by a pending expectation is annotated, not hidden. |
-| `queue_status(actor)` | Own queue only; `user` queue readable by edge + panel. |
-| Views (all `security_invoker`) | `v_unfiled_intake` (includes held-with-resolved-question), `v_open_proposals`, `v_run_misses`, `v_component_health`, `v_stale_expectations`, `v_source_metrics`. |
+| `get_context(anchor_type, anchor_id, opts)` | Anchors: `role · person · purpose · component`. Pure SQL v0 (no LLM at query time — production-validated). Two-phase protocol: packet first, then agentic drill-down (views, wiki grep/read, `refs`) — packet link expansion caps at 1 hop; agents iterate for hop 2+ ("start wide, then narrow"). |
+| `search_people(q)` | Names + handles + aliases. Misses logged (the embeddings promotion trigger). |
+| `what_happened(from, to, filters)` | Canonical atoms only; misses logged. |
+| `due_tasks(scope)` / `pending_expectations(scope)` | `blocks` annotations included. |
+| `queue_status(actor)` | Own queue; `user` queue: edge + panel. |
+| Views (`security_invoker`) | `v_unfiled_intake`, `v_open_proposals`, `v_run_misses`, `v_component_health` (incl. role mapping + usage — the audit page's source), `v_stale_expectations`, `v_source_metrics`, `v_purpose_alignment`. |
 
 ## The context packet
 
 ```jsonc
 {
-  "anchor":      { "type": "role", "id": "prod", "summary": "...", "page": "wiki/roles/prod.md" },
-  "taste":       { "directives": [...in scope...], "goals": [...via advances links...] },
+  "anchor":      { "type": "role", "id": "prod", "name": "PROD", "summary": "...", "page": "wiki/professional/prod.md" },
+  "taste":       { "directives": [...], "purpose": [...via advances: goals/values in scope...] },
   "obligations": { "tasks_due": [...], "expectations_pending": [...], "time_sensitive": [...] },
-  "state":       { "recent_atoms": [...canonical...], "rollups": ["wiki/roles/prod.md", ...] },
-  "capabilities":{ "workflows": [...scoped_to anchor...], "tools": [...] },
-  "people":      [...members by recency...],
-  "budget":      { "requested": 4000, "spent_estimate": 2810 }
+  "state":       { "recent_atoms": [...], "pulse": "wiki/digests/2026-06-11.md", "rollups": [paths] },
+  "capabilities":{ "workflows": [...], "tools": [...] },
+  "people":      [...],
+  "budget":      { "requested": 3000, "spent_estimate": 2410 }
 }
 ```
 
-Every item carries `id` + `source_ref` (citable, drillable). Truncation priority under `opts.budget_tokens`: capabilities → people → state → obligations; **taste is never truncated** (P5). Component anchors pull workflow-scoped directives — the morning brief reads its own law. Rollup *paths* returned, not contents.
+- Every item: `{id, name}`, event timestamp + age inline, `source_ref`.
+- **Scoring is a weighted sum, not a product**: `score = w_r·exp_decay(recency) + w_d·dueness + w_i·importance` (weights in `parameters`) — a product zeroes old-but-critical items (Generative Agents).
+- Default budget ~3k tokens (measured optimum band 2–4k; context rot beyond). Truncation order: capabilities → people → state → obligations; **taste never truncates**. Rollup paths, not contents (progressive disclosure).
+- `opts.verbosity: skeleton|standard|verbose`; clearance already enforces need-to-know.
 
 ## MCP front door
 
-`claudio-mcp` (inner): exposes exactly the caller's L1 function set as tools, descriptions generated from `COMMENT ON` (docs cannot drift — decay test). Connects as the consumer's worker role over the local socket; clearance and grants apply identically. No extra logic, no cache, no network exposure.
+`claudio-mcp` (inner): exposes exactly the caller's function set; tool descriptions generated from `COMMENT ON` (with the example calls — docs cannot drift). Connects as the consumer's role over the local socket. No extra logic, no cache, no network exposure.

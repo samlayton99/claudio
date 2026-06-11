@@ -1,53 +1,64 @@
 # 07 — Build Plan
 
-Phases gate on acceptance criteria. Each phase pays for itself before the next starts (P3).
+Build order law: **structure first, types and contracts second, functionality and wiring third.** Phases gate on acceptance criteria; each phase pays for itself before the next starts.
+
+## Standing gates (from `docs/honesty-audit.md`)
+
+1. **P2 in two weeks** of first DDL, or shrink before continuing.
+2. **Value at every stopping point** — every phase leaves the user better off if work stops forever.
+3. **The kill criterion** — at P3 exit: weekly maintenance minutes > weekly minutes saved ⇒ stop or shrink.
+
+## Standing rules of the build
+
+- Inner circle ships only via core sessions with migrations + tests; outer only via the provisioning pipeline; workers never write code paths.
+- Every component lands with: registry row, parameters, runs wiring, watchdog expectation, negative tests for new privilege, reconciler plist.
+- **Independent audits run at every phase gate**: structural-completeness + over-engineering trim + the malicious-superintelligence review (`04`). Scope cut at a gate is written to `docs/questions-queue.md`, never silently dropped.
+- Evals are not law: they grow and change with scope. Restraint/security cases stay at a 100% bar.
+- Continuous naming check: anything an agent calls gets a descriptive name or it doesn't merge.
 
 ## Eval suites (built first, run forever)
 
-- **Filer evals** (unit): corpus = `docs/claude-examples.md` + filer-level slices of `docs/sam-examples.md`, normalized: `{id, adapter, sender, raw, db_fixture, expected: [batch shape], tolerances}`. Tolerances explicitly cover implicit thread-day atoms (an extra mandated atom is a pass). Harness: seed scratch DB → run filer headless → diff actual vs expected L1 calls. Bar: **100% on restraint/security cases** (no-extract, no-guess, injection, sensitivity, world-obligation-vs-system-instruction), ≥90% extraction accuracy.
-- **Scenario evals** (integration): Sam's 10 workflow scenarios as end-to-end fixtures, activated per the traceability table. Autonomy expectations encoded per spec (S2 merges via proposal; S1 calendar via standing approval).
-- **Red-team suite** (04): merge gate from P1.
+- **Filer evals**: corpus from `docs/claude-examples.md` + filer-level slices of `docs/sam-examples.md`, normalized `{id, adapter, sender, raw, db_fixture, expected: [batch], tolerances}` (implicit thread-day atoms tolerated). Bar: 100% restraint/security (no-extract, no-guess, injection, sensitivity, world-obligation vs system-instruction), ≥90% extraction.
+- **Scenario evals**: Sam's 10 workflow scenarios end-to-end, activated per traceability (autonomy encoded: S2 merge via proposal; S1 calendar via standing approval).
+- **Packet evals** (new): context-assembly scenarios (brief assembly, meeting prep, "what's going on with X") scored for citation correctness + budget discipline.
+- **Red-team suite**: merge gate from P1.
 
 ## Phases
 
-**P0 — Corpus + ground truth (no code)**
-Normalize both example sets; label expected batch-shape outputs together; file any type-system friction as spec changes. *Gate: 25+ labeled fixtures; every example expressible in L1 calls (the two v1 blockers — hold/discard verbs — are now specced).*
+**P0 — Structure + ground truth (no code)**
+Repo layout (`core/`, `custom/`, `wiki/` chapters, `archive/`), corpus normalized and labeled together, **the mirror's first elicitation session** → purpose contract v1 + priorities (front-load the irreplaceable — honesty audit). *Gate: 25+ labeled fixtures, every example expressible in L1 calls; purpose contract exists and Sam signs it.*
 
-**P1 — The contract**
-Migrations (01), L1 function sets + grants matrix (02), audit + RLS (forced, invoker views) + `role_clearances`, OS users (`claudio-p/w0/w1`) + per-uid `.pgpass`, red-team suite, nightly backup + restore-test pipe, kill switch. *Gate: red-team green across tiers; restore drill passes; `get_context('role','prod')` correct on seed data.*
+**P1 — Types & contracts**
+Migrations (3 planes), L1 function sets + grants, jsonb schema validation, audit + RLS (forced, invoker) + `role_clearances` + `parameters`, OS tiers, red-team suite, backup + restore-test, kill switch. *Gate: red-team green across tiers; restore drill passes; `get_context('role','prod')` correct on seed data; generated types compile.*
 
 **P2 — First loop (daily value)**
-The edge (capture-first inbound, sender verification, outbound + external dead-man), gcal adapter, filer (passes eval bar), orchestrator (dictation gate live), watchdog + reaper, morning brief (degraded mode tested), todo & expectation scanner. Seed roles/goals/directives + root wiki page. Interim held-flow: questions via the edge, answers by text. *Gate: 7 consecutive days — brief delivered 7/7 (≥1 via forced degraded path), capture-by-text files correctly, an induced schedule miss alerts within 15 min, an induced send failure alerts via the dead-man, zero silent failures.*
+The edge (capture-first, sender verification, dead-man), gcal window, filer (eval bar), orchestrator (dictation gate), watchdog + reaper, morning brief (degraded-mode tested), scanner, pulse. Seed roles/directives + chapter MOCs + root pages from About_Me + purpose contract. *Gate: 7 consecutive days — brief 7/7 (≥1 forced-degraded), capture-by-text files, induced miss alerts ≤15 min, induced send failure alerts via dead-man, queue properties proven under induced crash (lease reaping, no double-fire), zero silent failures.*
 
 **P3 — Trust the writes**
-Merge gardener, panel v0 (approvals with derived classes + taint rendering, registry, people, intake, runs), `apply_actions` on approve, standing approvals, `retire_role` cascade end-to-end. *Gate: "two Mikes" disambiguated by text, merge applied via panel approval; a multi-action proposal approves and applies atomically; a live injected email files as data with `meta.suspected_injection`; a standing approval auto-applies a solo gcal block and is revocable.*
+Merge gardener, panel v0 (approvals + derived classes + taint, chat, registry/audit page, people, intake, parameters, runs), standing approvals, `retire_role` cascade. *Gate: two-Mikes by text + panel-approved merge; multi-action proposal applies atomically; live injected email files as data; standing approval auto-applies a solo gcal block and is revocable. Kill-criterion check #1.*
 
-**P4 — The portrait**
-wiki-tool + `register_page`/`move_page`, wiki gardener, lint, catalog gardener; seed person/role pages; weekly digest. *Gate: 2 weeks of growth, zero un-triaged lint failures, zero judgment-claim violations; a user correction sticks and the verifier (manual run) confirms citations.*
+**P4 — The biography**
+wiki-tool + page functions, wiki gardener (delta-only), lint (citations + anti-slop), **verifier on weekly cron**, state-of-life digests, demotion sweep. *Gate: 2 weeks growth — zero un-triaged lint failures, zero judgment-claim violations, citation sampling clean, a panel correction sticks as an immutable span, page count sublinear in atoms.*
 
 **P5 — Workflows & alignment**
-Query-trigger machinery (cursors), meeting setter, the intro→gcal chain (S1) under a standing approval, provisioning pipeline end-to-end (first outer component: built, approved, core-deployed, observed), alignment gardener (≤3 questions/week, re-ask rule). *Gate: S1 runs from a real text; one outer component live; alignment asks ≥1 question Sam rates as "good catch".*
+Query triggers + cursors, meeting setter, the S1 intro→gcal chain under standing approval, provisioning pipeline end-to-end (first outer component), alignment gardener, **the mirror's observational mode**. *Gate: S1 from a real text; one outer component live; alignment asks ≥1 question Sam rates "good catch"; mirror's first usage report leads to one real promote/cut.*
 
 **P6 — Widen**
-gmail/slack/transcript/notion adapters, old-dashboard adapter, custom dashboards (S9 tiles from `metrics`), meeting scanner (S10 — provisioned as an outer-circle workflow, not core), tool scout, hygiene reviews, verifier on cron if drift observed, Cowork migration of hot workers if cost data demands.
+gmail/slack/transcript/notion/folder windows, old-dashboard window, custom dashboards, meeting scanner (outer), scout (tools + windows), hygiene reviews, embeddings if the promotion trigger fires, Cowork migration if cost data demands, handshake's first real external agent.
 
 ## Scenario → phase traceability
 
 | Sam # | Scenario | Lands |
 |---|---|---|
 | 1 | intro text → person/atom → gcal + day-before expectation | P5 |
-| 2 | airline email + spouse texts → atom merge (via proposal) | P3 + P6 (gmail) |
+| 2 | airline email + spouse texts → atom merge (proposal) | P3 + P6 (gmail) |
 | 3 | quit job → retire_role cascade | P3 |
-| 4 | topology-notes drift question | P5 + P6 (folder adapter) |
+| 4 | topology-notes drift question | P5 + P6 (folders) |
 | 5 | left-on-read decay | P5 (metrics from P2) |
-| 6 | substack → wiki placement | P4 + P6 (adapter) |
-| 7 | role-goal crowding ultimatum (re-ask rule) | P5 |
+| 6 | substack → wiki placement | P4 + P6 |
+| 7 | role-purpose crowding ultimatum (re-ask rule) | P5 |
 | 8 | dashboard logs → atoms with inheritance | P6 |
 | 9 | custom dashboard tiles | P6 |
 | 10 | meeting scanner → enrich → propose connection | P6 |
 
-## Standing rules of the build
-
-- Inner circle ships only via core sessions with migrations + tests; outer circle only via the provisioning pipeline; workers never write code paths.
-- Every component lands with: registry row, runs wiring, watchdog expectation, negative tests for any new privilege, and its launchd plist generated by the reconciler.
-- Anything cut from scope is written to `docs/questions-queue.md`, never silently dropped.
+UX setup/maintenance burden per ring: `docs/ux-rings.md` (the sins list — every required user action is a debt to shrink).

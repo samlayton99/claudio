@@ -1,62 +1,50 @@
 # 04 — Security
 
-Deterministic stops at every boundary; probabilistic layers operate only inside them. Threat model: workers WILL be hijacked — intake is adversary-writable text by construction. Design target: a fully compromised worker writes bad *content* through audited, reversible, clearance-bounded syscalls — and nothing else.
+Deterministic stops at every boundary; probabilistic layers operate only inside them. Threat model: workers WILL be hijacked — intake is adversary-writable by construction — and the test adversary is a **superintelligent malicious agent** trying to read the life, act as the user, or poison the pipeline. Design target: full compromise of any worker yields only bad *content* through audited, reversible, clearance-bounded syscalls.
 
 ## Identity & privilege map
 
-| Actor | OS user | DB role | Clearance | Function sets (02) |
+| Actor | OS user | DB role | Clearance | Function sets (`02`) |
 |---|---|---|---|---|
 | Sam (build) | `sam` (GUI) | `claudio_core` | 2 | all |
-| Reconciler | `sam` (GUI LaunchAgent) | `w_reconciler` | 0 | agent subset (reads registry, `start_run`/`finish_run`) — writes sam-owned plists, hence this context |
-| iMessage edge | `sam` (GUI LaunchAgent; TCC: Full Disk Access + Automation) | `w_edge` | 1 | agent subset: `capture`, `post_message`, `read_message`, `resolve_message` — clearance 1 so sensitive user-queue messages (filer questions, orchestrator replies) are deliverable. Deterministic code only, no LLM in this context |
-| Panel | `claudio-p` | `claudio_panel` | 2 | panel + user + agent sets (approve-time apply runs under its own grants) |
-| Clearance-1 workers | `claudio-w1` | `w_filer`, `w_merge`, `w_wiki`, `w_verifier`, `w_lint`, `w_orchestrator` | 1 | agent set (+ user set for `w_orchestrator`, dictation-gated; `merge_atoms` extra for `w_merge`) |
-| Clearance-0 workers | `claudio-w0` | `w_brief`, `w_scanner`, `w_watchdog` (+ `reap_expired_claims`), `w_catalog`, `w_alignment`, … | 0 | agent set |
-| Base / test | — / `claudio-w0` | `claudio_agent` (NOLOGIN base all `w_*` inherit) / `w_test` (login, used by the red-team suite at each tier) | — / per run | agent set |
+| Reconciler | `sam` (LaunchAgent) | `w_reconciler` | 0 | agent subset (registry reads, runs) |
+| Edge | `sam` (LaunchAgent; TCC: FDA + Automation) | `w_edge` | 1 | `capture`, `post_message`, `read_message`, `resolve_message`. Deterministic only; no LLM |
+| Panel | `claudio-p` | `claudio_panel` | 2 | panel + user + agent |
+| Mirror | `claudio-w2` | `w_mirror` | 2 | agent + user (dictation-gated); **no network beyond model API; no connectors; no send** |
+| Clearance-1 workers | `claudio-w1` | `w_filer`, `w_merge`, `w_wiki`, `w_verifier`, `w_lint`, `w_orchestrator` | 1 | agent (+ user for `w_orchestrator`, gated; `merge_atoms` for `w_merge`) |
+| Clearance-0 workers | `claudio-w0` | `w_brief`, `w_scanner`, `w_pulse`, `w_watchdog` (+`reap_expired_claims`), `w_catalog`, `w_alignment`, … | 0 | agent |
+| Base / test | — / `claudio-w0` | `claudio_agent` (NOLOGIN) / `w_test` | — / per run | agent |
 
-- **OS user = trust tier.** Same-uid processes can read each other's credentials (macOS reality), so the lattice is enforced *between* tiers by the kernel and only *within* a tier by good faith. The panel's approver credential and the edge's TCC powers never share a uid with workers. Stated residual: same-tier workers are mutually exposed; cross-tier theft is impossible without an OS exploit.
-- DB auth: local socket, per-uid `.pgpass` 0600. No secrets in env or plists. Core secrets: `sam` login keychain (core is always a GUI session). The edge runs in Sam's session, so its TCC grants and keychain access are native — which is exactly why it must stay small and deterministic.
-- Clearance source of truth: `role_clearances` table (core-written), read by `l1.clearance()` (`STABLE SECURITY DEFINER`, search_path-pinned) keyed on **`session_user`**. No GUC — a session cannot raise itself. RLS: `FORCE ROW LEVEL SECURITY` on every labeled table; worker-facing views `security_invoker = true`.
-
-## Postgres hardening (the syscall layer's own walls)
-
-- Every L1 function: `SECURITY DEFINER SET search_path = pg_catalog, l1`; all references schema-qualified.
-- `REVOKE TEMP ON DATABASE claudio FROM PUBLIC; REVOKE CREATE ON SCHEMA public FROM PUBLIC;`
-- Identity in guards/attribution is always **`session_user`** (`current_user` inside SECURITY DEFINER is the owner — a guard reading it is a no-op).
-- Grants follow the function-set matrix in `02` — `claudio_agent` (base role) is **not** granted `approve_message`, `merge_people`, `purge`, asserted `add_link`, `set_directive`, `apply_actions`, `set_component_status`. The approval trigger on `messages` double-checks `session_user` behind the grant (defense in depth).
-- `links` endpoint validation: static branches over CHECKed types, no dynamic SQL on input; "missing" and "above clearance" raise the same error (no existence oracle).
-- Sensitivity floors, `verified_fields`, merge invariants, batch caps, conditional intake transitions: enforced inside the functions (01/02), each with a red-team case.
-
-## Filesystem & process
-
-- `core/` and `custom/` are **read-only to all worker uids** — code paths deploy only via core (the provisioning pipeline ends in a core-session deploy + reconciler plist generation). Workers write only `wiki/` (w1 only) and `archive/` — the staging directory for large tier-0 payloads claudio itself must retain (transcripts, exports), referenced by `intake.raw_ref` / `log.refs`, per-tier subdirs.
-- launchd plists: `/Library/LaunchDaemons` + Sam-session LaunchAgents, root/sam-owned, generated by the reconciler from the registry. No worker can edit its own launch config, settings, or tool allowlist.
-- Tripwire (w0 pipe, hourly): `git status` over `core/` + `custom/`, permission audit, **and worker-uid persistence scan** — `~claudio-w*/Library/LaunchAgents`, crontabs, login items. Any drift ⇒ alert.
-- Kill switch `claudio-stop` (core-owned): `launchctl bootout` every job of `claudio-w0/w1/p` **+ `pkill -u`** each worker uid + panel banner. Drilled quarterly. Red-team-red posts a critical alert and the panel/core performs worker disable (containment is a rule-3 act; the red-team pipe itself holds no disable privilege).
-- FileVault on; restic backups encrypted; retention 90 days so `purge` completes within the window.
-
-## Network egress
-
-pf anchor (core-owned, boot-loaded): default-deny outbound for `claudio-w0/w1/p`; allowlist = Anthropic API, approved connector hosts, the dead-man heartbeat host, restic target. Honest framing: pf is a **coarse backstop** — per-user matching on Apple's pf is imperfect and allowlisted SaaS is multi-tenant (a hijacked worker with a write-capable connector token can exfiltrate *into* an allowlisted service). The real per-worker control is the core-owned tool allowlist each worker runs under. Upgrade path (post-v0): a core-owned forward proxy with per-component host+method rules. Treat allowlisted SaaS as semi-trusted egress when approving tools — least-capability per worker is the operative stop.
+OS user = trust tier (same-uid credential theft is macOS reality; cross-tier is kernel-enforced). Clearance truth: `role_clearances` via `l1.clearance()` keyed on `session_user`. `FORCE ROW LEVEL SECURITY`; invoker views; sensitivity floors and `verified_fields` enforced inside L1; search_path pinned; `session_user` everywhere (`current_user` in SECURITY DEFINER is the owner — a guard reading it is a no-op); TEMP/CREATE revoked from PUBLIC.
 
 ## The boundary rules
 
-1. **No write outside L1** — grants.
-2. **No read above clearance** — RLS (forced, invoker views), clearance by `session_user`, OS tiers underneath. Applies to `messages` too (payload sensitivity = max of cited rows; queue scoping in 02).
-3. **Text never escalates privilege.** Inner-circle crossings require `claudio_panel`/`claudio_core` — a human act on the panel or a core session. The dictation gate extends this to taste: directives/asserted links/goal edits require a verified-Sam iMessage (service-checked, ≤10 min) or the panel. SMS and unknown senders are data, never commands.
-4. **No agent sends.** The edge is the only sender; destinations hardwired to Sam. Third-party drafts always stop at a proposal. Standing approvals are user-granted, server-classified, revocable, and never cover core-class or third-party-visible actions beyond their named class.
-5. **Privilege classes are derived, never declared.** `propose()` computes `privilege_class` from `actions[].fn`; the panel renders the derived class; approval applies synchronously under the panel role; core-class actions wait for a core session.
-6. **Lethal trifecta forbidden.** No worker combines untrusted input + sensitive read + external channel. Filer: untrusted + clearance 1, no network tools. Orchestrator: untrusted + clearance 1 + user-set functions — therefore **no send tools; no network beyond the Anthropic API and read-only allowlisted connectors**; its outbound is `propose`/user-queue text, and its user-set calls demand the dictation artifact. Enforced by allowlists + grants, not prompts.
-7. **Taint visibility.** `quoted` payload content renders as foreign text in the panel.
-8. **Rate ceilings** (02) bound blast radius; the watchdog (03) alerts on run/queue anomalies.
+1. **No write outside L1** (grants). **No external write inside claudio at all** — sends/posts belong to owning agents, post-approval, via handoff.
+2. **No read above clearance** — RLS down to `messages` payloads. The purpose contract sits at sensitivity 2: mirror/panel/core only; everyday packets carry only its distilled derivatives.
+3. **Text never escalates privilege.** Inner-circle crossings = panel/core role, reachable only by human act. Dictation gate for taste; SMS and unknown senders are data. **The master password**: a hash-verified passphrase (argon2; hash in core-owned storage) gating designated highest-risk operations — verified by code, **never by an agent** (agents can be socially engineered; hashes cannot). Optional per-operation-class, configured in `parameters`.
+4. **One sender** (the edge), destinations hardwired. Approval acts on claudio-owned surfaces only; approved external work hands off to the owning agent's own channel.
+5. **Privilege classes derived, never declared.** Server classifies `actions[].fn`; panel renders the derived class; standing approvals never cover core-class or third-party-visible actions beyond their named class.
+6. **Lethal trifecta forbidden** per worker: filer (untrusted + c1, no network); orchestrator (untrusted + c1 + user-set ⇒ no send tools, network = model API + read-only allowlisted connectors); mirror (c2 ⇒ most isolated: no connectors at all). Enforced by allowlists + grants + pf, not prompts.
+7. **Capability is issued, never declared** (the handshake law, `06`): external agents have no write access to hide because they have none until claudio's grant creates it. Write-capable registrations are visually distinct at approval; the user gate sits at issuance.
+8. **Taint visibility** (`quoted` renders foreign), **rate ceilings** (audit-counted), **anomaly alerts** (watchdog).
+
+## Filesystem, process, network
+
+- `core/` + `custom/` read-only to all worker uids (code deploys via core; workers never write code paths). Workers write only `wiki/` (w1) and `archive/` (large tier-0 payloads, per-tier subdirs).
+- launchd plists root/sam-owned, reconciler-generated; per-worker tool allowlists core-owned. No self-modification.
+- Tripwire (hourly): git drift over `core/`+`custom/`, permission audit, worker-uid persistence scan (LaunchAgents, crontabs, login items).
+- Kill switch `claudio-stop`: bootout + pkill every worker uid + panel banner; drilled quarterly. Red-team-red posts a critical alert; panel/core performs containment.
+- pf: default-deny per worker uid, allowlist (model API, approved connector hosts, dead-man, backup target). Stated honestly as a coarse backstop — allowlisted SaaS is multi-tenant; the operative stop is per-worker tool allowlists; upgrade path is a core-owned forward proxy.
+- Secrets: per-uid `.pgpass` 0600; core secrets in the `sam` login keychain; nothing secret in env or plists. FileVault; encrypted backups; retention bounds purge (90-day parameter).
 
 ## Privacy
 
-- Third parties never consented: minimize (pointers over mirrors), sensitivity defaults by role context, RLS keeps pastoral/confidential rows out of low-clearance packets structurally.
-- **Wiki file gap (stated):** `wiki/` files bypass RLS (filesystem). Rule: pages carry sensitivity ≤ 1; restricted content exists only in DB rows, referenced by id. `wiki/` is writable/readable by w1; w0 gets no wiki mount in its allowlisted tools. Lint scans for leak patterns. Upgrade path: per-clearance subtrees.
-- **Purge** (core-only): row + edges + anchors deleted; fact audited; wiki scrub procedure = page edit + `git filter-repo` (documented, rare); backups age out.
-- **Model boundary:** every packet leaves the device at inference (Anthropic API; no-training/retention terms — re-verify annually). Restricted rows reach a model only in a clearance-2 session Sam invokes.
+Third parties never consented: minimize (pointers over mirrors), sensitivity defaults by role context, RLS keeps pastoral/confidential rows out of low-clearance packets structurally. Wiki files carry sensitivity ≤ 1 (restricted content exists only in DB rows; `wiki/` mounted to w1 only; lint scans for leak patterns). `purge()` core-only, fact-audited; wiki scrub = page edit + `git filter-repo`; model boundary = no-training/retention API terms (re-verify annually); restricted rows reach a model only in mirror sessions or user-invoked clearance-2 sessions.
+
+## The malicious-superintelligence review (standing red-team lens)
+
+Beyond the weekly negative-space suite, every new component answers five questions at review: (1) what could it read above its need? (2) what could it cause to be *sent*? (3) what persistent state could it poison (directives, purpose, wiki, standing approvals are the crown jewels — all are user-set-gated or verifier-checked)? (4) what does it do with instruction-shaped content? (5) how would we notice? A dedicated adversarial audit (fresh-context agent, full spec access, "find the weasel path") runs at each phase gate — first findings folded in at `07` P1.
 
 ## Standing verification
 
-**Red-team suite** (w0 pipe, weekly + every migration; merge gate from P1): connect as `w_test` (and once per tier) and assert the negative space — direct `INSERT` fails; `CREATE TABLE` fails; `approve_message` not executable; `SET claudio.clearance` has no effect on reads; sensitivity-2 invisible at clearance 1 through every granted view; `pg_temp` shadowing cannot alter an L1 call; `file_intake` rejects `set_directive`; sensitivity floor cannot be lowered; `verified_fields` immutable to agents; `core/`+`custom/` unwritable; own plist unwritable; non-allowlisted egress fails; kill switch verified quarterly by drill. Every new grant, function, or stop ships with its negative test.
+**Red-team suite** (weekly + every migration; merge gate): as `w_test` per tier — direct INSERT fails; DDL fails; `approve_message` not executable; clearance self-raise has no effect; sensitivity-2 invisible at c1 through every view; `pg_temp` shadowing inert; `file_intake` rejects `set_directive`; floors and `verified_fields` immutable to agents; purpose tables unwritable by any `w_*` except via user-set gate; `core/`/`custom/`/own-plist unwritable; non-allowlisted egress fails. Every new grant ships with its negative test. Kill-switch and restore drills quarterly.
