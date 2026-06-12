@@ -126,6 +126,8 @@ insert into l1.components (id, kind, circle, status, definition_path, trigger, c
    '{"type":"resident"}', '{"role_map":["general"],"replayable":false,"default_sensitivity":0}', 'critical'),
   ('window-gcal', 'window', 'inner', 'disabled', 'core/pipes/windows/gcal',
    '{"type":"cron","schedule":"*/15 * * * *"}', '{"role_map":["general"],"replayable":true,"semantics":{"commitment_strength":"tentative"}}', 'standard'),
+  ('window-imessage', 'window', 'inner', 'disabled', 'core/pipes/windows/imessage',
+   '{"type":"cron","schedule":"15 5 * * *"}', '{"role_map":["general"],"replayable":true,"mode":"passive","watch":["*"],"exclude":[],"days_back":3}', 'standard'),
   ('filer', 'gardener', 'inner', 'disabled', 'core/agents/filer',
    '{"type":"query","interval_min":1}', '{"model_tier":"frontier"}', 'critical'),
   ('brief', 'workflow', 'inner', 'disabled', 'core/agents/brief',

@@ -11,18 +11,19 @@ P11 now has three shelves: **type** = invariants (schema, functions, protocols);
 
 ### Built: the daily loop, component by component
 
-One command proves the whole stack: `./evals/run-all.sh` — **189 tests green across 6 suites** (red-team 51, contract 84, scanner 14, edge 13, filer 14, brief 13). Each component also has its own `test.sh`.
+One command proves the whole stack: `./evals/run-all.sh` — **198 tests green across 7 suites** (red-team 51, contract 84, scanner 14, edge 13, window-imessage 9, filer 14, brief 13). Each component also has its own `test.sh`.
 
 - **Scanner** (`core/pipes/scanner/`) — pure SQL, no LLM (P6 critical). Due reminders (24h lead), follow-up firing, auto-task creation, missed nudges (ask, never auto-resolve — P7). Idempotent via meta markers; a moved due date re-arms its reminder on purpose.
 - **Edge** (`core/pipes/edge/`) — capture-first inbound from chat.db (cursor + locator dedup; verbatim text incl. newlines; `verified_user` tagging from your handles), outbound drain of the user queue with resolve-only-on-send-success, on-disk spool + config cache so capture survives a Postgres outage end-to-end, dead-man heartbeat hook. Send modes: `echo` (dev) and `imessage` (deploy, osascript).
 - **Filer** (`core/agents/filer/`) — the first LLM worker. The model judges; the plumbing is code: tier-0 refs are *injected* into every atom (the model cannot forget provenance), parse failures file the honest `kind=unknown` atom after one retry (nothing retries forever, nothing drops silently), file/discard/hold all dispatch deterministically, and `file_intake`'s poison-pill quarantine isolates bad batches per-row. The LLM command is injectable (`CLAUDIO_LLM_CMD`), so the entire plumbing is tested with a stub at zero token cost.
 - **Brief / daily pass** (`core/agents/brief/`) — the scaffold computes, the model phrases: sections and ordering are fully deterministic (obligations by due, questions batched, yesterday's record), and the skeleton **sends even with the model completely dead** (tested with `CLAUDIO_LLM_CMD=/usr/bin/false`). The model owns exactly two things: optional rewording of the opener line, and the notable judgment — a selection from the closed vocabulary (P12), junk reasons rejected by the trigger. Writes the daily reflection page (wiki file + registered documents row). One brief per day, dedup enforced.
+- **window-imessage** (`core/pipes/windows/imessage/`) — the passive thread-day sweeper: one capture per chat per CLOSED local day (the meme-day capture unit), verbatim transcript with senders and times, edge-watched chats excluded, replay-safe via locator dedup. Stdlib roster row added to `0008` (`watch: ["*"]`, your term sets `exclude`).
 
 ### Discoveries flagged while building (none required stopping)
 
 1. **`w_scanner` clearance raised 0 → 1** (in `0008`, commented): at c0, RLS structurally hid sensitivity-1 obligations from the scanner — a disciple-floor task would *silently never get its reminder*, violating P6's never-false-negative. The c0 rationale doesn't apply to the scanner (pure SQL, no model, output only to your queue).
 2. **The same question stands for `w_brief` (still c0), and it's yours**: as designed, sensitivity-1 obligations will not appear in your morning brief's ledger. That may even be what you want (pastoral content not riding a model-touching workflow) — but it means a disciple task can fire a scanner reminder yet be absent from the brief. Queue item 15.
-3. The filer's per-message capture works for your direct line, but group threads need the **thread-day window sweeper** (one capture per chat-day, per the meme-day fixture) — that's the next build item, not blocking the loop.
+3. ~~Group threads need the thread-day window sweeper~~ — built (window-imessage above). One refinement deferred to the J1 eval pass: zero-signal days currently still go through the filer model; the deterministic template path (t02's "no LLM pass at all" bar) lands when the filer is graded against your corpus.
 
 ### What I deliberately did NOT do
 
@@ -32,7 +33,7 @@ One command proves the whole stack: `./evals/run-all.sh` — **189 tests green a
 
 ### What's next
 
-Mine: the thread-day window sweeper, then run-worker LLM wiring polish, then J1 (filer vs corpus, real model) once your labels land. Yours, unchanged: elicitation (in progress), corpus labels (core/coverage/sam), notable-reasons skim (4b), and scheduling J3.
+Mine: an end-to-end loop smoke test (fixture text → edge → filer → scanner → brief → edge delivers — every hop is individually proven, the chain test is the icing), then J1 (filer vs corpus, real model) once your labels land. Yours, unchanged: elicitation (in progress), corpus labels (core/coverage/sam), notable-reasons skim (4b), brief-clearance call (queue 15), and scheduling J3.
 
 ### Pointers
 
