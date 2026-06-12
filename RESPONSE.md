@@ -20,16 +20,31 @@ Session report for Sam. Rewritten each session; git history keeps prior reports.
 4. It fills `core/l1/seeds/purpose-contract.md` and your role weights in `core/l1/seeds/roles.json` (your numbers — it asks, never proposes), and ends with your signature. Anything you say that's a directive ("never X in my morning brief") gets noted for staging, not put in the contract.
 5. Budget 30–60 minutes, phone away. Few true rows beat coverage; you can always add later.
 
-### What's next on your plate (in order)
+### Who works when: the async map
 
-1. **The elicitation** (above) — the one P0 item only you can do.
-2. **Confirm the remaining corpus labels** (~30 min): `corpus-core.json`, `corpus-coverage.json`, `corpus-sam.json` — same pass you did on the walkthrough; edit what's wrong, flip `labels_status` to `confirmed`. Queue 1 has the plain-language explainer.
-3. **Skim the 8 notable reasons** (queue 4b) — 2 minutes, veto any.
-4. **At deploy, when you're ready** (Sam-present steps, all scripted): `setup-os-users.sh p1`, the 5-minute Backblaze B2 account for offsite backup, restore-test cron. None of this blocks the elicitation or my P2 work.
+**Both tracks start NOW, fully in parallel. Nothing you do blocks my start; nothing I do blocks yours.** Your items gate my work *going live*, not my building it. The whole dependency structure is three join points:
 
-### What's next on mine
+**Your track (independent, ~1–2 hours total — do in this order):**
+1. Elicitation (30–60 min) → produces `purpose-contract.md` + role weights
+2. Corpus labels: core/coverage/sam (~30 min) → produces confirmed ground truth
+3. Notable-reasons skim (2 min)
 
-P2 — the daily loop: edge (iMessage in/out), filer, morning brief, scanner. Due by ~2026-06-26 per the honesty gate. The schema underneath it is now the simplified one; spec freeze holds the surface still while it's built. Your job during P2 is just to live with it daily and tell me where it's wrong.
+**My track (independent, starts now, the long pole to ~06-26):**
+- Scanner (pure SQL) and edge (iMessage in/out) — zero dependencies on your items
+- Filer — built and tested against the walkthrough you already confirmed
+- Brief/daily pass — built against the contract-test seed data
+
+**The three join points (where your output plugs into mine):**
+
+| Join | Needs from you | Needs from me | What unlocks |
+|---|---|---|---|
+| J1: filer trusted on real data | corpus labels confirmed (#2) | filer built | filer graded against YOUR ground truth before it touches your life |
+| J2: brief carries real content | elicitation done (#1) | brief built | scoring/sections use your actual weights + contract, not test seeds |
+| J3: loop runs live on the mini | ~30 min together: `setup-os-users.sh p1`, B2 account, launchd load | everything above | the daily loop, for real |
+
+**Ordering implication:** your #1 and #2 take ~2 hours; my build takes days. As long as your items land within the next ~3–4 days, you are never on the critical path — J1/J2 will be waiting on my code, not your labels. J3 is inherently synchronous (system-state changes are Sam-present by rule): we schedule ~30 minutes when both sides of the table are done.
+
+**During P2 after J3:** your only job is to live with it daily and tell me where it's wrong. That feedback loop is the point of the two-week gate.
 
 ### Pointers
 
