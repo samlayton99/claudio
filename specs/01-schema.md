@@ -156,7 +156,9 @@ create table atoms (                       -- renamed from log: the table IS the
   summary         text not null check (char_length(summary) <= 500),
   detail          text check (char_length(detail) <= 2000),
   quotes          jsonb not null default '[]',  -- VERBATIM spans for load-bearing facts: commitments,
-                                                -- dates, amounts, names. Never paraphrased (P8).
+                                                -- dates, amounts, names. Never paraphrased (P8); spans, never the whole thread.
+  notable         boolean not null default false,  -- filer-set under P7's "glaringly obvious" bar;
+                                                   -- one of the four structural importance inputs (volume never is)
   refs            jsonb not null default '[]',  -- [{source, locator, tool}]
   primary_role_id text references roles(id),
   canonical_of    uuid references atoms(id),    -- non-null ⇒ merged into that atom. Canonical ≡ NULL.
@@ -242,7 +244,7 @@ One human-meaningful episode: bounded time × coherent purpose × stable partici
 | Source pattern | Atomization |
 |---|---|
 | Meeting / call / ended calendar event | 1 atom |
-| Chat thread | 1 atom per thread per local-day (window closed by the window adapter; atom written by the filer). User↔claudio thread exempt (captured per message at the edge) |
+| Chat thread | the thread-day window is the **capture** unit; the filer writes **1..n atoms per window** — default 1, splitting only when purposes are glaringly distinct (morning: scheduling the meeting; evening: debriefing it). User↔claudio thread exempt (captured per message at the edge) |
 | Email thread | 1 atom per thread-beat (revival >7 days or purpose shift = new beat) |
 | Working session / focus block | 1 atom |
 | Trip / multi-day event | 1 umbrella atom + child atoms `part_of` (created after the fact; future events live in gcal) |
@@ -250,6 +252,9 @@ One human-meaningful episode: bounded time × coherent purpose × stable partici
 | Agent action with side effects | 1 atom per run |
 
 - **Never per-message**; per-message stats are window-computed `metrics`.
+- **Every non-discarded thread-day yields an atom.** A 75-text family meme day is one one-line atom — cheap, honest, and it feeds the relationship record (friends matter value-wise at zero task-yield). Discard is reserved for zero-life-record content (spam, OTP codes, delivery bots), decided deterministically at the window where possible (`semantics.discard_patterns`); the filer's restraint principle governs *extraction*, never *recording*.
+- **Importance is structural, never volumetric.** Message count is not a signal and is never scored. The packet's importance term derives at read time from: `notable` (filer-set, P7's "glaringly obvious" bar — three texts confirming a meeting with a major figure passes; 75 memes never do) + attached obligations (tasks/expectations born from the atom) + links (purpose via `advances`, people, active roles) + user assertions (taste wins). Three texts can outrank a hundred.
+- **Atom length does not scale; destination does (P8).** The atom is the index card, never the document — a long paraphrase is exactly the nested-summary decay P8 forbids. Depth ladder: trivial → `summary` only · standard → + `detail` · load-bearing facts → + `quotes` (verbatim spans, never the whole thread) · significant episodes → + a wiki page/section (where "incredibly long" lives, written delta-style with raw atoms in context) · always → `refs` to tier 0, one pointer away, re-ground rule applies.
 - **Flood days don't change the rules**: 200 texts is still N conversation atoms. The morning brief's daily digest page (re-derived from the day's atoms, absolute dates) gives consolidation; packet scoring keeps low-importance volume one pointer away. Live state of unclosed windows is visible via intake, not atoms.
 - **Quotes discipline (P8)**: load-bearing facts land in `quotes` verbatim at filing time. Workflows re-ground from `refs` before any irreversible/external action — never act off a summary alone.
 - Cross-source merges: gardener proposes; auto-merge only ≥ 0.9 with identical time+participants. `merge_atoms` invariants: target canonical, duplicates not targets, no self/cycles. Thresholds live in `parameters`.

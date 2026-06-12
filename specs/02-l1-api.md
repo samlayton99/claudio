@@ -80,7 +80,7 @@ Ergonomics (research-validated, trimmed to what's evidenced): **no bare UUIDs in
 ```
 
 - Every item: `{id, name}`, event timestamp + age inline, `source_ref`.
-- **Scoring is a weighted sum, not a product**: `score = w_r·exp_decay(recency) + w_d·dueness + w_i·importance` — a product zeroes old-but-critical items (Generative Agents). Weight values are deliberately unspecced: first real packets tune them.
+- **Scoring is a weighted sum, not a product**: `score = w_r·exp_decay(recency) + w_d·dueness + w_i·importance` — a product zeroes old-but-critical items (Generative Agents). Weight values are deliberately unspecced: first real packets tune them. The importance term is **structural** (`01 §Atoms`): notable flag + attached obligations + purpose/people/role links + user assertions. Volume is never an input.
 - Default budget ~3k tokens (measured optimum band 2–4k; context rot beyond). Truncation order: capabilities → people → state → obligations; **taste never truncates**. Rollup paths, not contents (progressive disclosure). Budget is the one dial — there is no separate verbosity knob; drill-down covers depth.
 
 ## MCP front door

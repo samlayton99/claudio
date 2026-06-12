@@ -83,6 +83,15 @@ Wiki (`research-wiki.md`): chapters as fixed MOCs, ≤2-hop rule · page budget 
 5. **Panel chat cut** — collides with your "chat interface in panel" ask; the over-engineering pass judged it a duplicate organ. Cheapest to restore later if wrong.
 6. **"Incessant" alignment → bounded re-ask** — unresolved questions re-surface every report and ride the brief, but P7 caps new questions; true incessance is a directive you can set.
 
+## D2. Post-v3 round: atoms under a real day (your 40-conversation walkthrough)
+
+| Your words | What changed | Where |
+|---|---|---|
+| "how are atoms made for this window... 40 conversations" | Worked policy: every non-discarded thread-day yields an atom (your meme day = one one-line atom — friends matter value-wise at zero task-yield, your own correction); spam/OTP/bots discard deterministically at the window (`semantics.discard_patterns`), zero filer tokens | `01 §Atoms` |
+| "extremely important meeting with Peter Thiel (3 texts) vs family groupchat (75 texts, memes)" | The real gap found and closed: **importance is structural, never volumetric** — `notable` flag (new column, filer-set at P7's "glaringly obvious" bar) + attached obligations + purpose/people/role links + user assertions; message count is never scored | `01 atoms.notable`, `01 §Atoms`, `02 §packet` |
+| "some atoms for a 2-hour meeting should be incredibly long, some really short" | Pushback (your P8 is the reason): atom length does NOT scale — destination does. Depth ladder: summary → +detail → +verbatim quotes → +wiki page/section (where "incredibly long" lives) → refs to tier 0 always. The atom is the index card, never the document; a long paraphrase is exactly the nested-summary decay P8 forbids | `01 §Atoms` |
+| (implied by your scenario) one thread, two episodes in a day | Loosened: thread-day is the *capture* unit; filer writes 1..n atoms per window, default 1, split only when purposes are glaringly distinct | `01 §Atoms` table |
+
 ## E. Still yours to answer (`questions-queue.md` §B)
 
 Purpose-contract sensitivity (default: 2) · first elicitation session timing/format (it now gates P0) · the kill criterion (agree in advance) · monthly budget ceiling (placeholder $50) · wiki default-no bar (confirm) · the five v2-era defaults in §C of the queue.
