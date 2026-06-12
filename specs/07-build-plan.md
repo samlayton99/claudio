@@ -2,11 +2,34 @@
 
 Build order law: **structure first, types and contracts second, functionality and wiring third.** Phases gate on acceptance criteria; each phase pays for itself before the next starts.
 
+## Repo structure (built at P0)
+
+```
+claudio/
+├── CONTEXT.md              # prose context for any future agent (with specs/, fully self-sufficient)
+├── specs/                  # THE LAW (00-07)
+├── core/                   # inner circle — read-only to all workers, ships via core sessions
+│   ├── agents/<id>/        # ONE FOLDER PER INNER AGENT (P10): prompt.md + context.md
+│   │                       #   (context.md declares the deterministic pulls: "reading yesterday's
+│   │                       #    atoms: {what_happened(...)}" — assembled by run-worker.sh)
+│   ├── l1/                 # migrations, functions, triggers, RLS, seeds
+│   ├── pipes/              # deterministic scripts: edge, windows, watchdog, lint, backup, red-team
+│   ├── panel/              # the permanent surface
+│   ├── deploy/             # launchd templates, reconciler, OS-user setup, pf anchors, kill switch
+│   └── params/             # core-ring parameter seeds (fn→class map, arg-predicates)
+├── custom/                 # outer circle — starts EMPTY; agent-authored, user-approved, core-deployed
+│   └── agents/<id>/        # one folder per outer agent/automation, same shape as core/agents/
+├── wiki/                   # the biography (eleven chapter dirs incl. cadences/, digests under it)
+├── archive/                # tier-0 payloads claudio itself retains
+├── evals/                  # filer corpus, scenario fixtures, packet evals, harness
+└── docs/                   # working notes; docs/archive/ = the historical brainstorm (not law)
+```
+
 ## Standing gates (from `docs/honesty-audit.md`)
 
 1. **P2 in two weeks** of first DDL, or shrink before continuing.
 2. **Value at every stopping point** — every phase leaves the user better off if work stops forever.
-3. **The kill criterion** — at P3 exit: weekly maintenance minutes > weekly minutes saved ⇒ stop or shrink.
+3. **The governing trio**: the kill criterion (at P3 exit: maintenance minutes > minutes saved ⇒ stop or shrink) + the effort slider (one dial on system proactivity) + the mirror's usage monitoring. Budget ceiling exists but defaults to none.
 
 ## Standing rules of the build
 
@@ -16,7 +39,7 @@ Build order law: **structure first, types and contracts second, functionality an
 - **Drills are automated, not assigned**: restore-test is a monthly cron with checksum + alert; kill-switch verification is scripted with a calendar nudge. Humans do not drill (ux-rings).
 - Evals are not law: they grow and change with scope. Restraint/security cases stay at a 100% bar.
 - Continuous naming check: anything an agent calls gets a descriptive name or it doesn't merge.
-- **One prompts folder**: every inner-circle prompt, agent config, and directive template lives in a single directory (`core/prompts/`) — one place to find and tweak everything; nothing scattered (dev ergonomics is a design input).
+- **One folder per agent** (P10): everything that defines an agent — prompt, context-construction spec, config — lives in its own folder under `core/agents/` (inner) or `custom/agents/` (outer). Tweaking an agent is editing its folder; nothing scattered.
 
 ## Eval suites (built first, run forever)
 
@@ -28,7 +51,7 @@ Build order law: **structure first, types and contracts second, functionality an
 ## Phases
 
 **P0 — Structure + ground truth (no code)**
-Repo layout (`core/`, `custom/`, `wiki/` chapters, `archive/`), corpus normalized and labeled together, **the first elicitation session** (run manually as a core session — the w2 mirror context doesn't exist yet) → purpose-contract markdown v1 + priorities (front-load the irreplaceable — honesty audit). *Gate: 25+ labeled fixtures, every example expressible in L1 calls; purpose contract exists and Sam signs it.*
+Repo layout (above), corpus normalized and labeled together, **the first elicitation session** (run manually as a core session; it doubles as the initiation protocol — the chat walks the user through what to fill out, can fill the files itself, and tours the panel when it exists) → purpose contract v1: goals, values/beliefs, attributes, the priorities document (front-load the irreplaceable — honesty audit). *Gate: 25+ labeled fixtures (incl. the Thiel/meme day, a two-episode thread, and the three assessment-question scenarios), every example expressible in L1 calls; purpose contract exists and Sam signs it.*
 
 **P1 — Types & contracts**
 Migrations (3 planes; `metrics` deferred to P5), L1 function sets + grants, jsonb schema validation, audit + RLS (forced, invoker) + `role_clearances` + `parameters` (seeded minimally), catalog as a migration-runner hook, **staged tiers: two OS users** (`04`), red-team suite, backup + monthly restore-test cron, kill switch. **Seed the contract**: purpose markdown → `purpose` rows. *Gate: red-team green for the deployed stage; restore cron passes; `get_context('role','prod')` correct on seed data incl. taste; contract tests green.*

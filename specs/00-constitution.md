@@ -29,6 +29,7 @@ Every spec section serves one of these; anything serving none is cut.
 - **P7 False-positive aversion.** A wrong proactive action costs more than a missed one. When unsure: do less, hold, or ask. The user will tell claudio the most important things. (Exception: P6 surfaces must never false-negative.)
 - **P8 The fundamental law of LLMs.** *Quality decays exponentially with the number of nested summaries.* Mechanical rules, not vibes: compaction depth is capped at two (raw → atom → rollup); every rollup re-derives from atoms, never from prior rollups; absolute dates only; load-bearing facts (commitments, dates, amounts, names) are stored as verbatim quotes, not paraphrase; any irreversible or external action re-grounds from tier-0 refs first; prose edits are deltas, never full-page regeneration. (Each rule is independently evidenced — `docs/research-traversal.md`, `docs/research-wiki.md`.)
 - **P9 Gardeners are downstream failures.** Every gardener run is evidence of an upstream design gap. The design does everything to deny gardeners work (constraints, idempotent pipes, typed gates); the system does everything to ensure they run dutifully anyway. Build inside this minimax tension; a shrinking gardener workload is the health metric.
+- **P10 Nothing scattered.** Parameters live in ONE registry (core/outer rings); every agent's prompt and context-construction spec lives in ITS OWN folder under one tree (`core/agents/` inner, `custom/agents/` outer). Tweaking the system never means hunting through code.
 
 ## The decay test (P1's enforcement)
 
@@ -47,7 +48,8 @@ External agents get the same property via the **handshake protocol** (`06`): rea
 | Pipes vs judgment; deterministic skeleton fallback when an LLM step fails | P6, P2 |
 | Workers are stock harnesses under launchd; orchestrator/agents configurable slots, never hardcoded | P4, P1 |
 | Capture-first entry on a required, claudio-owned ground-zero channel | P3, P6, security |
-| Purpose plane at sensitivity 2; writable only via dictation gate / panel / mirror sessions | P5, security |
+| Purpose plane readable by every agent (mission alignment — the user's call); writable only via dictation gate / panel / mirror sessions with read-back | P5, security |
+| Two-lane scoring: obligations score by importance × urgency (never recency); context by importance × recency. Role weights are user-set taste | P5, research |
 | Directives injected into every scoped context; taste never truncated from packets | P5 |
 | Filer confidence thresholds (default low); held intake; proposals over writes | P7, P5 |
 | One send-capable edge, destinations hardwired; approval acts on claudio-owned surfaces; approved external work handed off to owning agents | P6, security |
@@ -59,14 +61,14 @@ External agents get the same property via the **handshake protocol** (`06`): rea
 
 ## Vocabulary
 
-- **Purpose plane** — the apex contract: goals, values, attributes (+goalposts), priorities, and the versioned source document. **The mirror** — the one taste-modeling agent: elicits/maintains the contract, monitors actual usage and life against it.
+- **Purpose plane** — the apex contract: goals (horizons + types), values/beliefs (behavior drivers + key truths), attributes (identity-based goals + goalposts), and the **priorities document** (versioned prose: what matters most and why). Readable by every agent — the system is mission-aligned; writable only by the user. **The mirror** — the agent that elicits/maintains the contract and monitors the life against it. It owns exactly one judgment (lived-vs-proclaimed) and hands taste to no one — taste reaches agents only as user-set data (directives, weights, the contract itself).
 - **Plane** — life (content) vs system (the system's model of itself) vs purpose (the contract above both).
 - **Tier** — compaction: 0 raw (stays at source), 1 atoms, 2 rollups. Depth capped by P8.
 - **Atom** — one human-meaningful episode in `atoms` (`01`). The morning brief doubles as the daily rollup (one reflect-organ, not four — over-engineering pass).
 - **Window** — a data-ingesting adapter with role mappings. **Surface** — an outbound adapter. **Edge** — the required, claudio-owned ground-zero channel (TCC-bound pipe in the user's session).
 - **L1** — the syscall layer; function sets: agent, user (dictation-gated), panel, core (`02`). **Internal writes** (L1, to the scaffold) vs **external writes** (sends/posts to the world — never claudio's; owned by external agents after handoff).
 - **Circle** — inner (immutable to the system) vs outer (agent-authored, user-approved, core-deployed; starts empty).
-- **Chapters** — the fixed top-level wiki MOCs (the ten biography chapters, `05`).
+- **Chapters** — the fixed top-level wiki MOCs (the eleven biography chapters incl. `cadences`, `05`).
 - **Clearance / sensitivity** — 0 normal, 1 sensitive, 2 restricted (purpose, future finance/medical).
 - **Packet** — the `get_context` result. **Batch shape** — `[{"fn","args"}, ...]` with `{"$ref": i}`; the one action encoding.
 - **Standing approval** — user-granted directive auto-approving a named, server-classified proposal class. **Dictation gate** — user-set functions demand a verified-user message on the verified channel (≤10 min); the panel satisfies by role.
@@ -80,4 +82,4 @@ The Mac mini is the proving ground, never a load-bearing assumption: core is POS
 
 `01-schema.md` (DDL, purpose plane, atoms, links, RLS) · `02-l1-api.md` (function sets, packet, ergonomics) · `03-runtime.md` (workers, triggers, reliability, budget) · `04-security.md` (tiers, grants, enforcement) · `05-wiki.md` (the biography) · `06-surfaces.md` (windows, edge, panel, handshake) · `07-build-plan.md` (phases, gates, evals).
 
-Open items: `docs/questions-queue.md`. Honesty conditions: `docs/honesty-audit.md` (P2-in-two-weeks; value at every stop; the kill criterion). Research: `docs/research-traversal.md`, `docs/research-wiki.md`. Change log: `docs/v3-diff-log.md`.
+Open items: `docs/questions-queue.md`. Honesty conditions: `docs/honesty-audit.md` — P2-in-two-weeks; value at every stop; and the governing trio: **kill criterion + effort slider + usage monitoring**. Research: `docs/research-traversal.md`, `docs/research-wiki.md`. History and reasoning in prose: `CONTEXT.md` (repo root); archived brainstorm in `docs/archive/`.

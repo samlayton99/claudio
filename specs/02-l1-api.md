@@ -42,7 +42,7 @@ The panel satisfies both bindings by role (its writes are physically the user's)
 | `merge_people(keep, drop)` | Panel-set. Locks in id order; handle collisions resolve to keep; rejects self/archived/re-merge. |
 | `merge_atoms(canonical, dups[])` | Target canonical; dups not targets; no cycles. Agent path only at the auto-bar (parameter). |
 | `invalidate_link(id, superseded_by?)` | Supersedence, not deletion: sets `invalidated_at`; history stays queryable (research-traversal §3.6). Asserted links: user-set only. |
-| `upsert_purpose(...)` / `new_purpose_version(body)` | **User-set only.** The contract changes through the user, period. |
+| `upsert_purpose(...)` / `new_purpose_version(body)` | **User-set only.** The contract changes through the user, period. (`new_purpose_version` writes the *priorities document* — versioned prose.) Reads are open to every agent: the system is mission-aligned by design (purpose plane is sensitivity 0). |
 | `retire_role(role_id) → proposal_id` | Cascade-preview proposal (suspend scoped components, close windows, re-home open tasks). **Never touches wiki pages or atoms** — active-roles is a filter, not an eraser. |
 | `register_page(path, kind, title, chapter, entity, read_moment)` / `move_page(old, new)` | Page creation demands its chapter and its read-moment (anti-accretion, `05`); move rewrites inbound links atomically (wiki-tool). |
 | `propose(summary, actions, evidence, quoted)` | `privilege_class` derived server-side **per action**; propose-time check: every `fn` ∈ proposer's own set. Sensitivity = max of cited rows. **Regeneration dedup**: key `(from_actor, privilege_class, content_hash)` suppresses re-proposal while a matching pending/recently-expired proposal exists — user absence never produces a duplicate pile. |
@@ -59,6 +59,7 @@ Ergonomics (research-validated, trimmed to what's evidenced): **no bare UUIDs in
 | Surface | Notes |
 |---|---|
 | `get_context(anchor_type, anchor_id, opts)` | Anchors: `role · person · purpose · component`. Pure SQL v0 (no LLM at query time — production-validated). Two-phase protocol: packet first, then agentic drill-down (views, wiki grep/read, `refs`) — packet link expansion caps at 1 hop; agents iterate for hop 2+ ("start wide, then narrow"). |
+| `fetch_ref(ref)` | **One-call pointer dereference** — hand it any `{source, locator, tool}` ref and get the tier-0 content back (routed via the named tool). Pulling things in must be dead simple: no thinking, no multi-step execution, one call. Atom records are the compact tier-1 rows; this is the standard way any agent reaches the raw beneath them. |
 | `search_people(q)` | Names + handles + aliases. Misses logged (the embeddings promotion trigger). |
 | `what_happened(from, to, filters)` | Canonical atoms only; misses logged. |
 | `due_tasks(scope)` / `pending_expectations(scope)` | `blocks` annotations included. |
@@ -80,7 +81,10 @@ Ergonomics (research-validated, trimmed to what's evidenced): **no bare UUIDs in
 ```
 
 - Every item: `{id, name}`, event timestamp + age inline, `source_ref`.
-- **Scoring is Cobb-Douglas with floors**: `score = recency^α · importance^β · dueness^γ`, every factor floored above zero. The floors are load-bearing: a raw product zeroes old-but-critical items (Generative Agents); floored, this is a weighted sum in log space — Sam's intuitive utility form and the research-validated safety property at once. Exponents are the tweakable weights, deliberately unspecced until real packets tune them. The importance term is **structural** (`01 §Atoms`): notable + attached obligations + purpose/people/role links + user assertions — **multiplied by the user-set role weight** (`roles.weight`: how much each role matters in your life is declared taste, never inferred). Volume is never an input.
+- **Scoring runs in two lanes** (the fix for the dueness bug Sam caught: an important task assigned long ago and due *now* must score at the top — a single product with a recency factor would drag it down).
+  - **Obligations lane** (tasks, expectations, time-sensitive items): `score = (role_weight · importance)^β · urgency^γ` where `urgency` *rises* as the due moment approaches. Recency of creation is irrelevant to an obligation — only importance and imminence matter.
+  - **Context lane** (atoms, background state): `score = (role_weight · importance)^β · recency_decay^α` — fresh and important context wins; old context fades unless important.
+  - Both Cobb-Douglas with **floors** (a raw product zeroes old-but-critical items; floored, it's a weighted sum in log space — the intuitive utility form and the research safety property at once). Exponents are the tweakable elasticities, unspecced until real packets tune them. Importance is **structural** (`01 §Atoms`): notable + obligations + links + user assertions, multiplied by the user-set `roles.weight`. Volume is never an input.
 - Default budget ~3k tokens (measured optimum band 2–4k; context rot beyond). Truncation order: capabilities → people → state → obligations; **taste never truncates**. Rollup paths, not contents (progressive disclosure). Budget is the one dial — there is no separate verbosity knob; drill-down covers depth.
 
 ## MCP front door

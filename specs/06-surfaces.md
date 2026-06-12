@@ -26,7 +26,7 @@ One **required**, claudio-owned, deterministic pipe with ground-zero permissions
 
 **Two deterministic user-action flows live here** (no LLM in either commit path): the **taste-confirm flow** — staged taste writes render verbatim ("Set directive: '…' — reply YES"), a fresh confirming message commits via `confirm_taste_write` — and **phone approvals** for low-risk proposal classes, rendering the server-generated what-will-execute text, reply-to-approve bound to the message id. Together with hold-questions riding the brief, the phone covers the entire daily decision surface; the panel is for depth, never a daily requirement (ux-rings cascade A).
 
-**Orchestrator** (w1, queue ~10s): a configurable stock harness handed the packet + message. Tools: L1 MCP (agent set; taste is *staged* via the confirm flow — no direct taste-write grants, red-team finding 1) + read-only fixed-endpoint connectors. No send tools. High-risk actions → proposal + panel link. Chat holds clearance equal to the panel; panel wins conflicts.
+**Orchestrator** (w1; `queue` ~10s in v0, **`resident` mode preferred once a Hermes-class occupant fills the slot** — a daemon on a cycle clock, the heart and soul of the conversational surface, the one voice the user knows; residency changes no grants and the edge remains the only sender): a configurable harness handed the packet + message. Tools: L1 MCP (agent set; taste is *staged* via the confirm flow — no direct taste-write grants) + read-only fixed-endpoint connectors. No send tools. High-risk actions → proposal + panel link. Chat holds clearance equal to the panel; panel wins conflicts.
 
 ## Panel (the permanent surface — ultimate authority)
 
@@ -43,7 +43,9 @@ Stack: minimal Next.js, `claudio-p`, 127.0.0.1 + bearer token + Host check (loca
 
 ## Handshake (onboarding external agents — the decay test for outsiders)
 
-The law, binding now: **capability is issued, never declared** — a newcomer reads the public catalog slice, declares requested scopes, and can touch nothing until the user approves and claudio creates its role; write-capable registrations are flagged loudly; registration is always a core act. The protocol's full ceremony (overlap reports, trial conditions) is designed at **P6**, when the first real external agent shows what review actually needs — pinning and probation (`04` rule 7) carry the security load meanwhile.
+The law, binding now: **capability is issued, never declared** — a newcomer can touch nothing until the user approves and claudio creates its role; write-capable registrations are flagged loudly; registration is always a core act.
+
+The mechanism (P6): the **handshake agent** — a dedicated internal interviewer (an SDK loop with a custom prompt and *no permissions beyond read*) whose only job is a back-and-forth conversation with the newcomer: spec out what it's capable of, what it wants, and where it would sit in the ecosystem (which roles, triggers, windows, data). The conversation produces the registration proposal — requested scopes, placement, write-capability flagged loudly — and **the user issues the capability**. Probing is fine precisely because the interviewer can grant nothing and the newcomer has nothing until issuance. Pinning and probation (`04` rule 7) carry the post-approval load.
 
 ## Custom dashboards (disposable surfaces)
 

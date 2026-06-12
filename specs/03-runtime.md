@@ -11,8 +11,7 @@ What runs, where, when, and what happens when it fails. launchd is the scheduler
 | Core | `sam` (GUI) | build sessions, migrations, secret deploy; reconciler (core-session script until P3, then a sam-session LaunchAgent) | full privilege is a human act |
 | **Edge** | `sam` (GUI LaunchAgent; TCC) | the required ground-zero pipe: reads the verified channel, sends replies + pushes; progress indicators for long runs ("on it — checking your calendar…") | TCC reality; deterministic code only, **no LLM in this context** |
 | Panel | `claudio-p` | panel server | approver credential isolated |
-| **Mirror** | `claudio-w2` | the one taste-modeling agent | clearance 2 (reads the purpose contract); isolated uid |
-| Workers, clearance 1 | `claudio-w1` | filer, merge, wiki (+ verifier step), lint, orchestrator | OS user = clearance tier; lint + verifier here because `wiki/` is w1-only |
+| Workers, clearance 1 | `claudio-w1` | filer, merge, wiki (+ verifier step), lint, **orchestrator**, **mirror** | OS user = clearance tier; lint + verifier here because `wiki/` is w1-only. (The mirror needs no special tier now that the purpose plane is readable system-wide; its writes stay user-gated.) |
 | Workers, clearance 0 | `claudio-w0` | brief, scanner, windows (gcal, …), meeting setter, catalog, hygiene, approver (P5), watchdog, tripwire (P3+), red-team, backup | |
 
 DB auth: local socket, per-uid `.pgpass` 0600. `run-worker.sh` (core-owned, flock-guarded): resolve component → read its `parameters` → check for work via psql (claim/cursor peek; exit `skipped` if none — never spawn a model on an empty queue) → `start_run` → exec under the worker's DB role + core-owned settings → `finish_run`.
@@ -21,9 +20,11 @@ DB auth: local socket, per-uid `.pgpass` 0600. `run-worker.sh` (core-owned, floc
 
 `cron` (launchd) · `queue` (1-min cron + `claim_message`, SKIP LOCKED + claim-time lease reaping; orchestrator at 10s) · `query` (1-min cron + SQL predicate over a cursor in `runs.meta`) · `manual`. Chained automation runs on query triggers reading new atoms — no writer owes fan-out. **Cycle guard**: query triggers exclude `kind='agent_action'` atoms by default (opt-in per component) and derived writes carry `meta.chain_depth` with a hard cap — no A→B→A loops burning spend. Approved external halves arrive as handoffs with expiry (`02`).
 
-## Agent configuration (everything swappable)
+## Agent configuration (everything swappable, everything in one place — P10)
 
-Every gardener/workflow judgment step declares in `config`: harness (`claude -p` today — any headless agent runner that can call MCP qualifies), model tier, tool allowlist. Swapping a harness or model is a registry edit + reconcile, not a redesign (P1/P4). The orchestrator slot is likewise configurable: Claude Code, Agent SDK, Codex, a Hermes-like — anything that consumes packets and speaks L1.
+**Every agent gets its own folder** (`core/agents/<id>/` inner; `custom/agents/<id>/` outer — different trees), containing everything that defines it: `prompt.md` (the system prompt) and `context.md` (the declared context construction — "you are X; you are reading yesterday's atoms: `{what_happened(yesterday)}`; active expectations: `{pending_expectations(role)}`" — deterministic pulls named inline, assembled by `run-worker.sh`). Editing an agent is editing its folder; nothing to track down (dev ergonomics is a design input). `config` in the registry declares: harness (`claude -p` today — any headless runner that speaks MCP), model tier, tool allowlist, trigger. Swapping a harness or model is a registry edit + reconcile, not a redesign (P1/P4).
+
+The **orchestrator slot** is configurable (Claude Code, Agent SDK, Codex, a Hermes-like) and supports two modes: `queue` (spawned per message, the v0 default) or **`resident`** — a daemon on a cycle clock, recommended once a Hermes-class occupant fills the slot: it is the heart and soul of the conversational surface, the one voice the user should know, and persona/session continuity favors residency. Residency changes nothing about its grants, its uid, or the rule that the edge is the only sender; the watchdog supervises it like anything else (heartbeat = its cycle).
 
 ## Gardener roster (inner)
 
@@ -42,8 +43,8 @@ The operative P2 roster is four components: **filer, scanner, watchdog, brief.**
 
 (The alignment gardener was absorbed into the mirror's observational mode — two contract-watchers was the duplicate-organ pattern the over-engineering pass flagged. Scenario 7's "incessant" contract survives: unresolved mirror questions resurface in the next report and ride the brief.)
 
-**The mirror** (w2, the second licensed taste-owner — taste stays unified in one agent):
-- *Elicitation mode* (manual/scheduled sessions with the user): translates the user's "what matters most" document into the purpose contract — goals, values, attributes + goalposts, priorities. Reads the user, knows when to go deeper and when to stop; the user must come away feeling understood. **Every purpose write read-backs verbatim with a diff before commit** (`02` intent binding — session-active alone never authorizes apex writes); candidates derived from `suspected_injection` atoms are barred. (First session runs as a core session at P0, before the w2 context exists.)
+**The mirror** (w1 — and a scope clarification: the mirror does NOT hand taste to other agents; taste reaches agents only as data the user set — directives, role weights, the purpose contract. The mirror owns exactly one judgment: *how the user is living up to their purpose*):
+- *Elicitation mode* (manual/scheduled sessions with the user): translates the user's priorities into the purpose contract — goals, values/beliefs, attributes + goalposts, the priorities document. Reads the user, knows when to go deeper and when to stop; the user must come away feeling understood. **This same chat is the initiation protocol**: on first run it walks the user through setup — which files to fill out (it can fill them, or the user can), the panel tour, seeding roles and weights. **Every purpose write read-backs verbatim with a diff before commit** (`02` intent binding — session-active alone never authorizes apex writes); candidates derived from `suspected_injection` atoms are barred. (First session runs as a core session at P0.)
 - *Observational mode* (monthly cron, P5) — **the alignment surface**: actual usage + `v_purpose_alignment` + drift queries (activity-vs-`advances` distribution, response-decay by role, unlinked activity clusters, low-priority-role crowding) vs the contract → questions (never acts, P7; ≤3 new per report; unresolved re-ask next report and ride the brief — the "incessant" contract), promotes/cuts automations, carries the taste-write provenance review. An empty or stale contract is its first finding. One taste-owner, literally: there is no separate alignment gardener.
 
 ## Core workflows (inner)
@@ -68,7 +69,8 @@ The operative P2 roster is four components: **filer, scanner, watchdog, brief.**
 ## Budget control (downward pressure on spend)
 
 - Model routing is high-level by design: each worker class declares a tier in `config` (`cheap` default; `frontier` only where reasoning earns it — filer extraction quality and the mirror are the two justified frontier spends).
-- **One global monthly ceiling** in `parameters`; `runs` records cost; hygiene's spend report (P5) ranks components by cost-per-use and proposes cuts. Per-component ceilings and trend-flagging arrive only if a component's spend ever actually surprises (over-engineering pass: ~6 LLM-touching components owned by one person need one number, not a governance system).
+- **One global monthly ceiling** in `parameters` — **default: no ceiling** (the user's call); set it when wanted. `runs` records cost; hygiene's spend report (P5) ranks components by cost-per-use and proposes cuts. Per-component ceilings arrive only if a component's spend ever surprises.
+- **The effort slider** (outer-ring parameter): one global dial scaling system proactivity — question frequency, digest depth, model-tier defaults. With the kill criterion and the mirror's usage monitoring, this is the governing trio for "is this system earning its keep."
 
 ## The injection fence (defense the whole runtime honors)
 

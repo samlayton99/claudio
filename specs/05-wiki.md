@@ -1,14 +1,14 @@
 # 05 — Wiki
 
-`wiki/` is the **biography**: consolidated source material for understanding the life — not a mirror of the database. The DB is the 1:1 record (atoms); the wiki is what a person (or agent) reads to understand. The bar for a page: *would Sam, Sam-in-6-months, or someone in Sam's circle find this interesting or useful?* Default-no (P7); the content stays reachable through atoms regardless.
+`wiki/` is the **biography**: consolidated source material for understanding the life — a wikipedia of all noteworthy things in it, not a mirror of the database. The DB is the 1:1 record (atoms); the wiki is what a person (or agent) reads to understand. The bar for a page, deliberately two-sided: *would this be relevant to Sam six months from now (he finds joy in looking back and journaling his life), **or** to his agents (because it helps them answer a future query)?* Either justifies a page; the content stays reachable through atoms regardless.
 
 Substrate (research-validated): plain markdown, wikilinks, minimal frontmatter, git history, flat folders — every surviving PKM system is plain files, and "AI tools need direct file access" is now the top migration driver (research-wiki §1). Never add syntax or state the files can't natively carry.
 
 ## Chapters (the fixed top level)
 
-Ten chapter MOCs — stable overlay maps, the one structure pattern that survives (research-wiki §2):
+Eleven chapter MOCs — stable overlay maps, the one structure pattern that survives (research-wiki §2):
 
-`people` · `personal-life` · `significant-events` · `professional` · `purpose` (beliefs over time; lived-vs-proclaimed discrepancies) · `progress` · `interests` · `lessons-learned` · `pitfalls` (problems I keep causing myself) · `how-to-work-with-sam` (agent-facing: the system learns the person)
+`people` · `personal-life` · `significant-events` · `professional` · `purpose` (beliefs over time; lived-vs-proclaimed discrepancies) · `progress` · `interests` · `lessons-learned` · `pitfalls` (problems I keep causing myself) · `how-to-work-with-sam` (agent-facing: the system learns the person) ·  `cadences` (this includes the general summaries)
 
 **`how-to-work-with-sam` is taste-plane, not wiki-plane** (red-team finding 5: a page that steers agent behavior is a directive surface and must be governed like one): it is *rendered from* the directives table + user-asserted spans — gardeners never free-delta it, and behavioral guidance lives only behind the dictation gate. What gardeners may propose for it goes through proposals like any taste write.
 
@@ -23,13 +23,13 @@ Rules: **every page reachable from a chapter in ≤ 2 hops**; every page names i
 
 ## Writing discipline (P8 made mechanical)
 
-- **Raw atoms always in context**: any page update is prompted with the update reason, the previous version, and the full relevant atom list — never from another summary.
+- **Atoms are the source; the previous version is reference**: any page update is prompted as *write-from-scratch from the atom records and user-asserted overwrites* — with the previous version present in the window explicitly labeled "the old version, for reference and continuity, not source." Prior digests may likewise sit in context, clearly marked reference-only. (The atom rows are the compact tier-1 records; tier-0 raw is one `fetch_ref` call away when verbatim texture is needed.)
 - **Delta edits only**: patch sections, append cited lines; full-page regeneration only via proposal (full rewrites cause documented "context collapse").
-- **Digests re-derive from atoms every time** — no summary ever reads a prior summary as *source*. Absolute dates only.
+- **Digests re-derive from atoms every time** — no summary ever reads a prior summary as *source*, only as context. Absolute dates only.
 
 ## The summary ladder (records, not re-summaries)
 
-Three cadences of record, each a wiki page **with a 1:1 `documents` row carrying typed links** (to the atoms covered, roles touched, expectations opened/resolved) — queryable hubs, not just prose, and the longitudinal mid-tier for trend questions (scan six monthlies, drill to atoms):
+Three cadences of record living under the **`cadences` chapter**, each a wiki page **with a 1:1 `documents` row carrying typed links** (to the atoms covered, roles touched, expectations opened/resolved) — queryable hubs, not just prose, and the longitudinal mid-tier for trend questions (scan six monthlies, drill to atoms):
 
 - **Daily reflection** (P2, written by the brief's daily pass) — the day's record; also where `notable` is assigned/confirmed, with the whole day + a wide window of prior reflections and active expectations in context (relative judgments need longitudinal context; closed reason vocabulary recorded).
 - **Monthly summary** (P4) — long-form: aggregates progress moves, role activity, expectation ledger, purpose drift.
@@ -47,7 +47,7 @@ Three cadences of record, each a wiki page **with a 1:1 `documents` row carrying
 
 > The DB stores what agents **query**; the wiki stores what agents **read**.
 
-DB rows stay skinny (≤500-char summaries) but must be *descriptive* — naming, comments, examples carry the scaffolding load; skinny ≠ cryptic. Pages absorb narrative depth. A page full of statuses, or a DB column with paragraphs, is a lint violation.
+DB rows stay skinny (≤750-char summaries [configurable]) but must be *descriptive* — naming, comments, examples carry the scaffolding load; skinny ≠ cryptic. Pages absorb narrative depth. A page full of statuses, or a DB column with paragraphs, is a lint violation.
 
 ## Freshness & correction surface
 
