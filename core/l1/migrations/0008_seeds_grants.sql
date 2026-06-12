@@ -157,7 +157,7 @@ declare fn text;
 begin
   -- agent base (claudio_agent; all w_* inherit)
   foreach fn in array array[
-    'capture(text,text,jsonb,text,jsonb,smallint)',
+    'capture(text,text,jsonb,text,jsonb,smallint,text)',
     'file_intake(uuid,jsonb)','hold_intake(uuid,uuid)','discard_intake(uuid,text)',
     'create_person(text,text,text,smallint,jsonb,jsonb)','add_handle(uuid,text,text,boolean)','update_person(uuid,jsonb)',
     'create_task(text,timestamptz,uuid,text,jsonb,smallint,jsonb)','complete_task(uuid)','drop_task(uuid,text)','amend_task(uuid,jsonb)',

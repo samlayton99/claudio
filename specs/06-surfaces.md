@@ -6,6 +6,8 @@ Edges of the system. One contract: **messiness dies at the mouth** — adapters 
 
 Every window is a component (`kind='window'`) implementing:
 
+- **`mode: passive | probing`** (config). **Passive** copies the constant stream (texts, email, slack) — dumb by design, `sync()` on cron. **Probing** is inquiry-based — a smart MCP server or an external agent wearing the window hat; runs on a declared cadence *or* an orchestrator-triggered probe. Probe results land through `capture()` like any capture, `rawness` tagged honestly (`derived` when the upstream summarized). **When a source offers both** (e.g. an iMessage MCP with good summaries *and* raw polling), the verbatim feed is the record; the summaries are probe assist, never ground truth.
+- **The historical record is primary (P4).** All raw lands in-house (`intake` + `archive/`); refs resolve in-house first. The orchestrator may probe a probing window live when the record is discrepant or incomplete — it owns ad-hoc probe triggers, makes the judgment call to dig further, and every probe is a logged run whose results flow back through intake. Default to the record; probe when warranted.
 - **`sync()`** (pipe, cron): tier-0 deltas → `capture()` (or direct `record_atom` for unambiguous structured sources). Idempotent by constraint (locator uniqueness), flock-guarded.
 - **Window closing**: chat-like windows close atom windows (thread-day default) and emit one capture per closed window; the filer writes the atom.
 - **`role_map`**: the inheritance default (`01` §Inheritance) — the window is a dependent type narrowing the candidate set. Every window may map to `general`.

@@ -16,6 +16,8 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 7. **Filer judgment quality** — the corpus must prove `notable` reasons + atom-splitting; P0 labeling decides if the bars are right.
 8. **Embeddings promotion** — trigger defined (logged search misses; they already audit); no action until it fires.
 9. **Resident orchestrator occupant** — slot supports `resident`; pick the occupant (Hermes-class) at P3+.
+10. **Raw retention** — default: keep ALL intake rows forever, including discarded spam/OTP (text is cheap; the record is the point — your 2026-06-12 directive). Revisit triggers: `archive/` exceeds ~5 GB, or the first privacy purge request. Backup destination (item 4) now carries tier-0, so its sizing matters slightly more.
+11. **Probe budget** — orchestrator-triggered probes of probing windows are unmetered in v0 (logged as runs, visible in `v_component_health`). A cadence/cost cap gets a parameter only if probe spend shows up in the P5 spend report.
 
 ## Disclosures (done while you slept; objections reversible)
 

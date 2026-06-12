@@ -53,7 +53,7 @@ end $$;
 -- ---------- intake ----------
 create or replace function l1.capture(p_adapter text, p_raw text, p_sender jsonb default null,
                                       p_locator text default null, p_raw_ref jsonb default null,
-                                      p_sensitivity smallint default 0)
+                                      p_sensitivity smallint default 0, p_rawness text default 'verbatim')
 returns jsonb language plpgsql security definer set search_path = pg_catalog, l1, pg_temp as $$
 declare v_id uuid; v_sens smallint;
 begin
@@ -61,9 +61,12 @@ begin
   if not exists (select 1 from l1.components where id = p_adapter) then
     raise exception 'claudio.unknown_adapter: %', p_adapter;
   end if;
+  if p_rawness not in ('verbatim','derived') then
+    raise exception 'claudio.invalid_rawness: %', p_rawness;
+  end if;
   v_sens := least(l1._clamp_sensitivity(p_sensitivity, null, p_adapter), 1);  -- captures cap at 1; restricted routes to the panel
-  insert into l1.intake (adapter, sender, raw, raw_ref, locator, sensitivity)
-  values (p_adapter, p_sender, p_raw, p_raw_ref, p_locator, v_sens)
+  insert into l1.intake (adapter, sender, raw, raw_ref, locator, sensitivity, rawness)
+  values (p_adapter, p_sender, p_raw, p_raw_ref, p_locator, v_sens, p_rawness)
   on conflict (adapter, locator) where locator is not null do nothing
   returning id into v_id;
   if v_id is null then  -- idempotent: durable capture, exactly once (race-safe under concurrent replays)
@@ -73,10 +76,11 @@ begin
   perform l1._audit('capture', 'intake', v_id::text, 'insert', jsonb_build_object('adapter', p_adapter, 'locator', p_locator));
   return jsonb_build_object('id', v_id, 'deduped', false);
 end $$;
-comment on function l1.capture(text, text, jsonb, text, jsonb, smallint) is
+comment on function l1.capture(text, text, jsonb, text, jsonb, smallint, text) is
   'Dumb, instant, durable. Dedup on (adapter, locator) — replays are free. Examples: '
   'capture(''edge-imessage'', ''t: pick up...'', ''{"source":"imessage","handle":"+14355550100","verified_user":true}'', ''msg-9912''); '
-  'capture(''window-gcal'', ''{"event":...}'', null, ''gcal-evt-4411''). Sensitivity hard-capped at 1 here.';
+  'capture(''window-gcal'', ''{"event":...}'', null, ''gcal-evt-4411''). Sensitivity hard-capped at 1 here. '
+  'rawness: verbatim (default) | derived — probing windows that summarize upstream MUST tag derived (P8).';
 
 create or replace function l1.hold_intake(p_intake_id uuid, p_question_message_id uuid)
 returns jsonb language plpgsql security definer set search_path = pg_catalog, l1, pg_temp as $$
@@ -688,7 +692,8 @@ begin
       when 'hold_intake' then l1.hold_intake((args->>'intake_id')::uuid, (args->>'question_message_id')::uuid)
       when 'discard_intake' then l1.discard_intake((args->>'intake_id')::uuid, args->>'reason')
       when 'capture' then l1.capture(args->>'adapter', args->>'raw', args->'sender', args->>'locator',
-                                     args->'raw_ref', coalesce((args->>'sensitivity')::smallint, 0::smallint))
+                                     args->'raw_ref', coalesce((args->>'sensitivity')::smallint, 0::smallint),
+                                     coalesce(args->>'rawness', 'verbatim'))
       else null
     end;
     if r is null then

@@ -191,6 +191,8 @@ create table intake (
   sender      jsonb,                     -- {"source","handle","service"}
   raw         text not null,
   raw_ref     jsonb,
+  rawness     text not null default 'verbatim'
+              check (rawness in ('verbatim','derived')),   -- derived = AI/agent-summarized upstream (P8: already one summary deep)
   status      text not null default 'pending'
               check (status in ('pending','filed','discarded','held')),
   filed_refs  jsonb not null default '[]',
@@ -198,10 +200,17 @@ create table intake (
   ...conventions
 );
 create unique index intake_dedup on intake (adapter, locator) where locator is not null;
+create index intake_by_day on intake (received_at);
 -- Conditional transitions (WHERE status='pending') make concurrent filers lose cleanly.
 -- resolve_held_intake flips held → pending. Holds carry a TTL: aged-out holds auto-file as
 -- kind='unknown' low-confidence atoms (visible, correctable, never parked forever). Captures cap
 -- at sensitivity 1; restricted routes to the panel. Filing errors quarantine the ROW, never the filer.
+--
+-- INTAKE IS THE TIER-0 RECORD, not disposable staging (P4: the historical stream is owned in-house —
+-- external refs rot). Rows are never deleted; 'discarded' means no atom was extracted, the raw remains.
+-- Large/binary payloads live in archive/ with raw_ref pointing there. Raw is scannable on its own,
+-- atoms or no atoms: SQL by day (intake_by_day), grep over archive/. When a window can deliver
+-- verbatim, verbatim is the record; rawness='derived' summaries are context, never ground truth.
 
 create table documents (
   path        text primary key,
@@ -255,6 +264,8 @@ Order = cheapest first; every inherited link is `inferred` with the inheritance 
 ## Atoms (the precise definition)
 
 One meaningful chunk that contributes to your day: bounded time × coherent purpose × stable participants, from one source. Can be a single text, can be an hour-long conversation. Could be a 6-hour work session broken into 4 different atoms. Could be a cram study session for an exam. **An atom is a unit of life experience** — not merely a calendar episode: novel ideas, projects, research progress, goals achieved, things found interesting, what's being learned, how time was actually spent (including time wasted watching TV — the record is honest).
+
+Atoms are also **the accounting and directory system over the in-house raw**: ingestion defaults through windows → intake → atoms, and `refs` resolve in-house first. Raw remains independently scannable without atoms (SQL by day, grep over `archive/`) — the directory is the default door, never the only one.
 
 | Source pattern | Atomization |
 |---|---|
@@ -354,4 +365,4 @@ create table audit (
 
 ## Deliberately absent
 
-Groups (roles encode collectives) · calendar mirror · message archive (tier 0 + metrics) · health/finance/places (future; sensitivity tier ready) · embeddings (promotion trigger: logged search misses ⇒ exact pgvector + FTS/RRF, bolt-on) · `document_links` mirror (lint parses files) · graph features · separate registries/queues (unified) · dispatcher daemon · mutable lived-vs-proclaimed store (derived view) · `priority_rank` (priorities are prose, not a ranked column) · `doc_path` columns.
+Groups (roles encode collectives) · calendar mirror (live state stays in gcal; ended events become atoms with in-house raw) · health/finance/places (future; sensitivity tier ready) · embeddings (promotion trigger: logged search misses ⇒ exact pgvector + FTS/RRF, bolt-on) · `document_links` mirror (lint parses files) · graph features · separate registries/queues (unified) · dispatcher daemon · mutable lived-vs-proclaimed store (derived view) · `priority_rank` (priorities are prose, not a ranked column) · `doc_path` columns.

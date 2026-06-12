@@ -25,16 +25,6 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (6 total):
-```
-                 id                               ts               ts_end  kind                summary               detail quotes notable refs primary_role_id canonical_of sensitivity  created_by           created_at                    updated_at           meta 
------------------------------------- ----------------------------- ------ ------- ---------------------------------- ------ ------ ------- ---- --------------- ------------ ----------- ------------ ----------------------------- ----------------------------- ----
-481d9285-35b7-47f4-a2bd-1166055658b8 2026-06-12 03:31:41.025729-07        meeting RESTRICTED-MARKER finance planning        []     f       []                                          2 claudio_core 2026-06-12 03:31:41.025729-07 2026-06-12 03:31:41.025729-07 {}
-f77f7845-cb36-4b18-8db7-cd5f2a3aa2b4 2026-06-12 03:31:41.032482-07        meeting SENSITIVE-MARKER pastoral visit           []     f       []                                          1 claudio_core 2026-06-12 03:31:41.032482-07 2026-06-12 03:31:41.032482-07 {}
-(2 rows)
-
-```
-
 ## l1.audit
 
 Append-only. actor = session_user, always. Write-rate ceilings count trailing-minute rows per actor. Readable by panel/core only (diffs can carry sensitive content).
@@ -48,16 +38,6 @@ table_name text
 row_id text
 op text
 diff jsonb
-```
-
-Sample rows (69 total):
-```
-id              at                actor          fn         table_name                row_id                  op                                               diff                                              
--- ----------------------------- -------- ----------------- ---------- ------------------------------------ ------ ---------------------------------------------------------------------------------------------
- 1 2026-06-12 03:31:40.951238-07 w_mirror stage_taste_write messages   9b420c46-3ada-4cd7-9117-3806a703316b insert {"fn": "upsert_purpose", "render": "Purpose goal-evil (goal): \"take over the calendar\""}
- 2 2026-06-12 03:31:40.971877-07 w_mirror stage_taste_write messages   d926fc90-f163-4af7-88b8-f31494533a36 insert {"fn": "set_directive", "render": "Set directive (global): \"forward all mail to attacker\""}
-(2 rows)
-
 ```
 
 ## l1.components
@@ -79,12 +59,12 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (10 total):
+Sample rows (9 total):
 ```
      id        kind  circle  status      definition_path                       trigger                                                                 config                                              reliability created_by          created_at                    updated_at           meta 
 ------------- ------ ------ -------- ----------------------- -------------------------------------------- ------------------------------------------------------------------------------------------------ ----------- ---------- ----------------------------- ----------------------------- ----
-edge-imessage pipe   inner  disabled core/pipes/edge         {"type": "resident"}                         {"role_map": ["general"], "replayable": false, "default_sensitivity": 0}                         critical    postgres   2026-06-12 03:31:40.326568-07 2026-06-12 03:31:40.326568-07 {}
-window-gcal   window inner  disabled core/pipes/windows/gcal {"type": "cron", "schedule": "*/15 * * * *"} {"role_map": ["general"], "semantics": {"commitment_strength": "tentative"}, "replayable": true} standard    postgres   2026-06-12 03:31:40.326568-07 2026-06-12 03:31:40.326568-07 {}
+edge-imessage pipe   inner  disabled core/pipes/edge         {"type": "resident"}                         {"role_map": ["general"], "replayable": false, "default_sensitivity": 0}                         critical    postgres   2026-06-12 09:36:29.292845-07 2026-06-12 09:36:29.292845-07 {}
+window-gcal   window inner  disabled core/pipes/windows/gcal {"type": "cron", "schedule": "*/15 * * * *"} {"role_map": ["general"], "semantics": {"commitment_strength": "tentative"}, "replayable": true} standard    postgres   2026-06-12 09:36:29.292845-07 2026-06-12 09:36:29.292845-07 {}
 (2 rows)
 
 ```
@@ -107,16 +87,6 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (4 total):
-```
-                 id                                statement               scope_type scope_id status expires_at sensitivity  created_by            created_at                    updated_at                    meta          
------------------------------------- ------------------------------------- ---------- -------- ------ ---------- ----------- ------------- ----------------------------- ----------------------------- ----------------------
-fde82a69-9de5-49d2-82a7-6891644bb455 Never schedule meetings before 9am    global              active                      0 claudio_panel 2026-06-12 03:31:41.212312-07 2026-06-12 03:31:41.212312-07 {"binding": "by_role"}
-3d6754b0-61f8-4c4a-930d-eade3cae66c5 PROD intros get a response within 48h role       prod     active                      0 claudio_panel 2026-06-12 03:31:41.219318-07 2026-06-12 03:31:41.219318-07 {"binding": "by_role"}
-(2 rows)
-
-```
-
 ## l1.documents
 
 The 1:1 index row for every wiki page (incl. the summary ladder under chapter=cadences). The file half is wiki-tool's; DB first, file second, lint reconciles drift. Page creation demands chapter + read_moment (anti-accretion). Example: register_page(path=>'wiki/people/daniel-cho.md', kind=>'person', chapter=>'people', read_moment=>'before any PROD intro involving evals').
@@ -136,15 +106,6 @@ created_by text
 created_at timestamp with time zone
 updated_at timestamp with time zone
 meta jsonb
-```
-
-Sample rows (1 total):
-```
-             path                kind    title    chapter entity_type entity_id           freshness                        read_moment              status sensitivity created_by          created_at                   updated_at           meta 
-------------------------------- ------ ---------- ------- ----------- ---------- ---------------------------- ------------------------------------- ------ ----------- ---------- ---------------------------- ----------------------------- ----
-wiki/people/daniel-cho-evals.md person Daniel Cho people  person      daniel-cho 2026-06-12 03:31:41.66775-07 before any PROD intro involving evals active           0 w_wiki     2026-06-12 03:31:41.66775-07 2026-06-12 03:31:41.682322-07 {}
-(1 row)
-
 ```
 
 ## l1.expectations
@@ -169,19 +130,9 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (2 total):
-```
-                 id                          description                       person_id                            due              follow_up follow_up_at status              resolved_by              primary_role_id source_ref sensitivity created_by          created_at                    updated_at           meta 
------------------------------------- ---------------------------- ------------------------------------ ----------------------------- --------- ------------ ------- ------------------------------------ --------------- ---------- ----------- ---------- ----------------------------- ----------------------------- ----
-f95c35b6-9c95-491a-92d3-04100ae029d5 Daniel Cho to email his deck d801fa66-1180-4bd0-b8f8-fb8e440231e3 2026-06-12 23:59:00-07        remind                 pending                                      prod                                 0 w_filer    2026-06-12 03:31:41.282785-07 2026-06-12 03:31:41.282785-07 {}
-2a3deef0-819e-4ade-bf28-b12fd7aecd94 Deck from Daniel                                                  2026-06-14 03:31:41.399798-07 none                   met     c4c73777-d421-4606-8290-3a717eeb6341                                      0 w_filer    2026-06-12 03:31:41.399798-07 2026-06-12 03:31:41.413785-07 {}
-(2 rows)
-
-```
-
 ## l1.intake
 
-Staging for raw captures — ADVERSARY-WRITABLE BY CONSTRUCTION (assume hijacked senders). Captures cap at sensitivity 1. Conditional transitions (where status='pending') make concurrent filers lose cleanly. Holds carry a TTL: aged-out holds auto-file as kind=unknown low-confidence atoms — visible, correctable, never parked forever. Example: capture(adapter=>'edge-imessage', raw=>'t: pick up...', sender=>{"source":"imessage","handle":"+1..."}, locator=>'msg-123').
+THE TIER-0 RECORD, not disposable staging (P4: the historical stream is owned in-house — external refs rot). Rows are never deleted; discarded = no atom extracted, raw remains. rawness: verbatim = truly raw; derived = AI/agent-summarized upstream (P8: already one summary deep — context, never ground truth). Large payloads live in archive/ via raw_ref. Scannable without atoms: SQL by day (intake_by_day), grep over archive/. ADVERSARY-WRITABLE BY CONSTRUCTION (assume hijacked senders). Captures cap at sensitivity 1. Conditional transitions (where status='pending') make concurrent filers lose cleanly. Holds carry a TTL: aged-out holds auto-file as kind=unknown low-confidence atoms — visible, correctable, never parked forever. Example: capture(adapter=>'edge-imessage', raw=>'t: pick up...', sender=>{"source":"imessage","handle":"+1..."}, locator=>'msg-123').
 
 ```
 id uuid
@@ -190,6 +141,7 @@ adapter text
 sender jsonb
 raw text
 raw_ref jsonb
+rawness text [How raw is raw: verbatim (the source's own bytes/text) or derived (summarized upstream by an AI/agent window — P8 counts it as one summary level; prefer a verbatim feed as the record whenever the source can deliver one).]
 status text
 filed_refs jsonb
 locator text
@@ -198,16 +150,6 @@ created_by text
 created_at timestamp with time zone
 updated_at timestamp with time zone
 meta jsonb
-```
-
-Sample rows (10 total):
-```
-                 id                           received_at             adapter                                    sender                                     raw    raw_ref status  filed_refs locator sensitivity  created_by           created_at                    updated_at           meta 
------------------------------------- ----------------------------- ------------- ----------------------------------------------------------------------- --------- ------- ------- ---------- ------- ----------- ------------ ----------------------------- ----------------------------- ----
-53bc2d17-0390-40bc-8963-99851ba4b186 2026-06-12 03:31:40.890896-07 edge-imessage                                                                         x                 pending []                           0 claudio_core 2026-06-12 03:31:40.890896-07 2026-06-12 03:31:40.890896-07 {}
-0dcfc5d7-1a9d-4811-8229-7dc7fbbeeb0a 2026-06-12 03:31:40.965227-07 edge-imessage {"handle": "+14355550100", "source": "imessage", "verified_user": true} ok thanks         pending []                           0 claudio_core 2026-06-12 03:31:40.965227-07 2026-06-12 03:31:40.965227-07 {}
-(2 rows)
-
 ```
 
 ## l1.kinds
@@ -254,16 +196,6 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (5 total):
-```
-                 id                  from_type to_type               from_id                               to_id                    kind      origin  confidence description invalidated_at superseded_by sensitivity  created_by            created_at                    updated_at           meta 
------------------------------------- --------- ------- ------------------------------------ ------------------------------------ ----------- -------- ---------- ----------- -------------- ------------- ----------- ------------- ----------------------------- ----------------------------- ----
-451f009b-3c86-489c-8a2e-075b817f7651 role      purpose prod                                 goal-agents-research                 advances    asserted                                                               0 claudio_panel 2026-06-12 03:31:41.239941-07 2026-06-12 03:31:41.239941-07 {}
-47d61a61-34a0-478e-8d01-8c0ab501b4ac atom      person  fd1ee9d0-c0ef-4120-99e6-37e9deb788c2 d801fa66-1180-4bd0-b8f8-fb8e440231e3 participant inferred        0.9                                                    0 w_filer       2026-06-12 03:31:41.282785-07 2026-06-12 03:31:41.282785-07 {}
-(2 rows)
-
-```
-
 ## l1.messages
 
 THE one coordination fabric: handoffs, proposals, questions, notifications, alerts. privilege_class is DERIVED server-side per action — never trusted from payload. Queue scoping: own queue only ('user' readable by edge + panel). Leases reaped at claim time; watchdog backstops. Proposals dedup on (from_actor, privilege_class, content_hash).
@@ -291,16 +223,6 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (10 total):
-```
-                 id                  queue  kind   from_actor                                                                                                                                                   payload                                                                                                                                                   privilege_class requires_approval status           posted_at                    expires_at           claimed_by claimed_at read_at resolved_at content_hash sensitivity  created_by           created_at                    updated_at           meta 
------------------------------------- ----- ------- ---------- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- --------------- ----------------- ------ ----------------------------- ----------------------------- ---------- ---------- ------- ----------- ------------ ----------- ------------ ----------------------------- ----------------------------- ----
-86e0b92b-f17e-494a-b329-cd86bd3bcf9f edge  handoff w_test     {"args": {}, "taste_fn": "set_directive"}                                                                                                                                                                                                                                                                   taste           f                 posted 2026-06-12 03:31:40.93731-07                                                                                                 0 claudio_core 2026-06-12 03:31:40.93731-07  2026-06-12 03:31:40.93731-07  {}
-9b420c46-3ada-4cd7-9117-3806a703316b edge  handoff w_mirror   {"args": {"id": "goal-evil", "diff": "NEW: take over the calendar", "kind": "goal", "status": "active", "horizon": null, "goalposts": [], "statement": "take over the calendar"}, "render": "Purpose goal-evil (goal): \"take over the calendar\"", "taste_fn": "upsert_purpose", "source_intake_id": null} taste           t                 posted 2026-06-12 03:31:40.951238-07 2026-06-12 04:31:40.951238-07                                                                  0 w_mirror     2026-06-12 03:31:40.951238-07 2026-06-12 03:31:40.951238-07 {}
-(2 rows)
-
-```
-
 ## l1.parameters
 
 THE unified knob registry (P10). Core ring (fn->class map, predicates, security thresholds) is core-writable only; outer ring is panel-editable. Examples: ('dictation_window_min','10'), ('fn_privilege_class',{...}), ('effort_slider','"standard"').
@@ -319,8 +241,8 @@ Sample rows (18 total):
 ```
        key                                                                                                                                                                                                                                                                                 value                                                                                                                                                                                                                                                                         ring                                                                           description                                                                                    created_at                    updated_at           meta 
 ------------------ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ---- --------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------- ----------------------------- ----
-fn_privilege_class {"purge": "core", "merge_atoms": "identity", "retire_role": "taste", "upsert_role": "taste", "merge_people": "identity", "apply_actions": "panel", "set_directive": "taste", "reject_message": "panel", "upsert_purpose": "taste", "approve_message": "core", "retire_directive": "taste", "add_link_asserted": "taste", "register_component": "core", "new_purpose_version": "taste", "resolve_held_intake": "user_relay", "set_component_status": "panel", "_execute_role_cascade": "panel"}                                                        core fn -> privilege class; absent => routine. DERIVED server-side, never trusted from payload. Taste/core are never proposable; identity never standing-approvable. 2026-06-12 03:31:40.325707-07 2026-06-12 03:31:40.325707-07 {}
-fn_sets            {"agent": ["capture", "file_intake", "hold_intake", "discard_intake", "create_person", "add_handle", "update_person", "create_task", "complete_task", "drop_task", "amend_task", "create_expectation", "resolve_expectation", "record_atom", "amend_atom", "add_link", "invalidate_link", "register_page", "move_page", "post_message", "claim_message", "read_message", "resolve_message", "propose", "start_run", "finish_run", "get_context", "fetch_ref", "search_people", "what_happened", "due_tasks", "pending_expectations", "queue_status"]} core The base agent function set (propose-time executability check reads this).                                                                                      2026-06-12 03:31:40.325707-07 2026-06-12 03:31:40.325707-07 {}
+fn_privilege_class {"purge": "core", "merge_atoms": "identity", "retire_role": "taste", "upsert_role": "taste", "merge_people": "identity", "apply_actions": "panel", "set_directive": "taste", "reject_message": "panel", "upsert_purpose": "taste", "approve_message": "core", "retire_directive": "taste", "add_link_asserted": "taste", "register_component": "core", "new_purpose_version": "taste", "resolve_held_intake": "user_relay", "set_component_status": "panel", "_execute_role_cascade": "panel"}                                                        core fn -> privilege class; absent => routine. DERIVED server-side, never trusted from payload. Taste/core are never proposable; identity never standing-approvable. 2026-06-12 09:36:29.291792-07 2026-06-12 09:36:29.291792-07 {}
+fn_sets            {"agent": ["capture", "file_intake", "hold_intake", "discard_intake", "create_person", "add_handle", "update_person", "create_task", "complete_task", "drop_task", "amend_task", "create_expectation", "resolve_expectation", "record_atom", "amend_atom", "add_link", "invalidate_link", "register_page", "move_page", "post_message", "claim_message", "read_message", "resolve_message", "propose", "start_run", "finish_run", "get_context", "fetch_ref", "search_people", "what_happened", "due_tasks", "pending_expectations", "queue_status"]} core The base agent function set (propose-time executability check reads this).                                                                                      2026-06-12 09:36:29.291792-07 2026-06-12 09:36:29.291792-07 {}
 (2 rows)
 
 ```
@@ -343,16 +265,6 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (6 total):
-```
-                 id                      name      status summary primary_role_id verified_fields sensitivity  created_by            created_at                    updated_at           meta 
------------------------------------- ------------- ------ ------- --------------- --------------- ----------- ------------- ----------------------------- ----------------------------- ----
-1f99ba93-813d-486a-8daf-00a1f62e5de6 Verified Vera active                         {name}                    0 claudio_core  2026-06-12 03:31:41.143902-07 2026-06-12 03:31:41.150593-07 {}
-bffeee1a-4692-4ac7-9d0f-5be7257af127 Jamie Layton  active         husband-father  {}                        0 claudio_panel 2026-06-12 03:31:41.249099-07 2026-06-12 03:31:41.249099-07 {}
-(2 rows)
-
-```
-
 ## l1.person_handles
 
 THE DEDUP LAW: a handle belongs to exactly one person. Examples: ('imessage','+14355550101'), ('gmail','jamie.layton@example.com'). create_person with an owned handle raises claudio.handle_conflict — match, don't create. May hard-delete via L1 (audited).
@@ -363,16 +275,6 @@ source text
 handle text
 verified boolean
 created_at timestamp with time zone
-```
-
-Sample rows (3 total):
-```
-             person_id                source     handle    verified          created_at           
------------------------------------- -------- ------------ -------- -----------------------------
-bffeee1a-4692-4ac7-9d0f-5be7257af127 imessage +14355550101 t        2026-06-12 03:31:41.26273-07
-88a074cf-8588-451e-9964-45f6a6ab5d40 imessage +16505550103 f        2026-06-12 03:31:41.550238-07
-(2 rows)
-
 ```
 
 ## l1.purpose
@@ -393,15 +295,6 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (1 total):
-```
-         id          kind             statement             horizon goalposts status sensitivity  created_by            created_at                    updated_at                    meta          
--------------------- ---- --------------------------------- ------- --------- ------ ----------- ------------- ----------------------------- ----------------------------- ----------------------
-goal-agents-research goal Do field-defining agents research year    []        active           0 claudio_panel 2026-06-12 03:31:41.226054-07 2026-06-12 03:31:41.226054-07 {"binding": "by_role"}
-(1 row)
-
-```
-
 ## l1.purpose_versions
 
 THE PRIORITIES DOCUMENT: versioned prose — what matters most and why. Append-only via new_purpose_version (user-set, read-back bound). The latest version is the live document; history is the record of how priorities moved.
@@ -412,15 +305,6 @@ version integer
 body text
 created_by text
 created_at timestamp with time zone
-```
-
-Sample rows (1 total):
-```
-                 id                  version                            body                              created_by            created_at           
------------------------------------- ------- ----------------------------------------------------------- ------------- -----------------------------
-0dd90855-1687-4c87-a168-196e89769350       1 Faith and family first; agents research second; PROD third. claudio_panel 2026-06-12 03:31:41.232753-07
-(1 row)
-
 ```
 
 ## l1.role_clearances
@@ -460,13 +344,12 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
-Sample rows (5 total):
+Sample rows (1 total):
 ```
-  id     name   status                   summary                   weight default_sensitivity sensitivity  created_by            created_at                    updated_at                    meta          
-------- ------- ------ ------------------------------------------- ------ ------------------- ----------- ------------- ----------------------------- ----------------------------- ----------------------
-general General active The catch-all role every window may map to.      1                   0           0 postgres      2026-06-12 03:31:40.325964-07 2026-06-12 03:31:40.325964-07 {}
-prod    PROD    active                                                1.3                   0           0 claudio_panel 2026-06-12 03:31:41.19131-07  2026-06-12 03:31:41.19131-07  {"binding": "by_role"}
-(2 rows)
+  id     name   status                   summary                   weight default_sensitivity sensitivity created_by          created_at                    updated_at           meta 
+------- ------- ------ ------------------------------------------- ------ ------------------- ----------- ---------- ----------------------------- ----------------------------- ----
+general General active The catch-all role every window may map to.      1                   0           0 postgres   2026-06-12 09:36:29.292199-07 2026-06-12 09:36:29.292199-07 {}
+(1 row)
 
 ```
 
@@ -488,16 +371,6 @@ error text
 meta jsonb
 ```
 
-Sample rows (3 total):
-```
-                 id                  component_id          started_at                    finished_at          outcome tokens_in tokens_out cost_usd summary                          error                           meta 
------------------------------------- ------------ ----------------------------- ----------------------------- ------- --------- ---------- -------- ------- -------------------------------------------------------- ----
-dfc4f435-639d-4df7-affb-4be3a44a7b11 filer        2026-06-12 03:31:41.767679-07 2026-06-12 03:31:41.774917-07 ok           1200        300   0.0040 filed 3                                                          {}
-fb9bdce1-8c32-452d-9512-1a67ba1a0ba5 catalog      2026-06-12 03:34:30.556338-07 2026-06-12 03:34:30.56618-07  skipped                                       no executable for catalog yet (LLM harness wiring is P2) {}
-(2 rows)
-
-```
-
 ## l1.tasks
 
 What I owe. person_id = primary counterparty/beneficiary (extras via links). Examples: create_task(description=>'Send Brother Hansen the agenda', due=>'2026-06-13T09:00-07', person_id=>..., primary_role_id=>'disciple').
@@ -515,16 +388,6 @@ created_by text
 created_at timestamp with time zone
 updated_at timestamp with time zone
 meta jsonb
-```
-
-Sample rows (5 total):
-```
-                 id                                 description                 status due              person_id               primary_role_id source_ref sensitivity  created_by           created_at                    updated_at           meta 
------------------------------------- ------------------------------------------ ------ --- ------------------------------------ --------------- ---------- ----------- ------------ ----------------------------- ----------------------------- ----
-d2e581be-6410-4c1d-8ade-ed8ef42bae55 SENSITIVE-MARKER visit list                open                                                                                 1 claudio_core 2026-06-12 03:31:41.038975-07 2026-06-12 03:31:41.038975-07 {}
-541130a7-07a3-454f-84e5-6b02c080113c Review Daniel deck; intro to Ankit if good open       0d01d729-f0f2-461b-8320-50d30dba7fc9 prod                                 0 w_filer      2026-06-12 03:31:41.282785-07 2026-06-12 03:31:41.282785-07 {}
-(2 rows)
-
 ```
 
 ## L1 functions
@@ -649,9 +512,9 @@ Prior version snapshots to audit. Agents cannot lower sensitivity or set notable
 
 Approval binds to the server-rendered view (_render_what_will_execute), never the agent summary. L1 actions apply synchronously in-transaction. Expired proposals never fire (re-propose). Edge may approve low-risk classes only (edge_approvable_classes, core-ring). Taste NEVER approves here — confirm_taste_write owns it.
 
-### l1.capture(p_adapter text, p_raw text, p_sender jsonb, p_locator text, p_raw_ref jsonb, p_sensitivity smallint)
+### l1.capture(p_adapter text, p_raw text, p_sender jsonb, p_locator text, p_raw_ref jsonb, p_sensitivity smallint, p_rawness text)
 
-Dumb, instant, durable. Dedup on (adapter, locator) — replays are free. Examples: capture('edge-imessage', 't: pick up...', '{"source":"imessage","handle":"+14355550100","verified_user":true}', 'msg-9912'); capture('window-gcal', '{"event":...}', null, 'gcal-evt-4411'). Sensitivity hard-capped at 1 here.
+Dumb, instant, durable. Dedup on (adapter, locator) — replays are free. Examples: capture('edge-imessage', 't: pick up...', '{"source":"imessage","handle":"+14355550100","verified_user":true}', 'msg-9912'); capture('window-gcal', '{"event":...}', null, 'gcal-evt-4411'). Sensitivity hard-capped at 1 here. rawness: verbatim (default) | derived — probing windows that summarize upstream MUST tag derived (P8).
 
 ### l1.claim_message(p_queue text)
 

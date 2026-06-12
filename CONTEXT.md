@@ -42,7 +42,7 @@ Two dead predecessors: a Next.js+Supabase "First Principles Dashboard" (worked, 
 4. Anecdote-driven assessments. Aggregate first, cite both the number and the atoms, label impressions as impressions.
 5. Speculative structure: new tables, vocab kinds, parameters, or pages built for imagined volume. Grow by promotion on observed need; shrink by demotion. When the over-engineering instinct fires, it's probably right.
 6. Treating channel proof as intent proof anywhere new. Any new write path that could encode taste must carry the intent binding.
-7. Mirroring data that has an authoritative home (gcal, Gmail, chat.db). Pointers + compactions; `fetch_ref` makes dereference one cheap call.
+7. Mirroring *live external state* (gcal futures, mailbox state) — pointers + compactions; `fetch_ref` makes dereference one cheap call. But the *historical stream* is owned in-house (Sam's directive 2026-06-12, reversing the earlier pointers-only stance for history): every window's raw lands in `intake`/`archive/` with a `rawness` tag, because external refs rot — servers down, tokens renewed, agents losing context. The record never depends on a live external source.
 8. Forgetting third parties: ward members and founders never consented — sensitivity defaults by role context, pastoral content stays out of low-clearance packets structurally.
 
 ## Current state and what happens next

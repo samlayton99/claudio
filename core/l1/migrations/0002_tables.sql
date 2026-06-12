@@ -245,6 +245,7 @@ create table l1.intake (
   sender      jsonb,
   raw         text not null,
   raw_ref     jsonb,
+  rawness     text not null default 'verbatim' check (rawness in ('verbatim','derived')),
   status      text not null default 'pending' check (status in ('pending','filed','discarded','held')),
   filed_refs  jsonb not null default '[]',
   locator     text,
@@ -255,12 +256,20 @@ create table l1.intake (
   meta        jsonb not null default '{}'
 );
 comment on table l1.intake is
-  'Staging for raw captures — ADVERSARY-WRITABLE BY CONSTRUCTION (assume hijacked senders). Captures cap at sensitivity 1. '
+  'THE TIER-0 RECORD, not disposable staging (P4: the historical stream is owned in-house — external refs rot). Rows are '
+  'never deleted; discarded = no atom extracted, raw remains. rawness: verbatim = truly raw; derived = AI/agent-summarized '
+  'upstream (P8: already one summary deep — context, never ground truth). Large payloads live in archive/ via raw_ref. '
+  'Scannable without atoms: SQL by day (intake_by_day), grep over archive/. '
+  'ADVERSARY-WRITABLE BY CONSTRUCTION (assume hijacked senders). Captures cap at sensitivity 1. '
   'Conditional transitions (where status=''pending'') make concurrent filers lose cleanly. Holds carry a TTL: aged-out holds '
   'auto-file as kind=unknown low-confidence atoms — visible, correctable, never parked forever. '
   'Example: capture(adapter=>''edge-imessage'', raw=>''t: pick up...'', sender=>{"source":"imessage","handle":"+1..."}, locator=>''msg-123'').';
+comment on column l1.intake.rawness is
+  'How raw is raw: verbatim (the source''s own bytes/text) or derived (summarized upstream by an AI/agent window — P8 counts it '
+  'as one summary level; prefer a verbatim feed as the record whenever the source can deliver one).';
 create unique index intake_dedup on l1.intake (adapter, locator) where locator is not null;
 create index intake_pending on l1.intake (received_at) where status = 'pending';
+create index intake_by_day on l1.intake (received_at);
 
 create table l1.documents (
   path        text primary key,

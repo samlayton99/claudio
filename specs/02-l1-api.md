@@ -59,7 +59,7 @@ Ergonomics (research-validated, trimmed to what's evidenced): **no bare UUIDs in
 | Surface | Notes |
 |---|---|
 | `get_context(anchor_type, anchor_id, opts)` | Anchors: `role · person · purpose · component`. Pure SQL v0 (no LLM at query time — production-validated). Two-phase protocol: packet first, then agentic drill-down (views, wiki grep/read, `refs`) — packet link expansion caps at 1 hop; agents iterate for hop 2+ ("start wide, then narrow"). |
-| `fetch_ref(ref)` | **One-call pointer dereference** — hand it any `{source, locator, tool}` ref and get the tier-0 content back (routed via the named tool). Pulling things in must be dead simple: no thinking, no multi-step execution, one call. Atom records are the compact tier-1 rows; this is the standard way any agent reaches the raw beneath them. |
+| `fetch_ref(ref)` | **One-call pointer dereference** — hand it any `{source, locator, tool}` ref and get the tier-0 content back. **Resolves in-house first** (`intake` by locator, then `archive/`); the named external tool is the fallback for refs predating in-house retention — the record never depends on a live external source (P4). Returned content carries its `rawness` tag. Pulling things in must be dead simple: no thinking, no multi-step execution, one call. Atom records are the compact tier-1 rows; this is the standard way any agent reaches the raw beneath them. |
 | `search_people(q)` | Names + handles + aliases. Misses logged (the embeddings promotion trigger). |
 | `what_happened(from, to, filters)` | Canonical atoms only; misses logged. |
 | `due_tasks(scope)` / `pending_expectations(scope)` | `blocks` annotations included. |
