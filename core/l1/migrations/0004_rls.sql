@@ -7,7 +7,7 @@ set role claudio_core;
 do $$
 declare t text;
 begin
-  foreach t in array array['purpose','roles','people','directives','tasks','expectations','atoms',
+  foreach t in array array['purpose','roles','people','directives','obligations','atoms',
                            'intake','documents','links','messages'] loop
     execute format('alter table l1.%I enable row level security', t);
     execute format('alter table l1.%I force row level security', t);
@@ -70,8 +70,8 @@ create or replace view l1.v_component_health with (security_invoker = true) as
 create or replace view l1.v_stale_expectations with (security_invoker = true) as
   select e.id, e.description, e.person_id, p.name as person_name, e.due, e.follow_up, e.follow_up_at,
          e.status, e.sensitivity, now() - coalesce(e.due, e.created_at) as overdue_by
-  from l1.expectations e left join l1.people p on p.id = e.person_id
-  where e.status = 'pending' and (e.due < now() or e.follow_up_at < now());
+  from l1.obligations e left join l1.people p on p.id = e.person_id
+  where e.kind = 'expectation' and e.status = 'open' and (e.due < now() or e.follow_up_at < now());
 
 create or replace view l1.v_purpose_alignment with (security_invoker = true) as
   with advance_links as (

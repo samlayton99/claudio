@@ -7,13 +7,13 @@ One Postgres database (`claudio`). Three planes: **purpose** (the contract), **l
 Most relationships are technically many-to-many but practically one-to-many: **do one-to-many (an FK column) wherever we can get away with it** — inheritance rides the FK spine so agents make fewer judgment calls; the `links` table carries the genuinely many-to-many remainder.
 
 - **`purpose`** — the apex contract: goals, values/beliefs, attributes. *Relationships:* advanced-by roles/tasks/atoms (`advances` links, M2M); its prose priorities document lives in `purpose_versions` (1-many versions).
-- **`roles`** — the organizing spine of the life (prod, disciple, husband-father, student, general). *Relationships:* one-to-many to people (`people.primary_role_id`), tasks, expectations, atoms (each via `primary_role_id`); many-to-many to windows (`config.role_map` — a window feeds one or more roles); many-to-many to purpose (`advances`); secondary role attachments for anything via `links (about)`. User-set `weight` is the taste multiplier in scoring.
-- **`people`** — who. *Relationships:* one primary role (FK, practical 1-many); one-to-many handles (`person_handles` — the dedup law: a handle belongs to exactly one person); one-to-many tasks/expectations as the primary counterparty (FK on those tables); additional people on any task/expectation/atom via `links (participant/about)` (the technically-M2M remainder); person↔person via `relationship` links; created by whichever window first sees a new handle (provenance in `created_by` + `meta` — duplicate creations across windows are expected; that's what the merge gardener is for).
-- **`atoms`** — units of life experience (definition below). *Relationships:* one primary role (FK); participants via `links (participant)`; may resolve expectations (`expectations.resolved_by`); cited by documents (`links: document → atom`); merge into a canonical (`canonical_of` self-FK); born from intake (`intake.filed_refs`).
-- **`tasks`** / **`expectations`** — what I owe / what I'm owed. *Relationships:* one primary person (FK, nullable) + one primary role (FK); extra people/roles via `links`; expectations resolved by atoms; both may `advance` purpose.
+- **`roles`** — the organizing spine of the life (prod, disciple, husband-father, student, general). *Relationships:* one-to-many to people (`people.primary_role_id`), obligations, atoms (each via `primary_role_id`); many-to-many to windows (`config.role_map` — a window feeds one or more roles); many-to-many to purpose (`advances`); secondary role attachments for anything via `links (about)`. User-set `weight` is the taste multiplier in scoring.
+- **`people`** — who. *Relationships:* one primary role (FK, practical 1-many); one-to-many handles (`person_handles` — the dedup law: a handle belongs to exactly one person); one-to-many obligations as the primary counterparty (FK); additional people on any obligation/atom via `links (participant/about)` (the technically-M2M remainder); person↔person via `relationship` links; created by whichever window first sees a new handle (provenance in `created_by` + `meta` — duplicate creations across windows are expected; that's what the merge gardener is for).
+- **`atoms`** — units of life experience (definition below). *Relationships:* one primary role (FK); participants via `links (participant)`; may resolve expectations (`obligations.resolved_by`); cited by documents (`links: document → atom`); merge into a canonical (`canonical_of` self-FK); born from intake (`intake.filed_refs`).
+- **`obligations`** — one table, two kinds: `task` (what I owe) / `expectation` (what I'm owed). *Relationships:* one primary person (FK, nullable) + one primary role (FK); extra people/roles via `links`; expectations resolved by atoms (`resolved_by`); both kinds may `advance` purpose.
 - **`directives`** — user taste as operational law. *Relationships:* scoped to global/role/workflow/person/approval_class by `(scope_type, scope_id)`.
 - **`documents`** — the 1:1 index row for every wiki page, including the summary ladder (daily/monthly/biannual records). *Relationships:* anchored to an entity or chapter; link-bearing hubs via `links (document → atom/role/expectation/…)`.
-- **`intake`** — staging for raw captures before the filer structures them. *Relationships:* belongs to a window (`adapter` FK); produces atoms/tasks/expectations/people via `filed_refs`.
+- **`intake`** — staging for raw captures before the filer structures them. *Relationships:* belongs to a window (`adapter` FK); produces atoms/obligations/people via `filed_refs`.
 - **`components`** — the system's parts: windows, surfaces, pipes, gardeners, workflows, tools. *Relationships:* role scoping via `links (scoped_to)` and `config.role_map` (windows); one-to-many runs, metrics, intake.
 - **`messages`** — the one coordination fabric (handoffs, proposals, questions, alerts). **`runs`** / **`metrics`** / **`audit`** / **`parameters`** / **`kinds`** / **`role_clearances`** — operational records and registries, described in place below.
 
@@ -140,30 +140,23 @@ create table directives (
   ...conventions
 );
 
-create table tasks (
+create table obligations (              -- ONE TABLE, TWO KINDS (Sam's simplification 2026-06-12)
   id              uuid primary key,
+  kind            text not null check (kind in ('task','expectation')),  -- task: I act; expectation: they act
   description     text not null,
-  status          text not null default 'open' check (status in ('open','done','dropped')),
+  status          text not null default 'open',  -- CHECK per kind: task open→done|dropped; expectation open→met|missed|dropped
   due             timestamptz,
-  person_id       uuid references people(id),    -- primary counterparty/beneficiary; extras via links
-  primary_role_id text references roles(id),
-  source_ref      jsonb,
-  ...conventions
-);
-
-create table expectations (
-  id              uuid primary key,
-  description     text not null,
-  person_id       uuid references people(id),    -- primary person owing me (nullable); extras via links
-  due             timestamptz,
-  follow_up       text not null default 'none' check (follow_up in ('none','remind','auto_task')),
+  person_id       uuid references people(id),    -- task: counterparty/beneficiary; expectation: who owes me (nullable); extras via links
+  follow_up       text not null default 'none' check (follow_up in ('none','remind','auto_task')),  -- expectations only (CHECK)
   follow_up_at    timestamptz,
-  status          text not null default 'pending' check (status in ('pending','met','missed','dropped')),
-  resolved_by     uuid references atoms(id),
+  resolved_by     uuid references atoms(id),     -- the atom that evidences resolution (optional)
   primary_role_id text references roles(id),
   source_ref      jsonb,
   ...conventions
 );
+-- Agent-facing verbs stay create_task / create_expectation (clearest for agents; kind set internally).
+-- Lifecycle: amend_obligation + resolve_obligation (outcome validated against kind — P12).
+-- Link endpoint types stay 'task'/'expectation'; endpoint validation checks the row's kind matches.
 
 create table atoms (
   id              uuid primary key,
@@ -259,7 +252,7 @@ create index links_to   on links(to_type, to_id)   where invalidated_at is null;
 
 ## Inheritance (explicit, so agents make fewer judgment calls)
 
-1. **FK spine**: `primary_role_id` and `person_id` flow downward — a task created from an atom inherits the atom's primary role; an expectation inherits its task's; a new person inherits the discovering window's primary role.
+1. **FK spine**: `primary_role_id` and `person_id` flow downward — an obligation created from an atom inherits the atom's primary role; a new person inherits the discovering window's primary role.
 2. **Window mapping**: each window declares `role_map` — the dependent type narrowing the candidate set (prod-slack ⇒ prod; school email ⇒ student; iMessage ⇒ candidate set; anything may map to `general`).
 3. **Person membership**: a person's primary role + role links narrow further (text from the bishop ⇒ church).
 4. **Content inference last**, only above the confidence floor; below it, `unknown`/held (P5: confidence defaults low).

@@ -64,8 +64,8 @@ Sample rows (9 total):
 ```
      id        kind  circle  status      definition_path                       trigger                                                                 config                                              reliability created_by          created_at                    updated_at           meta 
 ------------- ------ ------ -------- ----------------------- -------------------------------------------- ------------------------------------------------------------------------------------------------ ----------- ---------- ----------------------------- ----------------------------- ----
-edge-imessage pipe   inner  disabled core/pipes/edge         {"type": "resident"}                         {"role_map": ["general"], "replayable": false, "default_sensitivity": 0}                         critical    postgres   2026-06-12 10:34:41.291466-07 2026-06-12 10:34:41.291466-07 {}
-window-gcal   window inner  disabled core/pipes/windows/gcal {"type": "cron", "schedule": "*/15 * * * *"} {"role_map": ["general"], "semantics": {"commitment_strength": "tentative"}, "replayable": true} standard    postgres   2026-06-12 10:34:41.291466-07 2026-06-12 10:34:41.291466-07 {}
+edge-imessage pipe   inner  disabled core/pipes/edge         {"type": "resident"}                         {"role_map": ["general"], "replayable": false, "default_sensitivity": 0}                         critical    postgres   2026-06-12 11:18:01.797037-07 2026-06-12 11:18:01.797037-07 {}
+window-gcal   window inner  disabled core/pipes/windows/gcal {"type": "cron", "schedule": "*/15 * * * *"} {"role_map": ["general"], "semantics": {"commitment_strength": "tentative"}, "replayable": true} standard    postgres   2026-06-12 11:18:01.797037-07 2026-06-12 11:18:01.797037-07 {}
 (2 rows)
 
 ```
@@ -102,28 +102,6 @@ entity_id text
 freshness timestamp with time zone
 read_moment text [WHEN will this be read — by Sam (journaling joy) or his agents (a future query). Can't name one => no page.]
 status text
-sensitivity smallint
-created_by text
-created_at timestamp with time zone
-updated_at timestamp with time zone
-meta jsonb
-```
-
-## l1.expectations
-
-What I'm owed. person_id = who owes it (nullable). resolved_by = the atom that resolved it. Examples: 'Daniel Cho to email his deck' due Friday follow_up=remind. The scanner (pure SQL, critical) drives reminders.
-
-```
-id uuid
-description text
-person_id uuid
-due timestamp with time zone
-follow_up text
-follow_up_at timestamp with time zone
-status text
-resolved_by uuid
-primary_role_id text
-source_ref jsonb
 sensitivity smallint
 created_by text
 created_at timestamp with time zone
@@ -224,6 +202,29 @@ updated_at timestamp with time zone
 meta jsonb
 ```
 
+## l1.obligations
+
+ONE TABLE, TWO KINDS (Sam's simplification, 2026-06-12). kind=task: what I owe — person_id = primary counterparty/beneficiary. kind=expectation: what I'm owed — person_id = who owes it; resolved_by = the atom that resolved it; the scanner (pure SQL, critical) drives reminders. Write via create_task / create_expectation (the agent-facing verbs); lifecycle via amend_obligation / resolve_obligation. Examples: create_task(description=>'Send Brother Hansen the agenda', due=>'2026-06-13T09:00-07', primary_role_id=>'disciple'); create_expectation('Daniel Cho to email his deck', due Friday, follow_up=>'remind').
+
+```
+id uuid
+kind text [task = I act; expectation = they act. Status vocab per kind (CHECK): task open->done|dropped; expectation open->met|missed|dropped.]
+description text
+status text
+due timestamp with time zone
+person_id uuid
+follow_up text [Expectations only (CHECK): none | remind | auto_task — what the scanner does at follow_up_at.]
+follow_up_at timestamp with time zone
+resolved_by uuid
+primary_role_id text
+source_ref jsonb
+sensitivity smallint
+created_by text
+created_at timestamp with time zone
+updated_at timestamp with time zone
+meta jsonb
+```
+
 ## l1.parameters
 
 THE unified knob registry (P10). Core ring (fn->class map, predicates, security thresholds) is core-writable only; outer ring is panel-editable. Examples: ('dictation_window_min','10'), ('fn_privilege_class',{...}), ('effort_slider','"standard"').
@@ -240,10 +241,10 @@ meta jsonb
 
 Sample rows (18 total):
 ```
-       key                                                                                                                                                                                                                                                                                 value                                                                                                                                                                                                                                                                         ring                                                                           description                                                                                    created_at                    updated_at           meta 
------------------- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ---- --------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------- ----------------------------- ----
-fn_privilege_class {"purge": "core", "merge_atoms": "identity", "retire_role": "taste", "upsert_role": "taste", "merge_people": "identity", "apply_actions": "panel", "set_directive": "taste", "reject_message": "panel", "upsert_purpose": "taste", "approve_message": "core", "retire_directive": "taste", "add_link_asserted": "taste", "register_component": "core", "new_purpose_version": "taste", "resolve_held_intake": "user_relay", "set_component_status": "panel", "_execute_role_cascade": "panel"}                                                        core fn -> privilege class; absent => routine. DERIVED server-side, never trusted from payload. Taste/core are never proposable; identity never standing-approvable. 2026-06-12 10:34:41.290459-07 2026-06-12 10:34:41.290459-07 {}
-fn_sets            {"agent": ["capture", "file_intake", "hold_intake", "discard_intake", "create_person", "add_handle", "update_person", "create_task", "complete_task", "drop_task", "amend_task", "create_expectation", "resolve_expectation", "record_atom", "amend_atom", "add_link", "invalidate_link", "register_page", "move_page", "post_message", "claim_message", "read_message", "resolve_message", "propose", "start_run", "finish_run", "get_context", "fetch_ref", "search_people", "what_happened", "due_tasks", "pending_expectations", "queue_status"]} core The base agent function set (propose-time executability check reads this).                                                                                      2026-06-12 10:34:41.290459-07 2026-06-12 10:34:41.290459-07 {}
+       key                                                                                                                                                                                                                                                                    value                                                                                                                                                                                                                                                             ring                                                                           description                                                                                    created_at                    updated_at           meta 
+------------------ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ---- --------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------- ----------------------------- ----
+fn_privilege_class {"purge": "core", "merge_atoms": "identity", "retire_role": "taste", "upsert_role": "taste", "merge_people": "identity", "apply_actions": "panel", "set_directive": "taste", "reject_message": "panel", "upsert_purpose": "taste", "approve_message": "core", "retire_directive": "taste", "add_link_asserted": "taste", "register_component": "core", "new_purpose_version": "taste", "resolve_held_intake": "user_relay", "set_component_status": "panel", "_execute_role_cascade": "panel"}                               core fn -> privilege class; absent => routine. DERIVED server-side, never trusted from payload. Taste/core are never proposable; identity never standing-approvable. 2026-06-12 11:18:01.793676-07 2026-06-12 11:18:01.793676-07 {}
+fn_sets            {"agent": ["capture", "file_intake", "hold_intake", "discard_intake", "create_person", "add_handle", "update_person", "create_task", "create_expectation", "amend_obligation", "resolve_obligation", "record_atom", "amend_atom", "add_link", "invalidate_link", "register_page", "move_page", "post_message", "claim_message", "read_message", "resolve_message", "propose", "start_run", "finish_run", "get_context", "fetch_ref", "search_people", "what_happened", "due_tasks", "pending_expectations", "queue_status"]} core The base agent function set (propose-time executability check reads this).                                                                                      2026-06-12 11:18:01.793676-07 2026-06-12 11:18:01.793676-07 {}
 (2 rows)
 
 ```
@@ -349,7 +350,7 @@ Sample rows (1 total):
 ```
   id     name   status                   summary                   weight default_sensitivity sensitivity created_by          created_at                    updated_at           meta 
 ------- ------- ------ ------------------------------------------- ------ ------------------- ----------- ---------- ----------------------------- ----------------------------- ----
-general General active The catch-all role every window may map to.      1                   0           0 postgres   2026-06-12 10:34:41.290752-07 2026-06-12 10:34:41.290752-07 {}
+general General active The catch-all role every window may map to.      1                   0           0 postgres   2026-06-12 11:18:01.794133-07 2026-06-12 11:18:01.794133-07 {}
 (1 row)
 
 ```
@@ -369,25 +370,6 @@ tokens_out integer
 cost_usd numeric
 summary text
 error text
-meta jsonb
-```
-
-## l1.tasks
-
-What I owe. person_id = primary counterparty/beneficiary (extras via links). Examples: create_task(description=>'Send Brother Hansen the agenda', due=>'2026-06-13T09:00-07', person_id=>..., primary_role_id=>'disciple').
-
-```
-id uuid
-description text
-status text
-due timestamp with time zone
-person_id uuid
-primary_role_id text
-source_ref jsonb
-sensitivity smallint
-created_by text
-created_at timestamp with time zone
-updated_at timestamp with time zone
 meta jsonb
 ```
 
@@ -501,9 +483,9 @@ Two-lane scoring, both Cobb-Douglas WITH FLOORS (a raw product zeroes old-but-cr
 
 Prior version snapshots to audit. Agents cannot lower sensitivity or set notable (the brief's daily pass and the user can). Setting notable=true requires notable_reason from the closed vocabulary (P12: judgments are selections, never prose). Examples: amend_atom(id, '{"detail":"..."}'); amend_atom(id, '{"meta":{"notable_candidate":true}}'); amend_atom(id, '{"notable":true,"notable_reason":"purpose_advance"}') [daily pass/panel only].
 
-### l1.amend_task(p_task_id uuid, p_patch jsonb)
+### l1.amend_obligation(p_id uuid, p_patch jsonb)
 
-(no comment yet)
+Patch either kind of obligation. kind is immutable; status moves only via resolve_obligation. Examples: amend_obligation(id, '{"due":"2026-06-14T17:00-07"}'); amend_obligation(id, '{"follow_up":"remind","follow_up_at":"2026-06-13T09:00-07"}').
 
 ### l1.apply_actions(p_actions jsonb)
 
@@ -525,10 +507,6 @@ Dumb, instant, durable. Dedup on (adapter, locator) — replays are free. Exampl
 
 Clearance of the CONNECTING role (session_user) from role_clearances; absent => 0. Examples: as w_filer => 1; as claudio_panel => 2; as anything unknown => 0. Self-raise is impossible: the table is core-writable only.
 
-### l1.complete_task(p_task_id uuid)
-
-(no comment yet)
-
 ### l1.confirm_taste_write(p_pending_id uuid, p_confirming_intake_id uuid)
 
 The edge's narrow grant: commits a staged taste write after verifying the confirming message (verified user, after the read-back, fresh). Deterministic code — the drafting LLM is not in this path. Example: edge renders payload.render ("Set directive: ... — reply YES"), user replies "yes", edge calls confirm_taste_write(pending, that_reply_intake).
@@ -546,10 +524,6 @@ claudio.handle_conflict if any handle is owned — match, don't create. Examples
 (no comment yet)
 
 ### l1.discard_intake(p_intake_id uuid, p_reason text)
-
-(no comment yet)
-
-### l1.drop_task(p_task_id uuid, p_reason text)
 
 (no comment yet)
 
@@ -641,10 +615,6 @@ The atom writer. Quote-at-write: load-bearing facts go in p_quotes VERBATIM (P8)
 
 (no comment yet)
 
-### l1.resolve_expectation(p_expectation_id uuid, p_status text, p_resolved_by uuid)
-
-(no comment yet)
-
 ### l1.resolve_held_intake(p_intake_id uuid, p_answer text, p_answer_intake_id uuid)
 
 (no comment yet)
@@ -652,6 +622,10 @@ The atom writer. Quote-at-write: load-bearing facts go in p_quotes VERBATIM (P8)
 ### l1.resolve_message(p_message_id uuid, p_resolution jsonb)
 
 (no comment yet)
+
+### l1.resolve_obligation(p_id uuid, p_outcome text, p_reason text, p_resolved_by uuid)
+
+ONE lifecycle exit for both kinds, outcome validated against kind (P12): task -> done|dropped; expectation -> met|missed|dropped. p_resolved_by = the atom that evidences it (optional). Examples: resolve_obligation(id, 'done'); resolve_obligation(id, 'met', null, atom_id); resolve_obligation(id, 'dropped', 'no longer relevant').
 
 ### l1.retire_directive(p_directive_id uuid, p_source_intake_id uuid)
 

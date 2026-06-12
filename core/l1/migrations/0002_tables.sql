@@ -140,32 +140,15 @@ comment on table l1.directives is
   'Examples: scope global ''never schedule before 9am''; scope workflow=morning-brief ''no news during finals''. '
   'Injected into every scoped context packet; never truncated from packets.';
 
-create table l1.tasks (
+create table l1.obligations (
   id              uuid primary key default gen_random_uuid(),
+  kind            text not null check (kind in ('task','expectation')),
   description     text not null,
-  status          text not null default 'open' check (status in ('open','done','dropped')),
+  status          text not null default 'open',
   due             timestamptz,
   person_id       uuid references l1.people(id),
-  primary_role_id text references l1.roles(id),
-  source_ref      jsonb,
-  sensitivity     smallint not null default 0 check (sensitivity in (0,1,2)),
-  created_by      text,
-  created_at      timestamptz not null default now(),
-  updated_at      timestamptz not null default now(),
-  meta            jsonb not null default '{}'
-);
-comment on table l1.tasks is
-  'What I owe. person_id = primary counterparty/beneficiary (extras via links). '
-  'Examples: create_task(description=>''Send Brother Hansen the agenda'', due=>''2026-06-13T09:00-07'', person_id=>..., primary_role_id=>''disciple'').';
-
-create table l1.expectations (
-  id              uuid primary key default gen_random_uuid(),
-  description     text not null,
-  person_id       uuid references l1.people(id),
-  due             timestamptz,
   follow_up       text not null default 'none' check (follow_up in ('none','remind','auto_task')),
   follow_up_at    timestamptz,
-  status          text not null default 'pending' check (status in ('pending','met','missed','dropped')),
   resolved_by     uuid,
   primary_role_id text references l1.roles(id),
   source_ref      jsonb,
@@ -173,11 +156,20 @@ create table l1.expectations (
   created_by      text,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now(),
-  meta            jsonb not null default '{}'
+  meta            jsonb not null default '{}',
+  constraint obligations_status_kind check (
+    (kind = 'task'        and status in ('open','done','dropped')) or
+    (kind = 'expectation' and status in ('open','met','missed','dropped'))),
+  constraint obligations_follow_up_kind check (kind = 'expectation' or follow_up = 'none')
 );
-comment on table l1.expectations is
-  'What I''m owed. person_id = who owes it (nullable). resolved_by = the atom that resolved it. '
-  'Examples: ''Daniel Cho to email his deck'' due Friday follow_up=remind. The scanner (pure SQL, critical) drives reminders.';
+comment on table l1.obligations is
+  'ONE TABLE, TWO KINDS (Sam''s simplification, 2026-06-12). kind=task: what I owe — person_id = primary counterparty/beneficiary. '
+  'kind=expectation: what I''m owed — person_id = who owes it; resolved_by = the atom that resolved it; the scanner (pure SQL, critical) drives reminders. '
+  'Write via create_task / create_expectation (the agent-facing verbs); lifecycle via amend_obligation / resolve_obligation. '
+  'Examples: create_task(description=>''Send Brother Hansen the agenda'', due=>''2026-06-13T09:00-07'', primary_role_id=>''disciple''); '
+  'create_expectation(''Daniel Cho to email his deck'', due Friday, follow_up=>''remind'').';
+comment on column l1.obligations.kind is 'task = I act; expectation = they act. Status vocab per kind (CHECK): task open->done|dropped; expectation open->met|missed|dropped.';
+comment on column l1.obligations.follow_up is 'Expectations only (CHECK): none | remind | auto_task — what the scanner does at follow_up_at.';
 
 create table l1.atoms (
   id              uuid primary key default gen_random_uuid(),
@@ -209,15 +201,14 @@ comment on column l1.atoms.notable_reason is 'P12: the judgment is a SELECTION, 
 comment on column l1.atoms.canonical_of is 'Non-null => merged into that atom. Canonical atoms have NULL. what_happened reads canonical only.';
 comment on column l1.atoms.refs is 'Tier-0 pointers [{source,locator,tool}] — one fetch_ref call from raw, always.';
 
-alter table l1.expectations
-  add constraint expectations_resolved_by_fkey foreign key (resolved_by) references l1.atoms(id);
+alter table l1.obligations
+  add constraint obligations_resolved_by_fkey foreign key (resolved_by) references l1.atoms(id);
 
 create unique index atoms_source_locator on l1.atoms ((refs->0->>'locator'), kind)
   where refs->0->>'locator' is not null;
 create index atoms_role_ts on l1.atoms (primary_role_id, ts desc) where canonical_of is null;
 create index atoms_ts on l1.atoms (ts desc) where canonical_of is null;
-create index tasks_open_due on l1.tasks (due) where status = 'open';
-create index expectations_pending_due on l1.expectations (due) where status = 'pending';
+create index obligations_open_due on l1.obligations (kind, due) where status = 'open';
 
 -- ---------- system plane ----------
 
@@ -408,7 +399,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['purpose','roles','people','directives','tasks','expectations','atoms',
+  foreach t in array array['purpose','roles','people','directives','obligations','atoms',
                            'intake','documents','links','components','parameters','messages'] loop
     execute format('create trigger touch_%s before update on l1.%I for each row execute function l1.tg_touch()', t, t);
     if t <> 'parameters' then

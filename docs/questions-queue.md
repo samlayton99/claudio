@@ -19,15 +19,21 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 9. **Resident orchestrator occupant** — slot supports `resident`; pick the occupant (Hermes-class) at P3+.
 10. **Probe budget** — orchestrator-triggered probes of probing windows are unmetered in v0 (logged as runs, visible in `v_component_health`). A cadence/cost cap gets a parameter only if probe spend shows up in the P5 spend report.
 11. **Type/term packaging milestone** — now the full distribution model (`specs/07 §Distribution`): type repo + Sam's private term repo; installed type core-owned read-only to everyone (your login session included); `claudio update` propagates releases; migrations append-only from first release; fork test as acceptance. Lands post-P2 gate, not mid-loop. Until then: the line is enforced in review, and term-building sessions (your dashboard) run in their own repos against L1 — never inside this checkout. Open sub-decision, no rush: whether the type repo ever goes public (the model is identical either way; you keep the option).
-12. **Regime accessor** — `semantics` is regime-dated by spec (P11); no accessor code until the first real regime change (grow by promotion).
+12. **Regimes** — `semantics` is SCALAR (Occam #4, approved 2026-06-12); the audit log carries config history; promotes to a dated regime list at the first real regime change.
 13. **Window filter defaults** — `filters` (pre-capture, never-recorded) ships empty by default; your term adds patterns as spam shows up. Type guardrails fixed: deterministic only + drop-counter metric.
 14. **P12 sweep** — remaining free-text judgment fields get closed vocabs as their surfaces are built: `discard_intake` reason, hold reasons (P2, with the filer), wiki demotion reasons (P5). The mechanism exists; apply on touch.
+
+## Standing rule until P2 ships (Occam #1, approved 2026-06-12)
+
+New directives get one question first — *does the daily loop need it?* If not: a queue one-liner, never spec law. Applies to Claude's ideas too.
 
 ## Resolved by Sam (2026-06-12)
 
 - **Raw retention: keep everything forever.** 512 GB local; external drive when needed; revisit only when storage actually bites.
 - **Spam pre-filtering exists** — as window `filters`, term config (`specs/06`).
 - **Type/term split is law** — P11 (`specs/00`), audit in `docs/type-term-audit.md`.
+- **Obligations merge done** (Occam #2): one `obligations` table, kind task|expectation; `create_task`/`create_expectation` survive as verbs; lifecycle = `amend_obligation` + `resolve_obligation`. Suites 51 + 84 green.
+- **Two-stage noise filtering kept** (Occam #3 rejected by Sam): `filters` (pre-capture) and `discard_patterns` (post-capture) stay distinct.
 
 ## Disclosures (done while you slept; objections reversible)
 

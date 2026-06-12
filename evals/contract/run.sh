@@ -49,12 +49,13 @@ expect_eq "held-back-to-pending" claudio_core "select status from l1.intake wher
 
 echo "== contract: task + expectation lifecycle =="
 TID=$(sql w_filer "select (l1.create_task('Send agenda', '2026-06-13T09:00:00-07:00', '$JAMIE'::uuid, 'disciple'))->>'id'")
-expect_ok "complete-task"       w_filer "select l1.complete_task('$TID'::uuid)"
-expect_fail "complete-twice"    w_filer "select l1.complete_task('$TID'::uuid)" "bad_transition"
+expect_ok "complete-task"       w_filer "select l1.resolve_obligation('$TID'::uuid, 'done')"
+expect_fail "complete-twice"    w_filer "select l1.resolve_obligation('$TID'::uuid, 'done')" "bad_transition"
+expect_fail "task-cannot-be-met" w_filer "select l1.resolve_obligation('$TID'::uuid, 'met')" "bad_args"
 EID=$(sql w_filer "select (l1.create_expectation('Deck from Daniel', null, now() + interval '2 days'))->>'id'")
 AID=$(sql w_filer "select (l1.record_atom(now(), 'communication', 'Daniel sent the deck'))->>'id'")
-expect_ok "resolve-expectation" w_filer "select l1.resolve_expectation('$EID'::uuid, 'met', '$AID'::uuid)"
-expect_fail "resolve-twice"     w_filer "select l1.resolve_expectation('$EID'::uuid, 'met')" "bad_transition"
+expect_ok "resolve-expectation" w_filer "select l1.resolve_obligation('$EID'::uuid, 'met', null, '$AID'::uuid)"
+expect_fail "resolve-twice"     w_filer "select l1.resolve_obligation('$EID'::uuid, 'met')" "bad_transition"
 
 echo "== contract: supersedence =="
 LID=$(sql w_filer "select (l1.add_link('atom','$AID','role','prod','about','inferred',0.8))->>'id'")
@@ -65,7 +66,7 @@ echo "== contract: propose -> approve (the proposal economy) =="
 PROP=$(sql w_filer "select (l1.propose('Create a follow-up task', '[{\"fn\":\"create_task\",\"args\":{\"description\":\"Follow up with venue\",\"primary_role_id\":\"prod\"}}]'))->>'id'")
 expect_eq "propose-dedups"      w_filer "select (l1.propose('Create a follow-up task', '[{\"fn\":\"create_task\",\"args\":{\"description\":\"Follow up with venue\",\"primary_role_id\":\"prod\"}}]'))->>'deduped'" "true"
 expect_ok "panel-approves"      claudio_panel "select l1.approve_message('$PROP'::uuid)"
-expect_eq "approved-applied"    w_filer "select count(*) from l1.tasks where description = 'Follow up with venue' and status = 'open'" "1"
+expect_eq "approved-applied"    w_filer "select count(*) from l1.obligations where description = 'Follow up with venue' and status = 'open'" "1"
 PROP2=$(sql w_filer "select (l1.propose('Another', '[{\"fn\":\"create_task\",\"args\":{\"description\":\"Stale thing\"}}]'))->>'id'")
 sql claudio_core "update l1.messages set expires_at = now() - interval '1 day' where id = '$PROP2'::uuid" >/dev/null
 expect_fail "stale-never-fires" claudio_panel "select l1.approve_message('$PROP2'::uuid)" "stale_approval"
@@ -123,7 +124,7 @@ RPROP=$(sql claudio_panel "select (l1.retire_role('ra-job'))->>'id'")
 expect_ok "cascade-approves"    claudio_panel "select l1.approve_message('$RPROP'::uuid)"
 expect_eq "role-retired"        claudio_panel "select status from l1.roles where id = 'ra-job'" "retired"
 expect_eq "component-suspended" claudio_panel "select status from l1.components where id = 'window-ra-slack'" "disabled"
-expect_eq "task-rehomed"        claudio_panel "select primary_role_id from l1.tasks where id = '$RTID'::uuid" "general"
+expect_eq "task-rehomed"        claudio_panel "select primary_role_id from l1.obligations where id = '$RTID'::uuid" "general"
 
 echo "== contract: queues + runs =="
 QMSG=$(sql w_filer "select (l1.post_message('orchestrator', 'notification', '{\"note\":\"hi\"}'))->>'id'")

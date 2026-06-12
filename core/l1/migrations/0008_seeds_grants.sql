@@ -75,7 +75,7 @@ insert into l1.parameters (key, value, ring, description) values
     }', 'core', 'fn -> privilege class; absent => routine. DERIVED server-side, never trusted from payload. Taste/core are never proposable; identity never standing-approvable.'),
   ('fn_sets', '{
       "agent": ["capture","file_intake","hold_intake","discard_intake","create_person","add_handle","update_person",
-                "create_task","complete_task","drop_task","amend_task","create_expectation","resolve_expectation",
+                "create_task","create_expectation","amend_obligation","resolve_obligation",
                 "record_atom","amend_atom","add_link","invalidate_link","register_page","move_page",
                 "post_message","claim_message","read_message","resolve_message","propose","start_run","finish_run",
                 "get_context","fetch_ref","search_people","what_happened","due_tasks","pending_expectations","queue_status"]
@@ -148,7 +148,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['kinds','role_clearances','parameters','purpose','purpose_versions','roles','people',
-                           'person_handles','directives','tasks','expectations','atoms','intake','documents',
+                           'person_handles','directives','obligations','atoms','intake','documents',
                            'links','components','runs','messages'] loop
     execute format('grant select on l1.%I to claudio_agent, claudio_panel, w_edge, w_reconciler', t);
   end loop;
@@ -168,9 +168,9 @@ begin
     'capture(text,text,jsonb,text,jsonb,smallint,text)',
     'file_intake(uuid,jsonb)','hold_intake(uuid,uuid)','discard_intake(uuid,text)',
     'create_person(text,text,text,smallint,jsonb,jsonb)','add_handle(uuid,text,text,boolean)','update_person(uuid,jsonb)',
-    'create_task(text,timestamptz,uuid,text,jsonb,smallint,jsonb)','complete_task(uuid)','drop_task(uuid,text)','amend_task(uuid,jsonb)',
+    'create_task(text,timestamptz,uuid,text,jsonb,smallint,jsonb)',
     'create_expectation(text,uuid,timestamptz,text,timestamptz,text,jsonb,smallint,jsonb)',
-    'resolve_expectation(uuid,text,uuid)',
+    'amend_obligation(uuid,jsonb)','resolve_obligation(uuid,text,text,uuid)',
     'record_atom(timestamptz,text,text,timestamptz,text,jsonb,jsonb,text,jsonb,smallint,jsonb)','amend_atom(uuid,jsonb)',
     'add_link(text,text,text,text,text,text,real,text)','invalidate_link(uuid,uuid)',
     'register_page(text,text,text,text,text,text,text,smallint)','move_page(text,text)',

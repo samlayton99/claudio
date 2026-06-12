@@ -281,61 +281,73 @@ declare v_id uuid; v_sens smallint;
 begin
   perform l1._rate_check();
   v_sens := l1._clamp_sensitivity(p_sensitivity, p_primary_role_id, null);
-  insert into l1.tasks (description, due, person_id, primary_role_id, source_ref, sensitivity, meta)
-  values (p_description, p_due, p_person_id, p_primary_role_id, p_source_ref, v_sens, p_meta)
+  insert into l1.obligations (kind, description, due, person_id, primary_role_id, source_ref, sensitivity, meta)
+  values ('task', p_description, p_due, p_person_id, p_primary_role_id, p_source_ref, v_sens, p_meta)
   returning id into v_id;
-  perform l1._audit('create_task', 'tasks', v_id::text, 'insert', jsonb_build_object('description', p_description, 'due', p_due));
+  perform l1._audit('create_task', 'obligations', v_id::text, 'insert', jsonb_build_object('description', p_description, 'due', p_due));
   return jsonb_build_object('id', v_id, 'name', left(p_description, 80));
 end $$;
 
-create or replace function l1.complete_task(p_task_id uuid)
+create or replace function l1.amend_obligation(p_id uuid, p_patch jsonb)
 returns jsonb language plpgsql security definer set search_path = pg_catalog, l1, pg_temp as $$
-declare n integer;
+declare v_row l1.obligations;
 begin
   perform l1._rate_check();
-  update l1.tasks set status = 'done' where id = p_task_id and status = 'open';
-  get diagnostics n = row_count;
-  if n = 0 then raise exception 'claudio.bad_transition: task % is not open', p_task_id; end if;
-  perform l1._audit('complete_task', 'tasks', p_task_id::text, 'update', null);
-  return jsonb_build_object('id', p_task_id, 'status', 'done');
-end $$;
-
-create or replace function l1.drop_task(p_task_id uuid, p_reason text default null)
-returns jsonb language plpgsql security definer set search_path = pg_catalog, l1, pg_temp as $$
-declare n integer;
-begin
-  perform l1._rate_check();
-  update l1.tasks set status = 'dropped', meta = meta || jsonb_build_object('drop_reason', p_reason)
-  where id = p_task_id and status = 'open';
-  get diagnostics n = row_count;
-  if n = 0 then raise exception 'claudio.bad_transition: task % is not open', p_task_id; end if;
-  perform l1._audit('drop_task', 'tasks', p_task_id::text, 'update', jsonb_build_object('reason', p_reason));
-  return jsonb_build_object('id', p_task_id, 'status', 'dropped');
-end $$;
-
-create or replace function l1.amend_task(p_task_id uuid, p_patch jsonb)
-returns jsonb language plpgsql security definer set search_path = pg_catalog, l1, pg_temp as $$
-declare v_row l1.tasks;
-begin
-  perform l1._rate_check();
-  select * into v_row from l1.tasks where id = p_task_id;
-  if v_row.id is null then raise exception 'claudio.endpoint_not_found: task/%', p_task_id; end if;
+  select * into v_row from l1.obligations where id = p_id;
+  if v_row.id is null then raise exception 'claudio.endpoint_not_found: obligation/%', p_id; end if;
   if session_user::text not in ('claudio_panel','claudio_core')
      and p_patch ? 'sensitivity' and (p_patch->>'sensitivity')::smallint < v_row.sensitivity then
     raise exception 'claudio.sensitivity_lower: agents cannot lower sensitivity';
   end if;
-  perform l1._audit('amend_task', 'tasks', p_task_id::text, 'update',
+  if p_patch ? 'kind' or p_patch ? 'status' then
+    raise exception 'claudio.bad_args: kind is fixed at creation; status moves only via resolve_obligation';
+  end if;
+  perform l1._audit('amend_obligation', 'obligations', p_id::text, 'update',
                     jsonb_build_object('prior', to_jsonb(v_row), 'patch', p_patch));
-  update l1.tasks set
-    description = coalesce(p_patch->>'description', description),
-    due         = coalesce((p_patch->>'due')::timestamptz, due),
-    person_id   = coalesce((p_patch->>'person_id')::uuid, person_id),
+  update l1.obligations set
+    description  = coalesce(p_patch->>'description', description),
+    due          = coalesce((p_patch->>'due')::timestamptz, due),
+    person_id    = coalesce((p_patch->>'person_id')::uuid, person_id),
+    follow_up    = coalesce(p_patch->>'follow_up', follow_up),
+    follow_up_at = coalesce((p_patch->>'follow_up_at')::timestamptz, follow_up_at),
     primary_role_id = coalesce(p_patch->>'primary_role_id', primary_role_id),
-    sensitivity = coalesce((p_patch->>'sensitivity')::smallint, sensitivity),
-    meta        = meta || coalesce(p_patch->'meta', '{}')
-  where id = p_task_id;
-  return jsonb_build_object('id', p_task_id, 'name', left(coalesce(p_patch->>'description', v_row.description), 80));
+    sensitivity  = coalesce((p_patch->>'sensitivity')::smallint, sensitivity),
+    meta         = meta || coalesce(p_patch->'meta', '{}')
+  where id = p_id;
+  return jsonb_build_object('id', p_id, 'name', left(coalesce(p_patch->>'description', v_row.description), 80));
 end $$;
+comment on function l1.amend_obligation(uuid, jsonb) is
+  'Patch either kind of obligation. kind is immutable; status moves only via resolve_obligation. '
+  'Examples: amend_obligation(id, ''{"due":"2026-06-14T17:00-07"}''); amend_obligation(id, ''{"follow_up":"remind","follow_up_at":"2026-06-13T09:00-07"}'').';
+
+create or replace function l1.resolve_obligation(p_id uuid, p_outcome text, p_reason text default null,
+                                                 p_resolved_by uuid default null)
+returns jsonb language plpgsql security definer set search_path = pg_catalog, l1, pg_temp as $$
+declare v_kind text; n integer;
+begin
+  perform l1._rate_check();
+  select kind into v_kind from l1.obligations where id = p_id;
+  if v_kind is null then raise exception 'claudio.endpoint_not_found: obligation/%', p_id; end if;
+  if (v_kind = 'task' and p_outcome not in ('done','dropped'))
+     or (v_kind = 'expectation' and p_outcome not in ('met','missed','dropped')) then
+    raise exception 'claudio.bad_args: a % resolves to % — got %',
+      v_kind, case v_kind when 'task' then 'done|dropped' else 'met|missed|dropped' end, p_outcome;
+  end if;
+  update l1.obligations
+     set status = p_outcome,
+         resolved_by = coalesce(p_resolved_by, resolved_by),
+         meta = case when p_reason is not null then meta || jsonb_build_object('resolve_reason', p_reason) else meta end
+   where id = p_id and status = 'open';
+  get diagnostics n = row_count;
+  if n = 0 then raise exception 'claudio.bad_transition: obligation % is not open', p_id; end if;
+  perform l1._audit('resolve_obligation', 'obligations', p_id::text, 'update',
+                    jsonb_build_object('outcome', p_outcome, 'reason', p_reason, 'resolved_by', p_resolved_by));
+  return jsonb_build_object('id', p_id, 'status', p_outcome);
+end $$;
+comment on function l1.resolve_obligation(uuid, text, text, uuid) is
+  'ONE lifecycle exit for both kinds, outcome validated against kind (P12): task -> done|dropped; expectation -> met|missed|dropped. '
+  'p_resolved_by = the atom that evidences it (optional). Examples: resolve_obligation(id, ''done''); '
+  'resolve_obligation(id, ''met'', null, atom_id); resolve_obligation(id, ''dropped'', ''no longer relevant'').';
 
 create or replace function l1.create_expectation(p_description text, p_person_id uuid default null,
                                                  p_due timestamptz default null, p_follow_up text default 'none',
@@ -347,29 +359,11 @@ declare v_id uuid; v_sens smallint;
 begin
   perform l1._rate_check();
   v_sens := l1._clamp_sensitivity(p_sensitivity, p_primary_role_id, null);
-  insert into l1.expectations (description, person_id, due, follow_up, follow_up_at, primary_role_id, source_ref, sensitivity, meta)
-  values (p_description, p_person_id, p_due, p_follow_up, p_follow_up_at, p_primary_role_id, p_source_ref, v_sens, p_meta)
+  insert into l1.obligations (kind, description, person_id, due, follow_up, follow_up_at, primary_role_id, source_ref, sensitivity, meta)
+  values ('expectation', p_description, p_person_id, p_due, p_follow_up, p_follow_up_at, p_primary_role_id, p_source_ref, v_sens, p_meta)
   returning id into v_id;
-  perform l1._audit('create_expectation', 'expectations', v_id::text, 'insert', jsonb_build_object('description', p_description));
+  perform l1._audit('create_expectation', 'obligations', v_id::text, 'insert', jsonb_build_object('description', p_description));
   return jsonb_build_object('id', v_id, 'name', left(p_description, 80));
-end $$;
-
-create or replace function l1.resolve_expectation(p_expectation_id uuid, p_status text default 'met',
-                                                  p_resolved_by uuid default null)
-returns jsonb language plpgsql security definer set search_path = pg_catalog, l1, pg_temp as $$
-declare n integer;
-begin
-  perform l1._rate_check();
-  if p_status not in ('met','missed','dropped') then
-    raise exception 'claudio.bad_args: resolve status must be met|missed|dropped';
-  end if;
-  update l1.expectations set status = p_status, resolved_by = p_resolved_by
-  where id = p_expectation_id and status = 'pending';
-  get diagnostics n = row_count;
-  if n = 0 then raise exception 'claudio.bad_transition: expectation % is not pending', p_expectation_id; end if;
-  perform l1._audit('resolve_expectation', 'expectations', p_expectation_id::text, 'update',
-                    jsonb_build_object('status', p_status, 'resolved_by', p_resolved_by));
-  return jsonb_build_object('id', p_expectation_id, 'status', p_status);
 end $$;
 
 -- ---------- links ----------
@@ -418,7 +412,7 @@ begin
       'select exists (select 1 from l1.%I where id::text = $1 and sensitivity <= l1.clearance())',
       case p_type
         when 'person' then 'people' when 'role' then 'roles' when 'purpose' then 'purpose'
-        when 'task' then 'tasks' when 'expectation' then 'expectations' when 'atom' then 'atoms'
+        when 'task' then 'obligations' when 'expectation' then 'obligations' when 'atom' then 'atoms'
         when 'directive' then 'directives'
         else null end) into v using p_id;
   end if;
@@ -678,16 +672,14 @@ begin
                                              (args->>'person_id')::uuid, args->>'primary_role_id',
                                              args->'source_ref', coalesce((args->>'sensitivity')::smallint, 0::smallint),
                                              coalesce(args->'meta','{}'))
-      when 'complete_task' then l1.complete_task((args->>'task_id')::uuid)
-      when 'drop_task' then l1.drop_task((args->>'task_id')::uuid, args->>'reason')
-      when 'amend_task' then l1.amend_task((args->>'task_id')::uuid, args->'patch')
+      when 'amend_obligation' then l1.amend_obligation((args->>'obligation_id')::uuid, args->'patch')
+      when 'resolve_obligation' then l1.resolve_obligation((args->>'obligation_id')::uuid, args->>'outcome',
+                                                           args->>'reason', (args->>'resolved_by')::uuid)
       when 'create_expectation' then l1.create_expectation(args->>'description', (args->>'person_id')::uuid,
                                                            (args->>'due')::timestamptz, coalesce(args->>'follow_up','none'),
                                                            (args->>'follow_up_at')::timestamptz, args->>'primary_role_id',
                                                            args->'source_ref', coalesce((args->>'sensitivity')::smallint, 0::smallint),
                                                            coalesce(args->'meta','{}'))
-      when 'resolve_expectation' then l1.resolve_expectation((args->>'expectation_id')::uuid,
-                                                             coalesce(args->>'status','met'), (args->>'resolved_by')::uuid)
       when 'add_link' then l1.add_link(args->>'from_type', args->>'from_id', args->>'to_type', args->>'to_id',
                                        args->>'kind', coalesce(args->>'origin','inferred'),
                                        (args->>'confidence')::real, args->>'description')

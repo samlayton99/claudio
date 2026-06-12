@@ -122,7 +122,7 @@
       "expected": [
         { "fn": "record_atom", "args": { "ts": "2026-06-11T09:30:00-07:00", "kind": "communication", "summary": "Daniel Cho sent his deck as promised.", "primary_role_id": "prod", "links": [{ "to": "@daniel", "kind": "participant" }], "refs": [{ "source": "gmail", "locator": "thread:deck-001", "tool": "window-gmail" }] } },
         { "fn": "add_handle", "args": { "person": "@daniel", "source": "gmail", "handle": "daniel.cho@example.com" } },
-        { "fn": "resolve_expectation", "args": { "expectation": "@exp_deck", "status": "met", "resolved_by": { "$ref": 0 } } }
+        { "fn": "resolve_obligation", "args": { "obligation": "@exp_deck", "outcome": "met", "resolved_by": { "$ref": 0 } } }
       ],
       "must_not": ["create_person duplicate for Daniel", "creating a second review task (it exists)"],
       "tolerances": ["task 'activation' is derived from the resolved blocks link — no write expected"],

@@ -173,7 +173,7 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object('id', id, 'kind', kind)), '[]') into v_components
   from l1.components where status = 'enabled' and (config->'role_map') ? p_role_id;
   select coalesce(jsonb_agg(jsonb_build_object('id', id, 'name', left(description, 60))), '[]') into v_tasks
-  from l1.tasks where status = 'open' and primary_role_id = p_role_id;
+  from l1.obligations where status = 'open' and primary_role_id = p_role_id;
   insert into l1.messages (queue, kind, from_actor, payload, privilege_class, requires_approval)
   values ('user', 'proposal', session_user::text,
           jsonb_build_object(
@@ -208,7 +208,7 @@ begin
   update l1.components set status = 'disabled', meta = meta || jsonb_build_object('disabled_by_role_retire', p_role_id)
   where status = 'enabled' and (config->'role_map') ? p_role_id;
   get diagnostics n_comp = row_count;
-  update l1.tasks set primary_role_id = 'general', meta = meta || jsonb_build_object('rehomed_from', p_role_id)
+  update l1.obligations set primary_role_id = 'general', meta = meta || jsonb_build_object('rehomed_from', p_role_id)
   where status = 'open' and primary_role_id = p_role_id;
   get diagnostics n_task = row_count;
   update l1.roles set status = 'retired' where id = p_role_id;
@@ -410,8 +410,7 @@ begin
   update l1.person_handles ph set person_id = p_keep_id where person_id = p_drop_id
     and not exists (select 1 from l1.person_handles k where k.source = ph.source and k.handle = ph.handle and k.person_id = p_keep_id);
   delete from l1.person_handles where person_id = p_drop_id;  -- collisions resolve to keep
-  update l1.tasks set person_id = p_keep_id where person_id = p_drop_id;
-  update l1.expectations set person_id = p_keep_id where person_id = p_drop_id;
+  update l1.obligations set person_id = p_keep_id where person_id = p_drop_id;
   update l1.links set from_id = p_keep_id::text where from_type = 'person' and from_id = p_drop_id::text
     and not exists (select 1 from l1.links k where k.from_type = 'person' and k.from_id = p_keep_id::text
                     and k.to_type = l1.links.to_type and k.to_id = l1.links.to_id and k.kind = l1.links.kind);
@@ -494,7 +493,7 @@ begin
   if session_user::text <> 'claudio_core' then
     raise exception 'claudio.core_only: purge is the privacy override';
   end if;
-  if p_table not in ('atoms','intake','tasks','expectations','links','messages','documents','people','person_handles') then
+  if p_table not in ('atoms','intake','obligations','links','messages','documents','people','person_handles') then
     raise exception 'claudio.bad_args: % is not purgeable', p_table;
   end if;
   execute format('delete from l1.%I where id::text = $1', p_table) using p_row_id;

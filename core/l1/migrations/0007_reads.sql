@@ -140,12 +140,12 @@ returns jsonb language sql stable security definer set search_path = pg_catalog,
     'person', (select jsonb_build_object('id', p.id, 'name', p.name) from l1.people p where p.id = t.person_id),
     'role', t.primary_role_id,
     'blocked_by', (select coalesce(jsonb_agg(jsonb_build_object('id', e.id, 'name', left(e.description, 60))), '[]')
-                   from l1.links lk join l1.expectations e on e.id::text = lk.to_id and e.status = 'pending'
+                   from l1.links lk join l1.obligations e on e.id::text = lk.to_id and e.kind = 'expectation' and e.status = 'open'
                    where lk.from_type = 'task' and lk.from_id = t.id::text and lk.to_type = 'expectation'
                      and lk.kind = 'blocks' and lk.invalidated_at is null))
     order by t.due asc nulls last), '[]')
-  from l1.tasks t
-  where t.status = 'open'
+  from l1.obligations t
+  where t.kind = 'task' and t.status = 'open'
     and (p_scope->>'role' is null or t.primary_role_id = p_scope->>'role')
     and (p_scope->>'person_id' is null or t.person_id = (p_scope->>'person_id')::uuid)
 $$;
@@ -158,8 +158,8 @@ returns jsonb language sql stable security definer set search_path = pg_catalog,
     'person', (select jsonb_build_object('id', p.id, 'name', p.name) from l1.people p where p.id = e.person_id),
     'role', e.primary_role_id)
     order by e.due asc nulls last), '[]')
-  from l1.expectations e
-  where e.status = 'pending'
+  from l1.obligations e
+  where e.kind = 'expectation' and e.status = 'open'
     and (p_scope->>'role' is null or e.primary_role_id = p_scope->>'role')
     and (p_scope->>'person_id' is null or e.person_id = (p_scope->>'person_id')::uuid)
 $$;
@@ -240,7 +240,7 @@ begin
                  'age', date_trunc('minute', now() - t.created_at)::text, 'source_ref', t.source_ref,
                  'person', (select jsonb_build_object('id', p.id, 'name', p.name) from l1.people p where p.id = t.person_id)) as item,
                l1._score_obligation(v_weight, 1.0, t.due) as score
-        from l1.tasks t where t.status = 'open'
+        from l1.obligations t where t.kind = 'task' and t.status = 'open'
           and (p_anchor_type <> 'role' or t.primary_role_id = p_anchor_id)
           and (p_anchor_type <> 'person' or t.person_id = p_anchor_id::uuid)
         order by score desc limit 20) x),
@@ -249,7 +249,7 @@ begin
                  'age', date_trunc('minute', now() - e.created_at)::text,
                  'person', (select jsonb_build_object('id', p.id, 'name', p.name) from l1.people p where p.id = e.person_id)) as item,
                l1._score_obligation(v_weight, 1.0, coalesce(e.due, e.follow_up_at)) as score
-        from l1.expectations e where e.status = 'pending'
+        from l1.obligations e where e.kind = 'expectation' and e.status = 'open'
           and (p_anchor_type <> 'role' or e.primary_role_id = p_anchor_id)
           and (p_anchor_type <> 'person' or e.person_id = p_anchor_id::uuid)
         order by score desc limit 20) x));

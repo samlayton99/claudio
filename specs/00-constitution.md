@@ -79,7 +79,7 @@ External agents get the same property via the **handshake protocol** (`06`): rea
 - **Standing approval** — user-granted directive auto-approving a named, server-classified proposal class. **Dictation gate** — user-set functions demand a verified-user message on the verified channel (≤10 min); the panel satisfies by role.
 - **Handshake** — the external-agent onboarding protocol (`06`).
 - **Type / Term** — the life-harness (general, shippable) vs one user's life configured into it (roles, weights, purpose contract, window instances + semantics + filters, directives, data). P11. Onboarding a new user IS term-authoring: elicitation → roles + contract; window registration → their life's meaning.
-- **Regime** — a dated entry in a term value that interprets data (e.g. window `semantics`): `[{"effective_from": ts, ...}]`. Captures are interpreted under the regime in force at `received_at`; historical questions answer under historical regimes.
+- **Regime** — how term values that interpret data change over time. `semantics` is SCALAR until the first real regime change (grow by promotion — the audit log already keeps config history); at that point it promotes to a dated list `[{"effective_from": ts, ...}]` and captures are interpreted under the regime in force at `received_at`.
 
 ## Portability rule
 

@@ -6,7 +6,7 @@ source "$(dirname "$0")/lib.sh"
 
 echo "== red-team: direct writes =="
 expect_fail "insert-denied-w_filer"   w_filer "insert into l1.atoms (ts, kind, summary) values (now(), 'meeting', 'evil')" "permission denied"
-expect_fail "insert-denied-w_brief"   w_brief "insert into l1.tasks (description) values ('evil')" "permission denied"
+expect_fail "insert-denied-w_brief"   w_brief "insert into l1.obligations (kind, description) values ('task','evil')" "permission denied"
 expect_fail "insert-denied-w_edge"    w_edge  "insert into l1.directives (statement, scope_type) values ('evil law', 'global')" "permission denied"
 expect_fail "update-denied-w_test"    w_test  "update l1.parameters set value = '999999' where key = 'dictation_window_min'" "permission denied"
 expect_fail "delete-denied-w_filer"   w_filer "delete from l1.intake" "permission denied"
@@ -66,7 +66,7 @@ sql claudio_core "select l1.record_atom(now(), 'meeting', 'SENSITIVE-MARKER past
 sql claudio_core "select l1.create_task('SENSITIVE-MARKER visit list', null, null, null, null, 1::smallint)" >/dev/null
 expect_eq "c1-cannot-see-s2"          w_filer "select count(*) from l1.atoms where summary like 'RESTRICTED-MARKER%'" "0"
 expect_eq "c0-cannot-see-s1-atoms"    w_brief "select count(*) from l1.atoms where summary like 'SENSITIVE-MARKER%'" "0"
-expect_eq "c0-cannot-see-s1-tasks"    w_brief "select count(*) from l1.tasks where description like 'SENSITIVE-MARKER%'" "0"
+expect_eq "c0-cannot-see-s1-tasks"    w_brief "select count(*) from l1.obligations where description like 'SENSITIVE-MARKER%'" "0"
 expect_eq "c1-sees-s1"                w_filer "select count(*) from l1.atoms where summary like 'SENSITIVE-MARKER%'" "1"
 expect_eq "c2-sees-all"               claudio_panel "select count(*) from l1.atoms where summary like '%-MARKER%'" "2"
 expect_eq "c0-whathappened-clean"     w_brief "select l1.what_happened(now() - interval '1 hour', now() + interval '1 hour', '{}')::text like '%SENSITIVE-MARKER%'" "f"

@@ -163,12 +163,15 @@ declare ok boolean;
 begin
   if p_type = 'document' then
     select exists (select 1 from l1.documents where path = p_id) into ok;     -- PK is path
+  elsif p_type in ('task','expectation') then
+    -- one obligations table; the endpoint type must match the row's kind
+    select exists (select 1 from l1.obligations where id::text = p_id and kind = p_type) into ok;
   else
     execute format(
       'select exists (select 1 from l1.%I where id::text = $1)',
       case p_type
         when 'person' then 'people' when 'role' then 'roles' when 'purpose' then 'purpose'
-        when 'task' then 'tasks' when 'expectation' then 'expectations' when 'atom' then 'atoms'
+        when 'atom' then 'atoms'
         when 'component' then 'components' when 'directive' then 'directives'
       end) into ok using p_id;
   end if;
