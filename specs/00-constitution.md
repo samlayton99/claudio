@@ -30,6 +30,7 @@ Every spec section serves one of these; anything serving none is cut.
 - **P8 The fundamental law of LLMs.** *Quality decays exponentially with the number of nested summaries.* Mechanical rules, not vibes: compaction depth is capped at two (raw → atom → rollup); every rollup re-derives from atoms, never from prior rollups; absolute dates only; load-bearing facts (commitments, dates, amounts, names) are stored as verbatim quotes, not paraphrase; any irreversible or external action re-grounds from tier-0 refs first; prose edits are deltas, never full-page regeneration. (Each rule is independently evidenced — `docs/research-traversal.md`, `docs/research-wiki.md`.)
 - **P9 Gardeners are downstream failures.** Every gardener run is evidence of an upstream design gap. The design does everything to deny gardeners work (constraints, idempotent pipes, typed gates); the system does everything to ensure they run dutifully anyway. Build inside this minimax tension; a shrinking gardener workload is the health metric.
 - **P10 Nothing scattered.** Parameters live in ONE registry (core/outer rings); every agent's prompt and context-construction spec lives in ITS OWN folder under one tree (`core/agents/` inner, `custom/agents/` outer). Tweaking the system never means hunting through code.
+- **P11 Type over term.** The life-harness is the **type** (shippable, general); a life is the **term** (one user's configuration and data). The standing question at every decision: *what are we assuming about how the user lives or uses this?* Any such assumption belongs in the term (config, seeds, regimes) — never in the type (schema, functions, normative spec). Occam's razor on user assumptions when building the type. The type must handle independent terms gracefully AND the same term changing over time: term values that interpret data are **regime-dated**, and interpretation always uses the regime in force at capture time. Sam's life is the reference term — the test case that hardens the type, never the spec. (Audit + packaging path: `docs/type-term-audit.md`.)
 
 ## The decay test (P1's enforcement)
 
@@ -58,6 +59,7 @@ External agents get the same property via the **handshake protocol** (`06`): rea
 | Supersedence over deletion for inferred facts (point-in-time queries survive) | P8, research |
 | Grow by promotion / shrink by demotion; outer circle starts empty; workers never write code paths | P1, P2, security |
 | Windows are a first-class category (data-ingesting, role-assigned), distinct from agents/automations | P2, his review |
+| Type/term split: assumptions about the user live in config/seeds/regimes, never schema/functions/spec; per-source meaning (`semantics`) is term, regime-dated | P11, P1 |
 
 ## Vocabulary
 
@@ -73,6 +75,8 @@ External agents get the same property via the **handshake protocol** (`06`): rea
 - **Packet** — the `get_context` result. **Batch shape** — `[{"fn","args"}, ...]` with `{"$ref": i}`; the one action encoding.
 - **Standing approval** — user-granted directive auto-approving a named, server-classified proposal class. **Dictation gate** — user-set functions demand a verified-user message on the verified channel (≤10 min); the panel satisfies by role.
 - **Handshake** — the external-agent onboarding protocol (`06`).
+- **Type / Term** — the life-harness (general, shippable) vs one user's life configured into it (roles, weights, purpose contract, window instances + semantics + filters, directives, data). P11. Onboarding a new user IS term-authoring: elicitation → roles + contract; window registration → their life's meaning.
+- **Regime** — a dated entry in a term value that interprets data (e.g. window `semantics`): `[{"effective_from": ts, ...}]`. Captures are interpreted under the regime in force at `received_at`; historical questions answer under historical regimes.
 
 ## Portability rule
 

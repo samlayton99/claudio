@@ -4,10 +4,10 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 
 ## Needs Sam (P0/P1 gate items)
 
-1. **Corpus labels** — 30 filer fixtures + 10 scenarios + 3 method evals are normalized with PROPOSED labels (`evals/`). Confirm or correct, then flip `labels_status` to confirmed. Highest-leverage review: `corpus-walkthrough.json` (Thiel/meme/split) and every `must_not`.
+1. **Corpus labels — plain version.** The eval corpus (`evals/filer/*.json`) is ~40 fixtures; each one is: a *raw input from your life* (a text, a Slack message, a thread-day) plus the **proposed correct answer** — `expected` (the exact L1 calls the filer should make: which atoms, tasks, people), `must_not` (what it must never do with this input), and `tolerances` (acceptable wiggle). The "label" is that proposed answer. **Confirming = reading each fixture and saying "yes, that's what I'd want claudio to do with this input" or correcting it.** They become the ground truth the filer is graded against before it touches your real data — wrong labels = a filer trained to your wrong taste. How: open the files, edit any `expected`/`must_not` you disagree with, flip `labels_status: proposed` → `confirmed`. Highest-leverage 15 minutes: `corpus-walkthrough.json` (Thiel/meme/split trio) and every `must_not`.
 2. **The elicitation session** — the one P0 item only you can do. Say "run the elicitation" in a core session (the mirror's prompt is `core/agents/mirror/prompt.md`); it fills `core/l1/seeds/purpose-contract.md` + `roles.json` weights and ends with your signature.
-3. **Role weights + disciple sensitivity** — `core/l1/seeds/roles.json` has null weights (yours to set during elicitation) and proposes `default_sensitivity: 1` on disciple (pastoral content). Confirm.
-4. **Backup destination** — default restic -> Backblaze B2 (encrypted) + private git remote; confirm or name another. Scripts are ready (`core/pipes/backup/`); nothing runs until the destination + password file exist.
+3. **Role weights + disciple sensitivity** — per your note: these are **term** seeds (P11), set during the elicitation (item 2), not before. Standing default until then: `default_sensitivity: 1` on disciple (pastoral content).
+4. **Backup destination** — default restic -> Backblaze B2 (encrypted) + private git remote; confirm or name another. Scripts are ready (`core/pipes/backup/`); nothing runs until the destination + password file exist. Slightly more important now that backups carry tier-0 + keep-forever.
 
 ## Standing defaults (no action until their trigger)
 
@@ -16,8 +16,16 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 7. **Filer judgment quality** — the corpus must prove `notable` reasons + atom-splitting; P0 labeling decides if the bars are right.
 8. **Embeddings promotion** — trigger defined (logged search misses; they already audit); no action until it fires.
 9. **Resident orchestrator occupant** — slot supports `resident`; pick the occupant (Hermes-class) at P3+.
-10. **Raw retention** — default: keep ALL intake rows forever, including discarded spam/OTP (text is cheap; the record is the point — your 2026-06-12 directive). Revisit triggers: `archive/` exceeds ~5 GB, or the first privacy purge request. Backup destination (item 4) now carries tier-0, so its sizing matters slightly more.
-11. **Probe budget** — orchestrator-triggered probes of probing windows are unmetered in v0 (logged as runs, visible in `v_component_health`). A cadence/cost cap gets a parameter only if probe spend shows up in the P5 spend report.
+10. **Probe budget** — orchestrator-triggered probes of probing windows are unmetered in v0 (logged as runs, visible in `v_component_health`). A cadence/cost cap gets a parameter only if probe spend shows up in the P5 spend report.
+11. **Type/term packaging milestone** — physical split (a `term/` home for seeds/window instances/Sam corpus/deploy choices; `0008` roster trimmed to required slots) lands post-P2 gate, not mid-loop. Plan: `docs/type-term-audit.md`. Until then the line is enforced in review, not directory structure.
+12. **Regime accessor** — `semantics` is regime-dated by spec (P11); no accessor code until the first real regime change (grow by promotion).
+13. **Window filter defaults** — `filters` (pre-capture, never-recorded) ships empty by default; your term adds patterns as spam shows up. Type guardrails fixed: deterministic only + drop-counter metric.
+
+## Resolved by Sam (2026-06-12)
+
+- **Raw retention: keep everything forever.** 512 GB local; external drive when needed; revisit only when storage actually bites.
+- **Spam pre-filtering exists** — as window `filters`, term config (`specs/06`).
+- **Type/term split is law** — P11 (`specs/00`), audit in `docs/type-term-audit.md`.
 
 ## Disclosures (done while you slept; objections reversible)
 

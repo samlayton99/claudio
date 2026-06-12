@@ -207,7 +207,9 @@ create index intake_by_day on intake (received_at);
 -- at sensitivity 1; restricted routes to the panel. Filing errors quarantine the ROW, never the filer.
 --
 -- INTAKE IS THE TIER-0 RECORD, not disposable staging (P4: the historical stream is owned in-house —
--- external refs rot). Rows are never deleted; 'discarded' means no atom was extracted, the raw remains.
+-- external refs rot). Once recorded, rows are never deleted; 'discarded' means no atom was extracted,
+-- the raw remains. What should never be recorded at all is dropped pre-capture by window `filters`
+-- (06 — term config, deterministic only, drop-counter metric).
 -- Large/binary payloads live in archive/ with raw_ref pointing there. Raw is scannable on its own,
 -- atoms or no atoms: SQL by day (intake_by_day), grep over archive/. When a window can deliver
 -- verbatim, verbatim is the record; rawness='derived' summaries are context, never ground truth.
