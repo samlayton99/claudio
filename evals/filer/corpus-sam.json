@@ -1,0 +1,113 @@
+{
+  "source": "docs/sam-examples.md, filer-level slices (full chains live in scenarios/scenarios.json)",
+  "labels_status": "proposed",
+  "fixtures": [
+    {
+      "id": "s01-prod-intro-text",
+      "title": "PROD intro over text (scenario 1, filer slice)",
+      "adapter": "edge-imessage",
+      "sender": { "source": "imessage", "handle": "+16505550107", "thread": "group:+16505550107,+16505550120" },
+      "context_date": "2026-06-08",
+      "raw": "[group thread] Alex: 'Sam <> Priya! Priya is building eval infra, you two should talk agents. Priya — Sam runs the AI track stuff at PROD.' Priya: 'Hi Sam! Would Thursday 2pm work for a call?' Sam: 'Perfect, Thursday 2pm.'",
+      "files_via": "filer",
+      "db_fixture": [],
+      "expected": [
+        { "fn": "create_person", "args": { "name": "Priya (via Alex Kim)", "primary_role_id": "prod" } },
+        { "fn": "add_handle", "args": { "person": { "$ref": 0 }, "source": "imessage", "handle": "+16505550120" } },
+        { "fn": "add_link", "args": { "from": { "$ref": 0 }, "to": "@alex", "kind": "introduced_by", "origin": "inferred", "confidence": 0.95, "description": "intro'd over text 2026-06-08, eval infra <> agents" } },
+        { "fn": "record_atom", "args": { "ts": "2026-06-08T13:00:00-07:00", "kind": "communication", "summary": "Alex intro'd Priya (eval infra); call agreed for Thursday 2pm.", "primary_role_id": "prod", "links": [{ "to": { "$ref": 0 }, "kind": "participant" }, { "to": "@alex", "kind": "participant" }], "quotes": ["Would Thursday 2pm work for a call?", "Perfect, Thursday 2pm."] } },
+        { "fn": "create_task", "args": { "description": "Call with Priya (intro from Alex)", "due": "2026-06-11T14:00:00-07:00", "person": { "$ref": 0 }, "primary_role_id": "prod" } }
+      ],
+      "must_not": ["unconfirmed last name fabricated for Priya", "gcal write (that is the P5 automation half, post-approval)"],
+      "tolerances": ["task vs expectation framing for the call: task labeled (Sam confirmed, it's his commitment)", "the day-before follow-up expectation is the automation's job, not the filer's"],
+      "bar": "extraction"
+    },
+    {
+      "id": "s02a-airline-email",
+      "title": "Airline booking email (merge pair A)",
+      "adapter": "window-gmail",
+      "sender": { "source": "gmail", "handle": "noreply@delta-example.com" },
+      "context_date": "2026-06-08",
+      "merge_pair": "utah-trip",
+      "raw": "Delta confirmation QX7741: SLC, depart Jul 3 8:05am, return Jul 7 6:40pm. Passenger: Samuel Layton.",
+      "files_via": "filer",
+      "db_fixture": [],
+      "expected": [
+        { "fn": "record_atom", "args": { "ts": "2026-06-08T09:00:00-07:00", "kind": "communication", "summary": "Delta booking confirmed: SLC Jul 3-7 (conf QX7741).", "primary_role_id": "general", "quotes": ["depart Jul 3 8:05am, return Jul 7 6:40pm", "QX7741"], "refs": [{ "source": "gmail", "locator": "thread:delta-qx7741", "tool": "window-gmail" }] } }
+      ],
+      "must_not": ["calendar mirror rows", "person creation for 'Delta'"],
+      "tolerances": ["role general or husband-father (content inference may not yet know it's the family trip — s02b carries that)", "kind communication or artifact"],
+      "bar": "extraction"
+    },
+    {
+      "id": "s02b-wife-texts-utah",
+      "title": "Utah plans with Jamie (merge pair B)",
+      "adapter": "edge-imessage",
+      "sender": { "source": "imessage", "handle": "+14355550101" },
+      "context_date": "2026-06-08",
+      "merge_pair": "utah-trip",
+      "raw": "[thread-day with Jamie] 'so excited to see my family!! July 3rd works right?' ... 'booked!! SLC here we come' ... planning logistics, who picks up the car, dinner with her parents Jul 4.",
+      "files_via": "filer",
+      "db_fixture": [],
+      "expected": [
+        { "fn": "record_atom", "args": { "ts": "2026-06-08T20:00:00-07:00", "kind": "conversation", "summary": "Planned the Utah trip with Jamie — visiting her family Jul 3-7; flight booked; dinner with her parents Jul 4.", "primary_role_id": "husband-father", "links": [{ "to": "@jamie", "kind": "participant" }], "quotes": ["July 3rd works right?", "booked!! SLC here we come"] } }
+      ],
+      "must_not": ["filer-level merge with s02a (the merge gardener proposes; auto only at the >=0.9 same-time-same-participants bar)"],
+      "tolerances": ["a meta merge-candidate hint is welcome", "P3 eval: merge gardener proposes s02a+s02b as one canonical trip atom under husband-father"],
+      "bar": "extraction"
+    },
+    {
+      "id": "s06-substack-post",
+      "title": "New substack post (scenario 6, filer slice)",
+      "adapter": "window-substack",
+      "sender": null,
+      "context_date": "2026-06-09",
+      "raw": "{\"post\": \"Why Agent Harnesses Churn\", \"url\": \"https://example.substack.com/p/why-agent-harnesses-churn\", \"published\": \"2026-06-09T08:00:00-07:00\", \"excerpt\": \"Own the data, rent the agents...\"}",
+      "files_via": "filer",
+      "db_fixture": [],
+      "expected": [
+        { "fn": "record_atom", "args": { "ts": "2026-06-09T08:00:00-07:00", "kind": "artifact", "summary": "Published 'Why Agent Harnesses Churn' on Substack — own the data, rent the agents.", "primary_role_id": "prod", "refs": [{ "source": "substack", "locator": "https://example.substack.com/p/why-agent-harnesses-churn", "tool": "window-substack" }] } }
+      ],
+      "must_not": ["mirroring the full post body into the atom (pointers over mirrors)"],
+      "tolerances": ["role prod or student (writing about agents spans both)", "wiki placement (page/section + advances links to relevant purpose rows) is the P4 wiki gardener's job — proposing it here is welcome, not required"],
+      "bar": "extraction"
+    },
+    {
+      "id": "s08-dashboard-day-log",
+      "title": "Old-dashboard day log (scenario 8, filer slice)",
+      "adapter": "window-dashboard",
+      "sender": null,
+      "context_date": "2026-06-09",
+      "raw": "{\"date\": \"2026-06-09\", \"entries\": [{\"type\": \"workout\", \"note\": \"5mi run\", \"start\": \"06:30\", \"mins\": 45}, {\"type\": \"deep_work\", \"note\": \"RL ablations\", \"start\": \"09:00\", \"mins\": 180}, {\"type\": \"church\", \"note\": \"exec secretary — agenda prep\", \"start\": \"19:30\", \"mins\": 60}]}",
+      "files_via": "template",
+      "db_fixture": [],
+      "expected": [
+        { "fn": "record_atom", "args": { "ts": "2026-06-09T06:30:00-07:00", "ts_end": "2026-06-09T07:15:00-07:00", "kind": "session", "summary": "Workout: 5mi run (45 min).", "primary_role_id": "general", "refs": [{ "source": "dashboard", "locator": "2026-06-09#workout-0630", "tool": "window-dashboard" }] } },
+        { "fn": "record_atom", "args": { "ts": "2026-06-09T09:00:00-07:00", "ts_end": "2026-06-09T12:00:00-07:00", "kind": "session", "summary": "Deep work: RL ablations (3h).", "primary_role_id": "student", "refs": [{ "source": "dashboard", "locator": "2026-06-09#deep_work-0900", "tool": "window-dashboard" }] } },
+        { "fn": "record_atom", "args": { "ts": "2026-06-09T19:30:00-07:00", "ts_end": "2026-06-09T20:30:00-07:00", "kind": "session", "summary": "Ward exec secretary: agenda prep (1h).", "primary_role_id": "disciple", "refs": [{ "source": "dashboard", "locator": "2026-06-09#church-1930", "tool": "window-dashboard" }] } }
+      ],
+      "must_not": ["LLM judgment where the entry-type -> role map decides (structured source, deterministic path)"],
+      "tolerances": ["entry-type role mapping is window config: workout->general, deep_work->student, church->disciple"],
+      "bar": "extraction"
+    },
+    {
+      "id": "s10-transcript-mentions",
+      "title": "Meeting transcript mentions people to meet (scenario 10, filer slice)",
+      "adapter": "window-transcripts",
+      "sender": null,
+      "context_date": "2026-06-10",
+      "raw": "[zoom transcript excerpt] Counterpart (Dev R, existing person): 'You should really meet Lena Fox — she runs eval tooling at a lab in Paris — and Omar, my old cofounder, he's deep in agent security.' Sam: 'Both sound great, send intros when you can.'",
+      "files_via": "filer",
+      "db_fixture": [
+        { "as": "agent", "fn": "create_person", "args": { "name": "Dev R", "primary_role_id": "prod" }, "bind": "dev" }
+      ],
+      "expected": [
+        { "fn": "record_atom", "args": { "ts": "2026-06-10T15:00:00-07:00", "kind": "meeting", "summary": "Call with Dev R — he offered intros to Lena Fox (eval tooling, Paris) and Omar (agent security, his old cofounder); Sam said yes to both.", "primary_role_id": "prod", "links": [{ "to": "@dev", "kind": "participant" }], "quotes": ["You should really meet Lena Fox", "send intros when you can"], "refs": [{ "source": "transcripts", "locator": "rec/2026-06-10-dev.txt", "tool": "window-transcripts" }] } },
+        { "fn": "create_expectation", "args": { "description": "Dev R to send intros to Lena Fox and Omar", "person": "@dev", "follow_up": "remind", "primary_role_id": "prod" } }
+      ],
+      "must_not": ["create_person for Lena or Omar (mentioned, never met — the meeting-scanner workflow proposes connections at P6, user approves first)", "relationship links to people who don't exist yet", "any outbound draft"],
+      "tolerances": ["a propose() suggesting the two connections is welcome (that IS the P6 behavior, early)", "expectation optional if labeled as too soft — Sam decides"],
+      "bar": "restraint"
+    }
+  ]
+}

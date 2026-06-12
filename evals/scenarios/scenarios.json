@@ -1,0 +1,134 @@
+{
+  "source": "docs/sam-examples.md — the 10 workflow scenarios end-to-end; activated at their phase per specs/07 traceability",
+  "labels_status": "proposed",
+  "scenarios": [
+    {
+      "id": "S1",
+      "title": "Intro text -> person/atom -> gcal + day-before expectation",
+      "phase": "P5",
+      "trigger_fixture": "filer/corpus-sam.json#s01-prod-intro-text",
+      "chain": [
+        "filer: person+handle+atom+task (s01 covers this slice)",
+        "events-with-meetings automation (query trigger on new meeting-ish atoms): proposes gcal block via handoff",
+        "standing approval gcal_solo_block (attendees==[] and no_external_links) auto-applies; attendee-bearing version requires manual approval",
+        "create_expectation: follow up day before (2026-06-10), follow_up=remind"
+      ],
+      "autonomy": "standing approval for solo blocks only; the intro call HAS an attendee -> manual approval path is the expected route",
+      "gate_assert": "S1 from a real text; standing approval auto-applies a solo block, REJECTS the attendee-bearing one, and is revocable"
+    },
+    {
+      "id": "S2",
+      "title": "Airline email + spouse texts -> atom merge proposal",
+      "phase": "P3 (gmail window P6; fixture uses both corpus rows)",
+      "trigger_fixture": "filer/corpus-sam.json#s02a + #s02b (merge_pair: utah-trip)",
+      "chain": [
+        "merge gardener (daily cron): detects same trip across sources (same dates, Jamie+Sam, SLC)",
+        "propose(merge_atoms) — NOT auto (cross-source, different timestamps: below the >=0.9 same-time bar)",
+        "panel/phone approval -> canonical trip atom under husband-father, both sources as refs"
+      ],
+      "autonomy": "proposal only — Sam's explicit call: the merge one proposes",
+      "gate_assert": "approved merge produces one canonical atom; originals point at it via canonical_of"
+    },
+    {
+      "id": "S3",
+      "title": "Quit job -> retire_role cascade",
+      "phase": "P3",
+      "trigger_fixture": "inline: verified Sam text 'claudio: I quit the lab RA job — retire that role'",
+      "chain": [
+        "orchestrator: retire_role('ra-job') -> cascade-preview proposal (suspend scoped components, close windows, re-home open tasks)",
+        "panel approval with the server-rendered what-will-execute view",
+        "wiki pages and atoms UNTOUCHED (active-roles is a filter, not an eraser)"
+      ],
+      "autonomy": "proposal + approval, never direct",
+      "gate_assert": "cascade applies atomically; rendered view matches execution"
+    },
+    {
+      "id": "S4",
+      "title": "Topology-notes drift question",
+      "phase": "P5 (mirror observational) + P6 (folder window)",
+      "trigger_fixture": "inline: folder window streams 9 new topology notes over 3 weeks; no advances link to any active goal",
+      "chain": [
+        "mirror observational (monthly): unlinked activity cluster query surfaces the topology cluster",
+        "question (<=3/report): 'new direction, or procrastination? (heavy obligations are due)' — never acts",
+        "Sam's answer: new purpose row / new role link / or an honest 'procrastinating' observation atom"
+      ],
+      "autonomy": "questions only (P7)",
+      "gate_assert": "mirror's first report asks >=1 question Sam rates 'good catch'"
+    },
+    {
+      "id": "S5",
+      "title": "Left-on-read decay",
+      "phase": "P5 (metrics + mirror)",
+      "trigger_fixture": "inline: window-side metrics show research-role reply lag tripling over 3 weeks, unanswered count climbing",
+      "chain": [
+        "source-side metrics (deterministic, per-message stats — no atom explosion)",
+        "mirror observational: response-decay-by-role query crosses threshold",
+        "question: 'procrastinating research messages, or did priorities change?'"
+      ],
+      "autonomy": "question only",
+      "gate_assert": "decay computed from metrics (aggregate), never from model recall over atoms"
+    },
+    {
+      "id": "S6",
+      "title": "Substack post -> wiki placement",
+      "phase": "P4 + P6 (substack window)",
+      "trigger_fixture": "filer/corpus-sam.json#s06-substack-post",
+      "chain": [
+        "filer: artifact atom with canonical URL ref (s06 covers)",
+        "wiki gardener (daily): places a cited line + pointer on the relevant interests/professional page; advances link to the matching purpose row if evident",
+        "verifier step (fresh context): citations exist and support claims"
+      ],
+      "autonomy": "delta edits free; judgment claims propose",
+      "gate_assert": "placement cites the atom; no full-page regeneration"
+    },
+    {
+      "id": "S7",
+      "title": "Low-priority-role crowding ultimatum",
+      "phase": "P5",
+      "trigger_fixture": "inline: 3 weeks of gcal atoms skew to a role advancing no top goal",
+      "chain": [
+        "mirror observational: activity-vs-advances distribution query",
+        "question with the re-ask rule: unresolved questions resurface next report AND ride the brief — the 'incessant' contract",
+        "resolution: new advances link (Sam asserts the connection) OR an accepted-misalignment directive + reminder automation proposal"
+      ],
+      "autonomy": "incessant questions, zero unilateral action",
+      "gate_assert": "unresolved question re-asks; resolution writes only through user-set paths"
+    },
+    {
+      "id": "S8",
+      "title": "Dashboard logs -> atoms with inheritance",
+      "phase": "P6",
+      "trigger_fixture": "filer/corpus-sam.json#s08-dashboard-day-log",
+      "chain": ["window sync (structured source): deterministic record_atom per entry via entry-type -> role map (s08 covers fully)"],
+      "autonomy": "deterministic",
+      "gate_assert": "no LLM in the path; roles correct per map"
+    },
+    {
+      "id": "S9",
+      "title": "Custom dashboard tiles",
+      "phase": "P6",
+      "trigger_fixture": "inline: Sam asks for tiles — expectations leaderboard (% met + raw count per person), ignored-messages-per-day trend, most-urgent-unanswered leaderboard",
+      "chain": [
+        "provisioning pipeline: dashboard component, own DB role (SELECT on named views + propose/post_message only)",
+        "tiles read metrics + views; derived metrics live under its component id via upsert_metric",
+        "any write action is a proposal; deleting the dashboard costs nothing"
+      ],
+      "autonomy": "read-only + proposals",
+      "gate_assert": "leaderboards are SQL aggregates (COUNT/percent over typed rows) — never model recall"
+    },
+    {
+      "id": "S10",
+      "title": "Meeting scanner -> enrich -> propose connection",
+      "phase": "P6",
+      "trigger_fixture": "filer/corpus-sam.json#s10-transcript-mentions",
+      "chain": [
+        "filer: meeting atom + intros expectation, NO person creation (s10 covers the restraint slice)",
+        "meeting scanner (outer, P6): web-search enrichment of mentioned names (fixed-endpoint read connector)",
+        "propose: 'connect with Lena Fox?' -> on approval: create_person + relationship link (introduced_by Dev R, terms in description) + draft intro text + task to send it — the draft is a task artifact, claudio never sends",
+        "role inheritance: prod (via Dev R + content)"
+      ],
+      "autonomy": "proposal-gated person creation; relationship links conservative (false positive worse than false negative — Sam's note)",
+      "gate_assert": "no person exists until approval; the send is Sam's act"
+    }
+  ]
+}

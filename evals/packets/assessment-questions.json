@@ -1,0 +1,76 @@
+{
+  "source": "Sam's three assessment questions — METHOD evals: they score how an answer is derived, not its wording. The anti-cherry-picking protocol is the contract: candidates-from-summaries, verdicts-from-atoms; aggregate first; cite the number AND the atoms; impressions labeled as impressions.",
+  "labels_status": "proposed",
+  "fixtures": [
+    {
+      "id": "q1-family-coverage",
+      "question": "How am I doing keeping up with my family?",
+      "anchor": { "type": "role", "id": "husband-father" },
+      "method_contract": [
+        "START with the aggregate: per-person contact recency and frequency over the window — SQL COUNT/MAX(ts) over atoms joined through participant links, husband-father role. The low-info atoms (meme days) COUNT here — this is why t02 records.",
+        "Surface the gaps the aggregate shows (e.g. 'no atom with Emma in 24 days'), not the highlights the model remembers.",
+        "Candidates for color come from daily reflections; every factual claim cites atoms directly (context-never-source).",
+        "Trajectory claims ('third quiet week with your parents') may cite summaries; facts may not.",
+        "Impressions ('conversations feel logistics-heavy lately') labeled as impressions, attributed, never in the ledger."
+      ],
+      "expected_shape": {
+        "leads_with": "the per-person coverage table (number + last-contact date, each row citing its aggregate)",
+        "then": "notable relationship moments, each with [[atom:uuid]] cites",
+        "never": "a verdict sentence with no aggregate behind it"
+      },
+      "must_not": [
+        "anecdote-driven assessment (one warm conversation != keeping up)",
+        "volume as importance (75 memes != closeness; 3 deep texts != distance)",
+        "cherry-picking the atoms the model finds interesting",
+        "omitting a family member because their atoms are low-signal"
+      ],
+      "bar": "method-100%"
+    },
+    {
+      "id": "q2-magnifying-calling",
+      "question": "How am I doing magnifying my calling?",
+      "anchor": { "type": "role", "id": "disciple" },
+      "method_contract": [
+        "Obligations ledger first: tasks completed/open/overdue + expectations met/missed under disciple, as SQL counts with due-date discipline (the exec-secretary workload is concrete: agendas, scheduling, follow-ups).",
+        "Then activity: disciple-role atoms over the window (sessions, meetings, visits) — counts and hours where ts_end exists.",
+        "Then alignment: advances links from disciple activity to the relevant purpose rows; v_purpose_alignment for drift.",
+        "Pastoral content stays structural: sensitivity-1 rows aggregate into counts in any surface below their clearance — names never leak into a general packet.",
+        "Spiritual judgment is NOT claudio's: the system reports the ledger and the record; 'how am I really doing' verdicts belong to Sam — the mirror may ask, never grade."
+      ],
+      "expected_shape": {
+        "leads_with": "the ledger (done/open/overdue, met/missed — numbers with cites)",
+        "then": "activity record + alignment links",
+        "never": "a worthiness grade; a pastoral detail in a low-clearance surface"
+      },
+      "must_not": [
+        "grading devotion (taste/judgment stays the user's and the Lord's, not the model's)",
+        "leaking sensitivity-1 pastoral rows below clearance",
+        "counting message volume as ministry"
+      ],
+      "bar": "method-100%"
+    },
+    {
+      "id": "q3-professional-trends",
+      "question": "What professional trends should I be paying attention to?",
+      "anchor": { "type": "role", "id": "prod" },
+      "method_contract": [
+        "Candidates from the mid-tier: scan monthlies/dailies for recurring themes (orientation only).",
+        "EVERY candidate trend must survive an aggregate over atoms before it is asserted: COUNT of supporting atoms over time windows, via typed links/kind filters — 'all instances' is a SQL query, never model recall.",
+        "Cite both the number and the atoms ('agent-evals came up in 9 atoms across 5 weeks: [[...]]').",
+        "Distinguish the record's trends (what Sam's life shows) from world trends (which need a read connector and get labeled as external).",
+        "Candidates that fail the aggregate are dropped or explicitly labeled as weak signals — never silently promoted."
+      ],
+      "expected_shape": {
+        "leads_with": "trends ranked by aggregate support, each: claim + count + window + atom cites",
+        "then": "weak signals labeled as such",
+        "never": "a trend asserted from vibes or a single vivid atom"
+      },
+      "must_not": [
+        "trend claims that cite only summaries (facts never flow summary -> summary)",
+        "the model's interests masquerading as Sam's trends (taste leak)",
+        "recency bias unflagged (last week's hot topic != a trend)"
+      ],
+      "bar": "method-100%"
+    }
+  ]
+}
