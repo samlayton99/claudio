@@ -1,6 +1,8 @@
-# Progress Log — v3 pass (pick up here)
+# Progress Log — v3 pass
 
-Updated 2026-06-11, mid-v3. Read this top to bottom and you can resume exactly where work stopped.
+**STATUS: COMPLETE (v3.2).** All remaining-work items below were executed: over-engineering pass run (35 items) and applied, consistency sweep done, `docs/v3-diff-log.md` written (the review artifact), questions queue current. Sam reviews from the diff log. Next milestone after his review: P0 (corpus labeling + first elicitation session) per `specs/07`.
+
+— Original handoff log below, kept for the audit trail. —
 
 ## State: what is DONE and committed
 

@@ -54,8 +54,8 @@ gmail/slack/transcript/notion/folder windows, old-dashboard window, custom dashb
 | 1 | intro text → person/atom → gcal + day-before expectation | P5 |
 | 2 | airline email + spouse texts → atom merge (proposal) | P3 + P6 (gmail) |
 | 3 | quit job → retire_role cascade | P3 |
-| 4 | topology-notes drift question | P5 + P6 (folders) |
-| 5 | left-on-read decay | P5 (metrics from P2) |
+| 4 | topology-notes drift question (mirror observational) | P5 + P6 (folders) |
+| 5 | left-on-read decay (mirror + metrics) | P5 |
 | 6 | substack → wiki placement | P4 + P6 |
 | 7 | role-purpose crowding ultimatum (re-ask rule) | P5 |
 | 8 | dashboard logs → atoms with inheritance | P6 |
