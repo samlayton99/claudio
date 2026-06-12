@@ -13,7 +13,7 @@ create table l1.kinds (
   primary key (domain, key)
 );
 comment on table l1.kinds is
-  'Closed vocabularies, OS-edited only (core sessions). Domains: atom|link|relationship|page|message|metric|purpose. '
+  'Closed vocabularies, OS-edited only (core sessions). Domains: atom|link|relationship|page|message|metric|purpose|notable_reason. '
   'Examples: (''atom'',''meeting''), (''link'',''advances''), (''purpose'',''goal''). Filterable flags are expensive — create reluctantly.';
 
 create table l1.role_clearances (
@@ -188,6 +188,7 @@ create table l1.atoms (
   detail          text check (char_length(detail) <= 2000),
   quotes          jsonb not null default '[]',
   notable         boolean not null default false,
+  notable_reason  text,
   refs            jsonb not null default '[]',
   primary_role_id text references l1.roles(id),
   canonical_of    uuid references l1.atoms(id),
@@ -195,14 +196,16 @@ create table l1.atoms (
   created_by      text,
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now(),
-  meta            jsonb not null default '{}'
+  meta            jsonb not null default '{}',
+  constraint atoms_notable_reason_pairing check ((notable and notable_reason is not null) or (not notable and notable_reason is null))
 );
 comment on table l1.atoms is
   'UNITS OF LIFE EXPERIENCE — compact index cards (summary <=750), never documents. One meaningful chunk: bounded time x coherent '
   'purpose x stable participants. Bias toward thoughtful, larger chunks; never per-message. Examples: a meeting; a thread-day; '
   'an idea (kind=idea); an evening of TV (the record is honest). Depth scales by destination (P8): summary -> +detail -> +quotes -> +wiki page.';
 comment on column l1.atoms.quotes is 'VERBATIM spans for load-bearing facts (commitments, dates, amounts, names) — never paraphrased (P8). Example: ["I''ll have the draft to you by Tuesday"].';
-comment on column l1.atoms.notable is 'Assigned at the daily pass with longitudinal context, closed reason vocabulary in meta.notable_reason. A structural importance input; volume never is.';
+comment on column l1.atoms.notable is 'Binary, assigned ONLY at the daily pass (longitudinal context) or by the user. A structural importance input; volume never is. Setting true requires notable_reason (CHECK-paired).';
+comment on column l1.atoms.notable_reason is 'P12: the judgment is a SELECTION, never prose — must be an active kind in domain notable_reason (trigger-validated). The model picks from the list or notable stays false; nuance goes in detail, where it drives nothing.';
 comment on column l1.atoms.canonical_of is 'Non-null => merged into that atom. Canonical atoms have NULL. what_happened reads canonical only.';
 comment on column l1.atoms.refs is 'Tier-0 pointers [{source,locator,tool}] — one fetch_ref call from raw, always.';
 

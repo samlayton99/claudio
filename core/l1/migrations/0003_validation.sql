@@ -73,7 +73,14 @@ begin
   return new;
 end $$;
 
+create or replace function l1.tg_kind_notable() returns trigger language plpgsql as $$
+begin
+  if new.notable_reason is not null then perform l1._assert_kind('notable_reason', new.notable_reason); end if;
+  return new;
+end $$;
+
 create trigger kind_atoms     before insert or update of kind on l1.atoms     for each row execute function l1.tg_kind_atoms();
+create trigger kind_notable   before insert or update of notable_reason on l1.atoms for each row execute function l1.tg_kind_notable();
 create trigger kind_documents before insert or update of kind on l1.documents for each row execute function l1.tg_kind_documents();
 create trigger kind_messages  before insert or update of kind on l1.messages  for each row execute function l1.tg_kind_messages();
 create trigger kind_purpose   before insert or update of kind on l1.purpose   for each row execute function l1.tg_kind_purpose();

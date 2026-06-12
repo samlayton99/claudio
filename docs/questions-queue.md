@@ -7,7 +7,8 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 1. **Corpus labels — plain version.** The eval corpus (`evals/filer/*.json`) is ~40 fixtures; each one is: a *raw input from your life* (a text, a Slack message, a thread-day) plus the **proposed correct answer** — `expected` (the exact L1 calls the filer should make: which atoms, tasks, people), `must_not` (what it must never do with this input), and `tolerances` (acceptable wiggle). The "label" is that proposed answer. **Confirming = reading each fixture and saying "yes, that's what I'd want claudio to do with this input" or correcting it.** They become the ground truth the filer is graded against before it touches your real data — wrong labels = a filer trained to your wrong taste. How: open the files, edit any `expected`/`must_not` you disagree with, flip `labels_status: proposed` → `confirmed`. Highest-leverage 15 minutes: `corpus-walkthrough.json` (Thiel/meme/split trio) and every `must_not`.
 2. **The elicitation session** — the one P0 item only you can do. Say "run the elicitation" in a core session (the mirror's prompt is `core/agents/mirror/prompt.md`); it fills `core/l1/seeds/purpose-contract.md` + `roles.json` weights and ends with your signature.
 3. **Role weights + disciple sensitivity** — per your note: these are **term** seeds (P11), set during the elicitation (item 2), not before. Standing default until then: `default_sensitivity: 1` on disciple (pastoral content).
-4. **Backup destination** — default restic -> Backblaze B2 (encrypted) + private git remote; confirm or name another. Scripts are ready (`core/pipes/backup/`); nothing runs until the destination + password file exist. Slightly more important now that backups carry tier-0 + keep-forever.
+4. **Backup destination — DECIDED (you delegated 2026-06-12).** Two layers: (a) local restic repo at `~/.claudio/backup` from day one (moves to the external drive when bought); (b) offsite restic -> Backblaze B2, client-side encrypted (B2 never sees plaintext; ~cents/month at life-data scale). The one step only you can do, at deploy, ~5 min guided: create the B2 account + bucket + app key. Until then layer (a) covers you.
+4b. **Notable-reason starter vocabulary** — 8 reasons seeded (P12): milestone, first_contact, purpose_advance, rare_event, relationship_beat, decision, emotional_peak, user_asserted (`0008_seeds_grants.sql`). Type default; your term extends by promotion. Skim and veto any.
 
 ## Standing defaults (no action until their trigger)
 
@@ -20,6 +21,7 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 11. **Type/term packaging milestone** — physical split (a `term/` home for seeds/window instances/Sam corpus/deploy choices; `0008` roster trimmed to required slots) lands post-P2 gate, not mid-loop. Plan: `docs/type-term-audit.md`. Until then the line is enforced in review, not directory structure.
 12. **Regime accessor** — `semantics` is regime-dated by spec (P11); no accessor code until the first real regime change (grow by promotion).
 13. **Window filter defaults** — `filters` (pre-capture, never-recorded) ships empty by default; your term adds patterns as spam shows up. Type guardrails fixed: deterministic only + drop-counter metric.
+14. **P12 sweep** — remaining free-text judgment fields get closed vocabs as their surfaces are built: `discard_intake` reason, hold reasons (P2, with the filer), wiki demotion reasons (P5). The mechanism exists; apply on touch.
 
 ## Resolved by Sam (2026-06-12)
 

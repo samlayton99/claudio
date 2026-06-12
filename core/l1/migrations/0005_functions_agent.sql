@@ -234,9 +234,14 @@ begin
     if p_patch ? 'sensitivity' and (p_patch->>'sensitivity')::smallint < v_row.sensitivity then
       raise exception 'claudio.sensitivity_lower: agents cannot lower sensitivity';
     end if;
-    if p_patch ? 'notable' then
+    if p_patch ? 'notable' and session_user::text <> 'w_brief' then
       raise exception 'claudio.daily_pass_only: notable is assigned at the daily pass (use meta.notable_candidate)';
     end if;
+  end if;
+  if session_user::text in ('claudio_panel','claudio_core','w_brief')
+     and p_patch ? 'notable' and (p_patch->>'notable')::boolean
+     and (p_patch->>'notable_reason') is null then
+    raise exception 'claudio.notable_reason_required: notable is a selection, not prose (P12) — pass notable_reason from the notable_reason vocabulary';
   end if;
   -- prior version snapshotted to audit
   perform l1._audit('amend_atom', 'atoms', p_atom_id::text, 'update',
@@ -251,6 +256,9 @@ begin
     refs    = coalesce(p_patch->'refs', refs),
     notable = case when session_user::text in ('claudio_panel','claudio_core','w_brief') and p_patch ? 'notable'
                    then (p_patch->>'notable')::boolean else notable end,
+    notable_reason = case when session_user::text in ('claudio_panel','claudio_core','w_brief') and p_patch ? 'notable'
+                          then (case when (p_patch->>'notable')::boolean then p_patch->>'notable_reason' else null end)
+                          else notable_reason end,
     primary_role_id = coalesce(p_patch->>'primary_role_id', primary_role_id),
     sensitivity = coalesce((p_patch->>'sensitivity')::smallint, sensitivity),
     meta    = meta || coalesce(p_patch->'meta', '{}')
@@ -259,7 +267,9 @@ begin
 end $$;
 comment on function l1.amend_atom(uuid, jsonb) is
   'Prior version snapshots to audit. Agents cannot lower sensitivity or set notable (the brief''s daily pass and the user can). '
-  'Examples: amend_atom(id, ''{"detail":"..."}''); amend_atom(id, ''{"meta":{"notable_candidate":true}}'').';
+  'Setting notable=true requires notable_reason from the closed vocabulary (P12: judgments are selections, never prose). '
+  'Examples: amend_atom(id, ''{"detail":"..."}''); amend_atom(id, ''{"meta":{"notable_candidate":true}}''); '
+  'amend_atom(id, ''{"notable":true,"notable_reason":"purpose_advance"}'') [daily pass/panel only].';
 
 -- ---------- tasks & expectations ----------
 create or replace function l1.create_task(p_description text, p_due timestamptz default null,

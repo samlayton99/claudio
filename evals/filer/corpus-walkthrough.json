@@ -29,14 +29,14 @@
       "adapter": "edge-imessage",
       "sender": { "source": "imessage", "handle": "group:layton-sibs" },
       "context_date": "2026-06-10",
-      "raw": "[thread-day window: 75 messages in the Layton sibs group — memes, reaction gifs, laughing at a video Josh sent. No questions, no commitments, no new handles, no plans.]",
+      "raw": "[thread-day window: 75 messages in the Layton sibs group — memes, reaction gifs, laughing at a video Ally sent. No questions, no commitments, no new handles, no plans.]",
       "files_via": "template",
       "db_fixture": [
-        { "as": "agent", "fn": "create_person", "args": { "name": "Josh Layton", "primary_role_id": "husband-father" }, "bind": "josh" },
-        { "as": "agent", "fn": "create_person", "args": { "name": "Emma Layton", "primary_role_id": "husband-father" }, "bind": "emma" }
+        { "as": "agent", "fn": "create_person", "args": { "name": "Ally Layton", "primary_role_id": "husband-father" }, "bind": "Ally" },
+        { "as": "agent", "fn": "create_person", "args": { "name": "Kate Layton", "primary_role_id": "husband-father" }, "bind": "Kate" }
       ],
       "expected": [
-        { "fn": "record_atom", "args": { "ts": "2026-06-10T22:00:00-07:00", "kind": "communication", "summary": "Active day in the Layton sibs thread (75 messages) — memes and banter, no commitments or questions.", "primary_role_id": "husband-father", "links": [{ "to": "@josh", "kind": "participant" }, { "to": "@emma", "kind": "participant" }] } }
+        { "fn": "record_atom", "args": { "ts": "2026-06-10T22:00:00-07:00", "kind": "communication", "summary": "Active day in the Layton sibs thread (75 messages) — memes and banter, no commitments or questions.", "primary_role_id": "husband-father", "links": [{ "to": "@Ally", "kind": "participant" }, { "to": "@Kate", "kind": "participant" }] } }
       ],
       "must_not": ["any extraction (tasks/expectations/holds)", "more than one atom", "an LLM pass at all — zero detected signal means the deterministic template emits the atom", "notable", "discard (this is the relationship record: not-recording is irreversible)"],
       "tolerances": ["summary is the template's output — wording fixed by template, message count and participants interpolated"],
@@ -49,16 +49,16 @@
       "adapter": "edge-imessage",
       "sender": { "source": "imessage", "handle": "group:layton-sibs" },
       "context_date": "2026-06-11",
-      "raw": "[thread-day window, same Layton sibs group] MORNING (9:02-9:40): planning Dad's 60th — Emma: 'June 28 dinner, that steakhouse he loves?' Josh: 'in.' Sam: 'I'll book it for 7pm, 6 people.' EVENING (20:15-21:30): Emma: 'Mom's MRI results came back, can we talk?' — long careful conversation about results, next steps, who calls the doctor Friday.",
+      "raw": "[thread-day window, same Layton sibs group] MORNING (9:02-9:40): planning Dad's 60th — Ally: 'June 28 dinner, that steakhouse he loves?' Kate: 'in.' Sam: 'I'll book it for 7pm, 6 people.' EVENING (20:15-21:30): Ally: 'Mom's MRI results came back, can we talk?' — long careful conversation about results, next steps, who calls the doctor Friday.",
       "files_via": "filer",
       "db_fixture": [
-        { "as": "agent", "fn": "create_person", "args": { "name": "Josh Layton", "primary_role_id": "husband-father" }, "bind": "josh" },
-        { "as": "agent", "fn": "create_person", "args": { "name": "Emma Layton", "primary_role_id": "husband-father" }, "bind": "emma" }
+        { "as": "agent", "fn": "create_person", "args": { "name": "Ally Layton", "primary_role_id": "husband-father" }, "bind": "Ally" },
+        { "as": "agent", "fn": "create_person", "args": { "name": "Kate Layton", "primary_role_id": "husband-father" }, "bind": "Kate" }
       ],
       "expected": [
-        { "fn": "record_atom", "args": { "ts": "2026-06-11T09:02:00-07:00", "ts_end": "2026-06-11T09:40:00-07:00", "kind": "conversation", "summary": "Planned Dad's 60th with Josh and Emma — June 28 steakhouse dinner; Sam booking for 7pm, 6 people.", "primary_role_id": "husband-father", "links": [{ "to": "@josh", "kind": "participant" }, { "to": "@emma", "kind": "participant" }], "quotes": ["I'll book it for 7pm, 6 people."] } },
+        { "fn": "record_atom", "args": { "ts": "2026-06-11T09:02:00-07:00", "ts_end": "2026-06-11T09:40:00-07:00", "kind": "conversation", "summary": "Planned Dad's 60th with Ally and Kate — June 28 steakhouse dinner; Sam booking for 7pm, 6 people.", "primary_role_id": "husband-father", "links": [{ "to": "@Ally", "kind": "participant" }, { "to": "@Kate", "kind": "participant" }], "quotes": ["I'll book it for 7pm, 6 people."] } },
         { "fn": "create_task", "args": { "description": "Book steakhouse for Dad's 60th — June 28, 7pm, 6 people", "due": "2026-06-14T17:00:00-07:00", "primary_role_id": "husband-father" } },
-        { "fn": "record_atom", "args": { "ts": "2026-06-11T20:15:00-07:00", "ts_end": "2026-06-11T21:30:00-07:00", "kind": "conversation", "summary": "Long talk with Emma and Josh about Mom's MRI results and next steps; someone calls the doctor Friday.", "primary_role_id": "husband-father", "sensitivity": 1, "links": [{ "to": "@emma", "kind": "participant" }, { "to": "@josh", "kind": "participant" }], "meta": { "notable_candidate": true } } }
+        { "fn": "record_atom", "args": { "ts": "2026-06-11T20:15:00-07:00", "ts_end": "2026-06-11T21:30:00-07:00", "kind": "conversation", "summary": "Long talk with Kate and Ally about Mom's MRI results and next steps; someone calls the doctor Friday.", "primary_role_id": "husband-father", "sensitivity": 1, "links": [{ "to": "@Kate", "kind": "participant" }, { "to": "@Ally", "kind": "participant" }], "meta": { "notable_candidate": true } } }
       ],
       "must_not": ["one merged atom burying the MRI conversation inside birthday logistics — the purposes are glaringly distinct", "more than two atoms (no micro-chunking the planning back-and-forth)", "a fabricated 'call the doctor' task for Sam (who calls was not settled — it lives in the atom; the daily pass may surface it as a question)"],
       "tolerances": ["booking-task due date free (before June 28, reasonably soon)", "sensitivity 1 on the MRI atom is the labeled default — Sam confirms where health content sits", "summaries free; both must name participants and the load-bearing facts"],

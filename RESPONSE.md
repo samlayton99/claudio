@@ -3,37 +3,36 @@
 
 Session report for Sam. Rewritten each session; git history keeps prior reports. Explains the most significant moves, what you most need to know, what to do, and points to the details. Open decisions live in `docs/questions-queue.md`, not here.
 
-## Session 2026-06-12 (day, part 2): your four responses integrated
+## Session 2026-06-12 (day, part 3): notable typechecked, P12, backup decided
 
-### 1. Spam filters → window `filters`
+### Your question: how is notable captured?
 
-Windows now carry `filters`: deterministic pre-capture drop rules — things never recorded at all, inherent to each window's config as you said. Two type-level guardrails: no model ever decides not-to-record (deterministic patterns only), and every drop increments a per-window counter metric so over-filtering stays visible (not-recording is irreversible). Distinct from `discard`, which records raw but extracts no atom. → `specs/06-surfaces.md` §Windows, `specs/01-schema.md` intake note. Ships empty; your term adds patterns as spam appears (queue 13).
+Your instinct found a real gap. The state before today: `notable` was already binary and privilege-gated (boolean column; only the daily pass and you can set it — the filer can only flag `meta.notable_candidate`, and the red-team suite proves agents get rejected). But the *reason* was a comment-level convention stuffed in `meta` jsonb — prose, never validated. Exactly the thing you smelled.
 
-### 2. Corpus labels, explained properly
+Now closed, top to bottom:
 
-Rewritten in plain language — queue item 1. Short version: each fixture is a raw input from your life plus the *proposed correct answer* (the exact calls the filer should make, what it must never do, allowed wiggle). Confirming = reading them and saying "yes, that's what I'd want" or correcting. They're the ground truth the filer is graded against before it touches real data. The 15-minute high-leverage pass: `evals/filer/corpus-walkthrough.json` + every `must_not`.
+- **`atoms.notable_reason`** is a real column, CHECK-paired with the boolean (`notable=true` ⇔ reason present — the database makes half-states unrepresentable).
+- The reason must be an **active kind in a closed `notable_reason` vocabulary** — trigger-validated like every other kind. "Felt important" is unwritable; the model selects from a list it didn't write.
+- **Starter list of 8** (seeded, yours to veto — queue 4b): `milestone`, `first_contact`, `purpose_advance`, `rare_event` (frequency claims must survive a COUNT, never model recall), `relationship_beat`, `decision`, `emotional_peak`, `user_asserted` (always wins).
+- **7 new contract tests**: no reason → rejected; junk reason → rejected; valid → stored; unset → reason auto-clears; agents still blocked. **Suites: red-team 51/51, contract 83/83.**
+- Found and fixed a pre-existing bug while testing: the guard blocked `w_brief` (the daily pass itself!) from setting notable — it could never have worked. My new tests caught it; this is your "every function needs test cases" rule paying out on day one.
 
-### 3. Storage
+### Generalized, as you suggested: P12 "Judgments are selections"
 
-Resolved as you said: keep everything forever, worry later. Removed from standing defaults; noted under Resolved.
+Now constitutional (`specs/00`): **any LLM judgment the scaffold acts on is a binary or closed-vocabulary selection, typechecked at write time — never free prose.** Nuance goes in prose fields that drive nothing. If a judgment can't be enumerated, it isn't automated — it becomes a question to you, and recurring answers grow the vocabulary by promotion. Much of the system already obeyed this (atom/link kinds, server-classified proposal classes, sensitivity); notable was the leak. Remaining free-text judgment fields (discard reason, hold reasons) get vocabs as their surfaces are built — queue 14.
 
-### 4. The type/term split — now P11, with an audit
+### Backup: decided (you delegated)
 
-This is the significant move of the session. Your words → what changed → where:
+Two layers. **Local**: restic repo at `~/.claudio/backup` from day one — zero setup, covers you immediately; moves to the external drive when you buy one. **Offsite**: restic → Backblaze B2, client-side encrypted (B2 only ever sees ciphertext; your data at life scale costs cents per month). The one 5-minute step only you can do — create the B2 account + bucket + key — happens at deploy, guided. Nothing is blocking on this anymore.
 
-- **"the life-harness is the type, my life is the term... clearly divided"** → **P11 Type over term** added to the constitution, with the standing question at every decision: *what are we assuming about how the user lives or uses this? Any assumption belongs in the term.* Vocabulary entries for Type/Term/Regime. → `specs/00-constitution.md`.
-- **"do an audit log... what is term, what is type"** → `docs/type-term-audit.md`: full classification of everything built. Headline finding: the harness is already cleanly type almost everywhere (schema/functions/specs carry you only in *examples*) — with one real leak: `0008` seeds `edge-imessage` and `window-gcal` (with your planner-regime semantics baked in) as if they were type. Tolerated at v0, moves to a `term/` seed at the packaging milestone (queue 11).
-- **"someone else likely uses their gcal as raw truth. I use it as a planner... this should be configurable"** → ruled exactly so: per-source meaning (`semantics`) is term config under a type mechanism. The type assumes only that a window declares what its data means — never what a calendar is. → `specs/06-surfaces.md`.
-- **"robust... mutable, dependent on time"** (gcal regime change in 8 months) → **regimes**: term values that interpret data are dated lists; any capture is interpreted under the regime in force at its `received_at`, so history reads under historical regimes. No accessor code until the first real regime change — grow by promotion (queue 12). → `specs/00` vocab, `specs/06`, audit doc.
-- **"makes it shippable and packagable"** → packaging path in the audit: the new-user story is *clone the type → elicitation (their contract + roles) → register windows (their meaning, their filters)* — onboarding IS term-authoring. Physical `term/` split lands post-P2 gate, not mid-loop.
-- **"you may be tempted in the future to conflate"** → pitfall 9 in `CONTEXT.md`: every future session names which side of the line each change is on.
+### Housekeeping
 
-No code changed this session (spec/doc layer only), so the suites stand as last verified: red-team 51/51, contract 76/76.
+Your corpus rename left t03's raw text still saying Emma/Josh while the fixtures bound Ally/Kate — aligned the raw to your names. Walkthrough noted as approved; the other corpus files (`corpus-core`, `corpus-coverage`, `corpus-sam`) still carry `labels_status: proposed` whenever you want the same pass on them.
 
-### What you need to do (carried over)
+### Elicitation: you're clear to start
 
-Still the gate items, now clearer: **(1) confirm corpus labels** (explained above — your next 15 minutes), **(2) run the elicitation** (which also sets the role weights/sensitivity you deferred — they're term seeds, set there, not before), **(4) name the backup destination** (default: restic → Backblaze B2; matters slightly more now that backups carry keep-forever tier-0).
+Nothing pending on my side. Say **"run the elicitation"** in a core session — the mirror's prompt is `core/agents/mirror/prompt.md`; it fills the purpose contract + role weights (including the disciple sensitivity default you deferred) and ends with your signature.
 
 ### Pointers
 
-The audit (read this one): `docs/type-term-audit.md`. Constitution: `specs/00` (P11, vocab, decision map). Windows: `specs/06` (filters, regime-dated semantics). Queue: `docs/questions-queue.md` (items 1–4 yours; 10–13 new defaults). Reasoning trail: `CONTEXT.md` (pitfall 9).
+P12 + decision map: `specs/00`. Schema: `specs/01` §atoms, `core/l1/migrations/0002/0003/0005/0008`. Tests: `evals/contract/run.sh` (notable section). Queue: 4 (backup, decided), 4b (the 8 reasons — skim), 14 (P12 sweep). Reasoning: `CONTEXT.md`.

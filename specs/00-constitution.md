@@ -31,6 +31,7 @@ Every spec section serves one of these; anything serving none is cut.
 - **P9 Gardeners are downstream failures.** Every gardener run is evidence of an upstream design gap. The design does everything to deny gardeners work (constraints, idempotent pipes, typed gates); the system does everything to ensure they run dutifully anyway. Build inside this minimax tension; a shrinking gardener workload is the health metric.
 - **P10 Nothing scattered.** Parameters live in ONE registry (core/outer rings); every agent's prompt and context-construction spec lives in ITS OWN folder under one tree (`core/agents/` inner, `custom/agents/` outer). Tweaking the system never means hunting through code.
 - **P11 Type over term.** The life-harness is the **type** (shippable, general); a life is the **term** (one user's configuration and data). The standing question at every decision: *what are we assuming about how the user lives or uses this?* Any such assumption belongs in the term (config, seeds, regimes) — never in the type (schema, functions, normative spec). Occam's razor on user assumptions when building the type. The type must handle independent terms gracefully AND the same term changing over time: term values that interpret data are **regime-dated**, and interpretation always uses the regime in force at capture time. Sam's life is the reference term — the test case that hardens the type, never the spec. (Audit + packaging path: `docs/type-term-audit.md`.)
+- **P12 Judgments are selections.** Any LLM judgment the scaffold acts on is a **binary or closed-vocabulary selection, typechecked at write time** (CHECK / FK / vocab trigger) — never free prose. The model picks from a list it didn't write; nuance goes in prose fields (`detail`, descriptions) that drive nothing. If a judgment can't be enumerated, it isn't automated — it becomes a question to the user (P5/P7), and recurring answers grow the vocabulary by promotion. Canonical instance: `notable` is a boolean whose `notable_reason` must be an active kind in the `notable_reason` vocab, CHECK-paired and trigger-validated; "felt important" is unwritable.
 
 ## The decay test (P1's enforcement)
 
@@ -60,6 +61,7 @@ External agents get the same property via the **handshake protocol** (`06`): rea
 | Grow by promotion / shrink by demotion; outer circle starts empty; workers never write code paths | P1, P2, security |
 | Windows are a first-class category (data-ingesting, role-assigned), distinct from agents/automations | P2, his review |
 | Type/term split: assumptions about the user live in config/seeds/regimes, never schema/functions/spec; per-source meaning (`semantics`) is term, regime-dated | P11, P1 |
+| LLM judgments land as typechecked selections (vocab kinds, `notable_reason`, server-classified proposal classes); prose annotates, never drives | P12, P5 |
 
 ## Vocabulary
 

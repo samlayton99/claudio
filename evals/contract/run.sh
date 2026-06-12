@@ -98,6 +98,15 @@ expect_eq "canonical-set"       w_filer "select canonical_of::text from l1.atoms
 expect_fail "no-merge-chains"   claudio_panel "select l1.merge_atoms('$A2'::uuid, array['$A1'::uuid])" "bad_args"
 expect_eq "what-happened-canonical-only" w_brief "select l1.what_happened('2026-06-08T00:00:00-07:00'::timestamptz, '2026-06-09T00:00:00-07:00'::timestamptz, '{}')::text like '%Planned Utah trip%'" "f"
 
+echo "== contract: notable is a selection, never prose (P12) =="
+expect_fail "notable-needs-reason"   w_brief "select l1.amend_atom('$A1'::uuid, '{\"notable\":true}')" "notable_reason_required"
+expect_fail "notable-junk-reason"    w_brief "select l1.amend_atom('$A1'::uuid, '{\"notable\":true,\"notable_reason\":\"felt important\"}')" "unknown_kind"
+expect_ok   "notable-valid-reason"   w_brief "select l1.amend_atom('$A1'::uuid, '{\"notable\":true,\"notable_reason\":\"relationship_beat\"}')"
+expect_eq   "notable-reason-stored"  w_brief "select notable_reason from l1.atoms where id = '$A1'::uuid" "relationship_beat"
+expect_ok   "notable-unset-clears"   claudio_panel "select l1.amend_atom('$A1'::uuid, '{\"notable\":false}')"
+expect_eq   "notable-reason-cleared" w_brief "select coalesce(notable_reason, 'NULL') from l1.atoms where id = '$A1'::uuid" "NULL"
+expect_ok   "notable-user-asserted"  claudio_panel "select l1.amend_atom('$A1'::uuid, '{\"notable\":true,\"notable_reason\":\"user_asserted\"}')"
+
 echo "== contract: pages =="
 expect_fail "page-needs-read-moment" w_wiki "select l1.register_page('wiki/people/daniel-cho.md', 'person', 'Daniel Cho', 'people')" "read_moment_required"
 expect_fail "page-needs-real-chapter" w_wiki "select l1.register_page('wiki/x.md', 'person', 'X', 'misc', null, null, 'sometime')" "unknown_chapter"

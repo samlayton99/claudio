@@ -14,7 +14,8 @@ kind text
 summary text
 detail text
 quotes jsonb [VERBATIM spans for load-bearing facts (commitments, dates, amounts, names) — never paraphrased (P8). Example: ["I'll have the draft to you by Tuesday"].]
-notable boolean [Assigned at the daily pass with longitudinal context, closed reason vocabulary in meta.notable_reason. A structural importance input; volume never is.]
+notable boolean [Binary, assigned ONLY at the daily pass (longitudinal context) or by the user. A structural importance input; volume never is. Setting true requires notable_reason (CHECK-paired).]
+notable_reason text [P12: the judgment is a SELECTION, never prose — must be an active kind in domain notable_reason (trigger-validated). The model picks from the list or notable stays false; nuance goes in detail, where it drives nothing.]
 refs jsonb [Tier-0 pointers [{source,locator,tool}] — one fetch_ref call from raw, always.]
 primary_role_id text
 canonical_of uuid [Non-null => merged into that atom. Canonical atoms have NULL. what_happened reads canonical only.]
@@ -63,8 +64,8 @@ Sample rows (9 total):
 ```
      id        kind  circle  status      definition_path                       trigger                                                                 config                                              reliability created_by          created_at                    updated_at           meta 
 ------------- ------ ------ -------- ----------------------- -------------------------------------------- ------------------------------------------------------------------------------------------------ ----------- ---------- ----------------------------- ----------------------------- ----
-edge-imessage pipe   inner  disabled core/pipes/edge         {"type": "resident"}                         {"role_map": ["general"], "replayable": false, "default_sensitivity": 0}                         critical    postgres   2026-06-12 09:36:29.292845-07 2026-06-12 09:36:29.292845-07 {}
-window-gcal   window inner  disabled core/pipes/windows/gcal {"type": "cron", "schedule": "*/15 * * * *"} {"role_map": ["general"], "semantics": {"commitment_strength": "tentative"}, "replayable": true} standard    postgres   2026-06-12 09:36:29.292845-07 2026-06-12 09:36:29.292845-07 {}
+edge-imessage pipe   inner  disabled core/pipes/edge         {"type": "resident"}                         {"role_map": ["general"], "replayable": false, "default_sensitivity": 0}                         critical    postgres   2026-06-12 10:34:41.291466-07 2026-06-12 10:34:41.291466-07 {}
+window-gcal   window inner  disabled core/pipes/windows/gcal {"type": "cron", "schedule": "*/15 * * * *"} {"role_map": ["general"], "semantics": {"commitment_strength": "tentative"}, "replayable": true} standard    postgres   2026-06-12 10:34:41.291466-07 2026-06-12 10:34:41.291466-07 {}
 (2 rows)
 
 ```
@@ -154,7 +155,7 @@ meta jsonb
 
 ## l1.kinds
 
-Closed vocabularies, OS-edited only (core sessions). Domains: atom|link|relationship|page|message|metric|purpose. Examples: ('atom','meeting'), ('link','advances'), ('purpose','goal'). Filterable flags are expensive — create reluctantly.
+Closed vocabularies, OS-edited only (core sessions). Domains: atom|link|relationship|page|message|metric|purpose|notable_reason. Examples: ('atom','meeting'), ('link','advances'), ('purpose','goal'). Filterable flags are expensive — create reluctantly.
 
 ```
 domain text
@@ -163,7 +164,7 @@ description text
 status text
 ```
 
-Sample rows (40 total):
+Sample rows (48 total):
 ```
 domain     key                                                       description                                                  status 
 ------ ------------ ------------------------------------------------------------------------------------------------------------- ------
@@ -241,8 +242,8 @@ Sample rows (18 total):
 ```
        key                                                                                                                                                                                                                                                                                 value                                                                                                                                                                                                                                                                         ring                                                                           description                                                                                    created_at                    updated_at           meta 
 ------------------ ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ---- --------------------------------------------------------------------------------------------------------------------------------------------------------------- ----------------------------- ----------------------------- ----
-fn_privilege_class {"purge": "core", "merge_atoms": "identity", "retire_role": "taste", "upsert_role": "taste", "merge_people": "identity", "apply_actions": "panel", "set_directive": "taste", "reject_message": "panel", "upsert_purpose": "taste", "approve_message": "core", "retire_directive": "taste", "add_link_asserted": "taste", "register_component": "core", "new_purpose_version": "taste", "resolve_held_intake": "user_relay", "set_component_status": "panel", "_execute_role_cascade": "panel"}                                                        core fn -> privilege class; absent => routine. DERIVED server-side, never trusted from payload. Taste/core are never proposable; identity never standing-approvable. 2026-06-12 09:36:29.291792-07 2026-06-12 09:36:29.291792-07 {}
-fn_sets            {"agent": ["capture", "file_intake", "hold_intake", "discard_intake", "create_person", "add_handle", "update_person", "create_task", "complete_task", "drop_task", "amend_task", "create_expectation", "resolve_expectation", "record_atom", "amend_atom", "add_link", "invalidate_link", "register_page", "move_page", "post_message", "claim_message", "read_message", "resolve_message", "propose", "start_run", "finish_run", "get_context", "fetch_ref", "search_people", "what_happened", "due_tasks", "pending_expectations", "queue_status"]} core The base agent function set (propose-time executability check reads this).                                                                                      2026-06-12 09:36:29.291792-07 2026-06-12 09:36:29.291792-07 {}
+fn_privilege_class {"purge": "core", "merge_atoms": "identity", "retire_role": "taste", "upsert_role": "taste", "merge_people": "identity", "apply_actions": "panel", "set_directive": "taste", "reject_message": "panel", "upsert_purpose": "taste", "approve_message": "core", "retire_directive": "taste", "add_link_asserted": "taste", "register_component": "core", "new_purpose_version": "taste", "resolve_held_intake": "user_relay", "set_component_status": "panel", "_execute_role_cascade": "panel"}                                                        core fn -> privilege class; absent => routine. DERIVED server-side, never trusted from payload. Taste/core are never proposable; identity never standing-approvable. 2026-06-12 10:34:41.290459-07 2026-06-12 10:34:41.290459-07 {}
+fn_sets            {"agent": ["capture", "file_intake", "hold_intake", "discard_intake", "create_person", "add_handle", "update_person", "create_task", "complete_task", "drop_task", "amend_task", "create_expectation", "resolve_expectation", "record_atom", "amend_atom", "add_link", "invalidate_link", "register_page", "move_page", "post_message", "claim_message", "read_message", "resolve_message", "propose", "start_run", "finish_run", "get_context", "fetch_ref", "search_people", "what_happened", "due_tasks", "pending_expectations", "queue_status"]} core The base agent function set (propose-time executability check reads this).                                                                                      2026-06-12 10:34:41.290459-07 2026-06-12 10:34:41.290459-07 {}
 (2 rows)
 
 ```
@@ -348,7 +349,7 @@ Sample rows (1 total):
 ```
   id     name   status                   summary                   weight default_sensitivity sensitivity created_by          created_at                    updated_at           meta 
 ------- ------- ------ ------------------------------------------- ------ ------------------- ----------- ---------- ----------------------------- ----------------------------- ----
-general General active The catch-all role every window may map to.      1                   0           0 postgres   2026-06-12 09:36:29.292199-07 2026-06-12 09:36:29.292199-07 {}
+general General active The catch-all role every window may map to.      1                   0           0 postgres   2026-06-12 10:34:41.290752-07 2026-06-12 10:34:41.290752-07 {}
 (1 row)
 
 ```
@@ -498,7 +499,7 @@ Two-lane scoring, both Cobb-Douglas WITH FLOORS (a raw product zeroes old-but-cr
 
 ### l1.amend_atom(p_atom_id uuid, p_patch jsonb)
 
-Prior version snapshots to audit. Agents cannot lower sensitivity or set notable (the brief's daily pass and the user can). Examples: amend_atom(id, '{"detail":"..."}'); amend_atom(id, '{"meta":{"notable_candidate":true}}').
+Prior version snapshots to audit. Agents cannot lower sensitivity or set notable (the brief's daily pass and the user can). Setting notable=true requires notable_reason from the closed vocabulary (P12: judgments are selections, never prose). Examples: amend_atom(id, '{"detail":"..."}'); amend_atom(id, '{"meta":{"notable_candidate":true}}'); amend_atom(id, '{"notable":true,"notable_reason":"purpose_advance"}') [daily pass/panel only].
 
 ### l1.amend_task(p_task_id uuid, p_patch jsonb)
 

@@ -173,9 +173,12 @@ create table atoms (
   summary         text not null check (char_length(summary) <= 750),
   detail          text check (char_length(detail) <= 2000),
   quotes          jsonb not null default '[]',  -- VERBATIM spans for load-bearing facts; never paraphrased (P8)
-  notable         boolean not null default false,  -- assigned at the daily pass, closed reason vocabulary,
-                                                   -- wide longitudinal context; one of the structural
+  notable         boolean not null default false,  -- assigned ONLY at the daily pass (wide longitudinal
+                                                   -- context) or by the user; one of the structural
                                                    -- importance inputs (volume never is)
+  notable_reason  text,                    -- vocab 'notable_reason' (trigger-validated); CHECK-paired:
+                                           -- notable=true ⇔ reason present. P12: the judgment is a
+                                           -- SELECTION against the closed list, never prose.
   refs            jsonb not null default '[]',  -- [{source, locator, tool}] — one cheap call to dereference
   primary_role_id text references roles(id),
   canonical_of    uuid references atoms(id),    -- non-null ⇒ merged into that atom. Canonical ≡ NULL.
