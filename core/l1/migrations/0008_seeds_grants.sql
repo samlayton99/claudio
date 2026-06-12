@@ -59,7 +59,11 @@ insert into l1.role_clearances (role_name, clearance) values
   ('claudio_core', 2), ('claudio_panel', 2),
   ('w_edge', 1), ('w_filer', 1), ('w_merge', 1), ('w_wiki', 1), ('w_verifier', 1),
   ('w_lint', 1), ('w_orchestrator', 1), ('w_mirror', 1),
-  ('w_brief', 0), ('w_scanner', 0), ('w_watchdog', 0), ('w_catalog', 0),
+  -- w_scanner at 1, not 0: reminders must never false-negative (P6), and at c0 RLS hides
+  -- sensitivity-1 obligations (disciple-floor tasks) from the scanner entirely. The c0
+  -- injection rationale doesn't apply: pure SQL, no model, output only to the user queue.
+  ('w_scanner', 1),
+  ('w_brief', 0), ('w_watchdog', 0), ('w_catalog', 0),
   ('w_hygiene', 0), ('w_approver', 0), ('w_reconciler', 0), ('w_test', 0)
 on conflict (role_name) do update set clearance = excluded.clearance;
 
