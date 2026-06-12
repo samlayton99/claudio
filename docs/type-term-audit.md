@@ -1,6 +1,6 @@
 # Type/Term Audit
 
-Sam's directive (2026-06-12): **the life-harness is the type; a life is the term.** Claudio ships as a general product; Sam's life is the reference term — the test case that makes it good, never the spec. The classification rule: *if a design decision rests on an assumption about how the user lives or uses a tool, it belongs in the term (config, seeds, regimes), not the type (schema, functions, specs).* Occam's razor on user assumptions: the fewer the type makes, the more decisions answer themselves.
+Sam's directive (2026-06-12): **the life-harness is the type; a life is the term** — with a third shelf added later the same day: the **standard library** (shipped, term-shaped defaults maintained with the type so a fresh install is useful from minute one — see `specs/00` P11). Type = invariants; stdlib = shipped defaults; term = this user's values and data. Claudio ships as a general product; Sam's life is the reference term — the test case that makes it good, never the spec. The classification rule: *if a design decision rests on an assumption about how the user lives or uses a tool, it belongs in the term (config, seeds, regimes), not the type (schema, functions, specs).* Occam's razor on user assumptions: the fewer the type makes, the more decisions answer themselves.
 
 ## The audit
 
@@ -10,12 +10,12 @@ Sam's directive (2026-06-12): **the life-harness is the type; a life is the term
 |---|---|
 | `specs/00–07` normative statements | Type. Protocols, planes, tiers, L1 contract, security model, wiki machinery, build gates. |
 | `core/l1/migrations/` schema + validation + RLS + functions | Type. No term data in DDL or function logic. Sam appears only in `COMMENT ON` *examples* — acceptable and good (concrete beats abstract), provided the normative text stays term-free. |
-| Vocab seeds (atom kinds, link kinds, message kinds) | Type defaults; promote/demote machinery lets any term extend. |
-| `parameters` keys + shipped defaults | Type. Tuned *values* become term. |
+| Vocab seeds (atom kinds, link kinds, notable reasons, message kinds) | **Stdlib** — shipped starter vocabularies; the promote/demote machinery (type) lets any term extend. |
+| `parameters` keys + shipped defaults | Keys + validation: type. Shipped default values: **stdlib**. Tuned values: term. |
 | Component roster: required slots (filer, brief, scanner, watchdog, orchestrator, mirror, catalog, the edge *slot*) | Type. Every instance needs these organs. |
 | `core/pipes/`, `core/deploy/`, panel, eval harness, `evals/contract/` | Type. Contract tests verify the harness, not a life. |
 | The `general` role | Type — the spec-mandated catch-all. |
-| Wiki chapters (the eleven) | Type default taxonomy; a term may rename/extend at the frontmatter freeze. |
+| Wiki chapters (the eleven) | **Stdlib** — shipped taxonomy; a term may rename/extend at the frontmatter freeze. |
 | Regime mechanism, filters mechanism, rawness, clearances | Type mechanisms; their *values* are term. |
 
 ### Term (Sam's instance)
@@ -25,7 +25,7 @@ Sam's directive (2026-06-12): **the life-harness is the type; a life is the term
 | `core/l1/seeds/roles.json` (disciple, prod, husband-father, student; weights; disciple sensitivity) | Term seed. |
 | `core/l1/seeds/purpose-contract.md` (post-elicitation) | Term — the apex of the term, in fact. |
 | `evals/filer/corpus-*.json` (Thiel day, meme day, Jamie, Brother Hansen) | Term test data exercising type functions. Ship the harness + an anonymized starter corpus; Sam's corpus stays his. |
-| Window instances + config: which windows exist, `role_map`, `semantics` regimes, `filters`, edge channel choice (iMessage), allowlisted handles | Term. **Found leak:** `0008` seeds `edge-imessage` + `window-gcal` (with Sam's `commitment_strength: tentative`) as if type — tolerated at v0, moves to a term seed at the packaging milestone (queue). |
+| Window instances + config: `role_map`, `semantics` values, `filters` patterns, allowlisted handles | Term (the user's VALUES). The adapters themselves and the `0008` roster rows (edge slot, gcal window, brief, scanner, ...) are **stdlib** — shipped defaults, not a leak; Sam's `commitment_strength: tentative` is his term override riding the stdlib gcal adapter. |
 | Directives, role_clearances rows, tuned parameter values, all DB life-plane data, `wiki/` content | Term. |
 | `docs/sam-examples.md`, CONTEXT.md "Who Sam is" | Term documentation. |
 | Sam's deploy choices (Mac mini, launchd, backup destination) | Term deployment; type stays POSIX-portable (00 §Portability). |
