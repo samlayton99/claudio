@@ -2,9 +2,23 @@
 
 Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Defaults stand unless Sam objects.
 
-1. **Scoring tuning** — the two-lane exponents and the urgency curve are deliberately unspecced; tuned against the first real packets (P2). Sam reviews the first week's briefs as the tuning signal.
-2. **Wiki frontmatter freeze** — current keys (`title, kind, chapter, entity, tags, updated, read_moment, sensitivity`) are v0; freeze after a month of real pages.
-3. **Backup destination** — default restic → Backblaze B2 (encrypted) + private git remote; confirm or name another before P1.
-4. **Filer judgment quality** — `notable` reasons and atom-splitting are the two judgment calls the eval corpus must prove (the Thiel/meme day, a two-episode thread). P0 labeling decides if the bars are right.
-5. **Embeddings promotion** — trigger defined (logged search misses ⇒ exact pgvector + FTS/RRF); no action until it fires.
-6. **Resident orchestrator occupant** — slot supports `resident` mode; pick the occupant (Hermes-class preferred, "the main voice") when filling it at P3+.
+## Needs Sam (P0/P1 gate items)
+
+1. **Corpus labels** — 30 filer fixtures + 10 scenarios + 3 method evals are normalized with PROPOSED labels (`evals/`). Confirm or correct, then flip `labels_status` to confirmed. Highest-leverage review: `corpus-walkthrough.json` (Thiel/meme/split) and every `must_not`.
+2. **The elicitation session** — the one P0 item only you can do. Say "run the elicitation" in a core session (the mirror's prompt is `core/agents/mirror/prompt.md`); it fills `core/l1/seeds/purpose-contract.md` + `roles.json` weights and ends with your signature.
+3. **Role weights + disciple sensitivity** — `core/l1/seeds/roles.json` has null weights (yours to set during elicitation) and proposes `default_sensitivity: 1` on disciple (pastoral content). Confirm.
+4. **Backup destination** — default restic -> Backblaze B2 (encrypted) + private git remote; confirm or name another. Scripts are ready (`core/pipes/backup/`); nothing runs until the destination + password file exist.
+
+## Standing defaults (no action until their trigger)
+
+5. **Scoring tuning** — two-lane exponents seeded v0 in `parameters.scoring`; tuned against the first week of real packets (P2).
+6. **Wiki frontmatter freeze** — current keys are v0; freeze after a month of real pages.
+7. **Filer judgment quality** — the corpus must prove `notable` reasons + atom-splitting; P0 labeling decides if the bars are right.
+8. **Embeddings promotion** — trigger defined (logged search misses; they already audit); no action until it fires.
+9. **Resident orchestrator occupant** — slot supports `resident`; pick the occupant (Hermes-class) at P3+.
+
+## Disclosures (done while you slept; objections reversible)
+
+- **Homebrew install**: `postgresql@17` (binaries only — no service registered). Dev cluster lives at `~/.claudio/pg`, socket-only on port 5433, outside iCloud. `./core/deploy/dev.sh start|stop|reset|test`.
+- **The P2-in-two-weeks clock started**: first DDL committed 2026-06-12 (the honesty-gate condition). P2 = the daily loop (edge, filer, brief, scanner) by ~2026-06-26 or shrink.
+- **OS users NOT created, crons/launchd NOT loaded, no backups configured** — system-state changes wait for you (scripts exist: `setup-os-users.sh p1`, `reconcile.sh --dry-run`).
