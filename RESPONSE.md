@@ -3,36 +3,33 @@
 
 Session report for Sam. Rewritten each session; git history keeps prior reports. Explains the most significant moves, what you most need to know, what to do, and points to the details. Open decisions live in `docs/questions-queue.md`, not here.
 
-## Session 2026-06-12 (evening): the type is installed, never forked
+## Session 2026-06-12 (evening, part 2): fork softened, panel customizable, Occam findings
 
-### Your directive, integrated
+### Your two corrections, applied
 
-The distribution model is now law (`specs/00` P11 extension, `specs/07 §Distribution`, `specs/04` install guarantee). Three artifacts:
+- **"Installed by default (recommended), fork if you wish"** — softened everywhere (`specs/00` P11, `07 §Distribution`, `CONTEXT.md`, audit doc). The distribution section is now explicitly framed as *an option preserved cheaply, not a commitment* — nothing in it is load-bearing for a single-user install; it exists so heading there later is easy. The fork test survives as the design bar (install+term-build should beat forking on effort), not as a prohibition.
+- **Panel: core is type, chrome is term** (`specs/06 §Panel`) — the panel must always exist with core functionality intact (approvals, registry, intake, parameters, and above all the what-will-execute commit paths). On top: embeddable AND customizable — re-skin, rearrange, extend with term pages/tiles, or wrap entirely inside your FPD-style dashboard. One deliberate limit, which is itself an Occam call: customization happens in term surfaces, **no plugin framework in the type**, and the server-rendered approval views are never overridable — however deep the custom chrome goes, what-you-approve remains what-executes.
 
-| Artifact | Who writes it |
-|---|---|
-| **Type release** — installed at a pinned version, core-owned, read-only to every uid *including your own login session* | nobody locally |
-| **Term workspace** — your repo: windows, dashboards, custom agents, seeds, wiki | you and your agents, freely |
-| **Dev checkout** — a normal clone | maintainers; changes go upstream as PRs |
+### The simplification check (you asked for Occam's razor findings — here they are, biggest first)
 
-Your requirements, mapped:
+**1. The spec is outrunning the build — freeze new law until P2 ships.** The binding constraint is the daily loop by ~06-26. Of this week's additions, the raw store and P12 are load-bearing for P2; regimes, distribution, probing protocol are not — they're good law written early. The risk isn't that they're wrong; it's the pattern: we are one week into a two-week clock and spec mass is still growing. Recommendation: every new directive until P2 gets one question first — *does the daily loop need it?* — and if not, it goes to the queue as a one-liner, not into the specs as law. (This includes things I write.)
 
-- **"users aren't editing the core files"** → the install guarantee: the type lands core-owned and read-only. Not a convention — file ownership. Even the dumbest dashboard-building agent gets a permission error, not a footgun.
-- **"I MUST ENSURE that I NEVER change or touch the core system"** → the same guarantee protects you from yourself: your interactive sessions can't write an install either. Maintaining the type = editing a dev checkout and shipping a release; building your life = the term workspace. Two different directories, two different permissions, impossible to confuse.
-- **"propagate easily... I'd like the option"** → `claudio update`: fetch tagged release → run new migrations (append-only from first release) → regenerate catalog → restart workers. The term never lives in type paths, so updates structurally can't touch it. The model is identical whether the repo stays private or goes public — the option costs nothing to keep open (queue 11).
-- **"a very strong test... more onerous to fork than to use"** → **the fork test** is now the packaging acceptance test, and its enforcement loop: every "I had to fork to do X" is filed as a type defect. This is just P11's standing question with teeth — if a legitimate customization needs a type edit, the type is wrong.
-- **Your dashboard use case** → specced in `specs/06`: dashboards are term components that may wear **two hats** — surface (data out) and window (data in: the daily-log box writes `capture()`), each hat getting its own narrow grant via the handshake. And **panel views are embeddable**: your FPD-style dashboard mounts the type's approval/registry/intake views inside its own chrome — the term decides the look, the type keeps the commit paths. You wire it all up with your own Claude Code sessions against L1, and none of it can touch core.
+**2. `tasks` + `expectations` are one table wearing two names.** They share description, person, due, status, role, sensitivity, links, provenance; expectations add only `follow_up`/`resolved_by`. Your own type-system brainstorm had this right originally: one **obligations** table with `direction: by_me | to_me`. Merging cuts a table, ~4 L1 functions, and view branches; the scanner reads one surface; agents walk one concept. Cost: a day of L1+test churn *now* — and it's now or never, because every phase after P2 builds on these two names. This is the single biggest structural simplification available. My lean: do it.
 
-### One interim rule that starts now
+**3. `filters` vs `semantics.discard_patterns` — two mechanisms for "this is noise."** Both are deterministic per-window pattern lists; the only difference is stage (pre-capture drop vs post-capture discard). Unify: one `noise_patterns` list per window, each pattern tagged `drop` (never recorded — your privacy case) or `discard` (recorded, no atom; the default). One concept instead of two, and the drop-counter guardrail covers both. My lean: do it (spec-only change; filters aren't built yet).
 
-Until the physical split (post-P2 packaging milestone), this repo is the dev checkout with your term co-resident. **Term-building sessions — the custom dashboard especially — run in their own repos against L1, never inside this checkout.** That's the line until file permissions enforce it.
+**4. Regimes: we violated our own grow-by-promotion rule.** The spec mandates `semantics` be a dated list *from day one* — list-shaped config for a regime change that may never come, which is exactly pitfall-5 speculative structure. Simplify: `semantics` stays scalar; the audit log already records every config change, so history is never lost; promote to the dated-list shape at the *first real* regime change (the trigger and target shape are pre-agreed, so the promotion is mechanical). My lean: do it.
+
+**5. Checked and deliberately kept** (so you know the pass was real): staged OS tiers (security arrives with its load — already the simplified form); intent binding (closed the deepest red-team finding); the 8 notable reasons (small, and `milestone`-reason vs `milestone`-kind overlap is legitimate — a kind=meeting atom can be reason=milestone); eleven wiki chapters (research-validated MOC anchors, zero runtime cost); metrics/embeddings/probe-budget deferrals (all have explicit triggers); two backup layers (the local one is one directory); the seeded-but-disabled component roster (it's the registry being honest about what will exist).
+
+Items 2–4 are yours to call — you said you'll start the simplification next; I've changed nothing on them. If you bless 2, it should happen before any P2 code references the two names.
 
 ### Carried over
 
-- **Elicitation: still clear to start** — say "run the elicitation" in a core session. Nothing this directive changes blocks it; the purpose contract is term, exactly where it belongs.
-- Corpus: walkthrough approved (your rename applied); `corpus-core/coverage/sam` still `proposed` when you want the same pass.
-- Queue 4b: skim the 8 notable reasons. Queue 11: the only open sub-decision is public-vs-private type repo, no rush.
+- **Elicitation: clear to start** — unaffected by any of this. Say "run the elicitation" in a core session.
+- Corpus: `corpus-core/coverage/sam` still `proposed`. Queue 4b: skim the 8 notable reasons.
+- Queue 11: distribution stays tentative by design; public-vs-private undecided, zero cost to defer.
 
 ### Pointers
 
-Distribution: `specs/07 §Distribution` (the three artifacts, update path, fork test). Law: `specs/00` P11. Enforcement: `specs/04` install guarantee. Dashboard dual-hat + embeddable panel: `specs/06`. Audit updated: `docs/type-term-audit.md`. Queue: 11.
+Fork softening: `specs/00` P11, `specs/07 §Distribution`. Panel: `specs/06 §Panel`. The Occam items above reference: `specs/01` (tasks/expectations DDL), `specs/06 §Windows` (filters, semantics), `specs/00` vocab (Regime). Queue: `docs/questions-queue.md`.

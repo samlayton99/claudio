@@ -27,6 +27,8 @@ claudio/
 
 ## Distribution (P11: the type ships; planned now, built at the packaging milestone)
 
+Status: an **option preserved cheaply, not a commitment** — Sam hasn't decided whether the type is ever maintained for others. Nothing in this section is load-bearing for a single-user install; it exists so heading there later is easy. Default path is install; forking is allowed.
+
 Three artifacts:
 
 | Artifact | Who writes it | Where |
@@ -37,7 +39,7 @@ Three artifacts:
 
 - **Update path** (cheap by construction, whether or not the project is ever public): `claudio update` = fetch tagged release → run new migrations → regenerate catalog → reconciler restarts workers. The term never lives in type paths, so updates cannot touch it.
 - **Migrations are append-only from the first release.** (Pre-release, in-place editing + `dev.sh reset` is fine — that era ends at packaging.)
-- **The fork test is the packaging acceptance test**: a senior dev must find using-and-term-building strictly easier than forking. Every "I had to fork to do X" is filed as a type defect.
+- **The fork test is the packaging acceptance test**: forking is permitted, but a senior dev must find using-and-term-building strictly easier than forking. Every "I had to fork to do X" is filed as a type defect.
 - **This repo, today**, is the dev checkout with Sam's term co-resident; the milestone splits them (type repo + Sam's private term repo). Until then: term-building sessions (e.g. the custom dashboard) run in their own repos against L1 — never inside this checkout.
 
 ## Standing gates (from `docs/honesty-audit.md`)

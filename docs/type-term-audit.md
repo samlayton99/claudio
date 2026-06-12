@@ -43,7 +43,7 @@ The type must be robust to **different terms** (independence) and to **the same 
 
 ## Packaging path (how this ships)
 
-Sam's distribution directive (2026-06-12 evening): **installed, never forked.** Users don't clone-and-run-with-it; they install a versioned type they cannot edit and author their term beside it. Maintainers (Sam +, if ever public) edit type upstream; releases propagate to installs without touching any term. Full model: `specs/07 §Distribution`, `specs/00 P11`, `specs/04` install guarantee.
+Sam's distribution directive (2026-06-12 evening): **installed by default, forkable by choice** — and the whole distribution design is an option preserved cheaply, not a commitment (he hasn't decided on maintaining it for others). The recommended path: install a versioned type you can't edit, author your term beside it. Maintainers edit type upstream; releases propagate to installs without touching any term. Full model: `specs/07 §Distribution`, `specs/00 P11`, `specs/04` install guarantee.
 
 1. **Now (directive)** — P11 + this audit; every future decision states its side of the line. New-user story, stated as the target: *install the type → run the elicitation (produces the purpose contract + roles) → register windows (role_map, semantics, filters per their life) → done.* Onboarding IS term-authoring; there is no other setup.
 2. **P2 (while building the daily loop)** — keep the line visible in code review; no restructure mid-loop. Term-building sessions (the custom dashboard) run in their own repos against L1, never inside this checkout.
