@@ -90,6 +90,9 @@ create table roles (
   name      text not null,
   status    text not null default 'active' check (status in ('active','retired')),
   summary   text check (char_length(summary) <= 500),
+  weight    real not null default 1.0,   -- USER-SET (asserted, dictation/panel): how much this role
+                                         -- matters in the life. The taste multiplier in packet scoring;
+                                         -- never inferred, never model-adjusted.
   default_sensitivity smallint not null default 0,
   ...conventions
 );
@@ -208,8 +211,10 @@ create unique index documents_anchor on documents(kind, entity_type, entity_id)
 ```sql
 create table links (
   id            uuid primary key,
-  from_type     text not null check (from_type in ('person','role','purpose','task','expectation','atom','component','directive')),
-  to_type       text not null check (to_type   in ('person','role','purpose','task','expectation','atom','component','directive')),
+  from_type     text not null check (from_type in ('person','role','purpose','task','expectation','atom','component','directive','document')),
+  to_type       text not null check (to_type   in ('person','role','purpose','task','expectation','atom','component','directive','document')),
+  -- 'document' makes summary pages link-bearing hubs: daily/monthly/biannual records link their atoms,
+  -- roles, and expectations — the queryable longitudinal mid-tier (05 §Summary ladder).
   from_id       text not null,
   to_id         text not null,
   kind          text not null,            -- vocab 'link' or 'relationship'

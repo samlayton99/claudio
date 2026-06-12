@@ -92,6 +92,16 @@ Wiki (`research-wiki.md`): chapters as fixed MOCs, ≤2-hop rule · page budget 
 | "some atoms for a 2-hour meeting should be incredibly long, some really short" | Pushback (your P8 is the reason): atom length does NOT scale — destination does. Depth ladder: summary → +detail → +verbatim quotes → +wiki page/section (where "incredibly long" lives) → refs to tier 0 always. The atom is the index card, never the document; a long paraphrase is exactly the nested-summary decay P8 forbids | `01 §Atoms` |
 | (implied by your scenario) one thread, two episodes in a day | Loosened: thread-day is the *capture* unit; filer writes 1..n atoms per window, default 1, split only when purposes are glaringly distinct | `01 §Atoms` table |
 
+## D3. Post-v3 round 2: taste, scoring, and the summary ladder
+
+| Your words | What changed | Where |
+|---|---|---|
+| "weights set manually based on role... cobb douglas utility function" | Scoring is now Cobb-Douglas with floors (`recency^α · importance^β · dueness^γ`); floors preserve old-but-critical items (floored ≡ weighted sum in log space, so the research safety property survives); `roles.weight` added — user-set, the taste multiplier, never inferred or model-adjusted | `02 §packet`, `01 roles.weight` |
+| "the llm decides notable... with all previous atoms in a wide window + context of what's going on" | Notable assignment moved to the daily pass: whole day + prior reflections + active expectations in context (relative judgments need longitudinal context); filer marks candidates, day-close confirms; closed reason vocabulary stands | `05 §Summary ladder`, `03 brief/daily pass` |
+| "daily summary as a linking object... data table 1:1 with each wikipage; monthly long; biannual multiple pages" | The summary ladder: daily reflection (P2) / monthly summary (P4) / biannual log (P5+), each a wiki page with a 1:1 `documents` row + typed links (`document` added to links endpoints) — the queryable longitudinal mid-tier. **Context, never source**: facts cite atoms only; prior summaries are orientation; only trajectory claims may cite them | `05 §Summary ladder`, `01 links`, `03 workflows` |
+| "all prompts/agents/directives in a single folder" | Standing build rule: everything inner-circle lives in `core/prompts/` — one tweak surface | `07 §Standing rules` |
+| "prevent the model from indexing on one or two obscure examples... representation and expressibility" | Confinement of LLM taste made explicit: headlines computed not chosen (templated summaries ordered by role weights + ledgers); "all instances" is a SQL property over typed links (complete record + COUNT, never recall); candidates-from-summaries / verdicts-from-atoms; the model owns wording, never ordering, inclusion, or facts | `05 §Summary ladder` (headline rule), `02 §packet`, conversation record |
+
 ## E. Still yours to answer (`questions-queue.md` §B)
 
 Purpose-contract sensitivity (default: 2) · first elicitation session timing/format (it now gates P0) · the kill criterion (agree in advance) · monthly budget ceiling (placeholder $50) · wiki default-no bar (confirm) · the five v2-era defaults in §C of the queue.

@@ -25,7 +25,19 @@ Rules: **every page reachable from a chapter in ≤ 2 hops**; every page names i
 
 - **Raw atoms always in context**: any page update is prompted with the update reason, the previous version, and the full relevant atom list — never from another summary.
 - **Delta edits only**: patch sections, append cited lines; full-page regeneration only via proposal (full rewrites cause documented "context collapse").
-- **Digests re-derive from atoms every time** — the brief's daily digest page and the weekly state-of-life page never read prior digests. Absolute dates only.
+- **Digests re-derive from atoms every time** — no summary ever reads a prior summary as *source*. Absolute dates only.
+
+## The summary ladder (records, not re-summaries)
+
+Three cadences of record, each a wiki page **with a 1:1 `documents` row carrying typed links** (to the atoms covered, roles touched, expectations opened/resolved) — queryable hubs, not just prose, and the longitudinal mid-tier for trend questions (scan six monthlies, drill to atoms):
+
+- **Daily reflection** (P2, written by the brief's daily pass) — the day's record; also where `notable` is assigned/confirmed, with the whole day + a wide window of prior reflections and active expectations in context (relative judgments need longitudinal context; closed reason vocabulary recorded).
+- **Monthly summary** (P4) — long-form: aggregates progress moves, role activity, expectation ledger, purpose drift.
+- **Biannual log** (P5+) — multiple pages; the era record.
+
+**Context, never source (P8 made precise for summaries):** every factual claim in any summary derives from and cites atoms directly — depth stays raw → atom → rollup. Prior summaries sit in the window for orientation and continuity only; the sole claims allowed to cite a summary are trajectory claims ("third week this has surfaced"). Facts never flow summary → summary.
+
+**Headlines are computed, not chosen:** summary structure is templated — sections ordered by user-set role weights, the obligations ledger by due-date, notables by recorded reason. The model writes sentences inside a frame it didn't pick; it cannot make the day "all about" what it found interesting.
 - **Citations are load-bearing**: factual claims carry dated `[[atom:uuid]]` refs. Lint verifies cited atoms *exist*; the **verifier step** (chained on the wiki gardener's run in a fresh context that is never the author) samples that atoms *support* claims — fabricated/mis-anchored citations are the single most documented AI-wiki defect. It becomes a separately-scheduled component only if scale demands it.
 - **Judgment attribution**: characterizations of people/feelings are user-authored or user-approved, cited to the user's own statements. Agents propose; never assert the moral ledger.
 - **Human corrections are immutable spans**: user-asserted text (panel edits, dictated corrections — marked, e.g. cited to `[[user:date]]`) may be *moved* but never *reworded* by any gardener. On correction, walk the citation graph and flag dependent claims (poisoned facts propagate one-to-many).

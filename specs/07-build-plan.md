@@ -16,6 +16,7 @@ Build order law: **structure first, types and contracts second, functionality an
 - **Drills are automated, not assigned**: restore-test is a monthly cron with checksum + alert; kill-switch verification is scripted with a calendar nudge. Humans do not drill (ux-rings).
 - Evals are not law: they grow and change with scope. Restraint/security cases stay at a 100% bar.
 - Continuous naming check: anything an agent calls gets a descriptive name or it doesn't merge.
+- **One prompts folder**: every inner-circle prompt, agent config, and directive template lives in a single directory (`core/prompts/`) — one place to find and tweak everything; nothing scattered (dev ergonomics is a design input).
 
 ## Eval suites (built first, run forever)
 

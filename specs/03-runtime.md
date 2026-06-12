@@ -50,9 +50,9 @@ The operative P2 roster is four components: **filer, scanner, watchdog, brief.**
 
 | Workflow | Phase | Trigger | Pipeline |
 |---|---|---|---|
-| **morning brief** | P2 | cron | SQL packet (incl. hold-questions batch) → one cheap-model step → user queue, **and writes `wiki/digests/<date>.md` as a side effect** — the brief IS the daily rollup (re-derived from atoms, absolute dates, P8); packets point at that page. One reflect-organ, not two. **Degraded mode: model fails ⇒ deterministic skeleton still delivers** (P6). |
+| **morning brief / daily pass** | P2 | cron | SQL packet (incl. hold-questions batch) → one cheap-model step → user queue, **and writes the daily reflection page** (1:1 documents row + links — `05 §Summary ladder`); the same pass assigns/confirms `notable` with the whole prior day + wide context in window. One reflect-organ. **Degraded mode: model fails ⇒ deterministic skeleton still delivers** (P6). |
 | **todo & expectation scanner** | P2 | hourly cron | pure SQL: due/overdue, `follow_up_at`, missed expectations → resolutions + reminders. No LLM. **Critical.** |
-| **state-of-life digest** | P4 | **weekly only** | audit of the person's general state, fresh from atoms each time, fed into general context. Monthly/biannual cadences are added when the weekly is demonstrably read — not before one is proven. |
+| **monthly summary** | P4 | monthly cron | long-form record: progress moves, role activity, expectation ledger, purpose drift — fresh from atoms (dailies as orientation only, never source). Biannual log (multi-page era record) follows at P5+. (`05 §Summary ladder`) |
 | **meeting setter** | P5 | query | proposes times + drafts; never books, never sends |
 | **query-what-happened** | P2 | manual | orchestrator over `what_happened` + packet |
 
