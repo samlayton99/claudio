@@ -25,6 +25,21 @@ claudio/
 └── docs/                   # working notes; docs/archive/ = the historical brainstorm (not law)
 ```
 
+## Distribution (P11: the type ships; planned now, built at the packaging milestone)
+
+Three artifacts:
+
+| Artifact | Who writes it | Where |
+|---|---|---|
+| **Type release** | nobody locally — installed at a pinned tag, core-owned, read-only to ALL non-core uids including the user's login session | e.g. `~/claudio-system/` (installer-created) |
+| **Term workspace** | the user and their agents, freely | the user's own repo: term components (windows, dashboards, custom agents), seeds, wiki, deploy choices |
+| **Dev checkout** | maintainers only | a normal clone; type changes go upstream as PRs |
+
+- **Update path** (cheap by construction, whether or not the project is ever public): `claudio update` = fetch tagged release → run new migrations → regenerate catalog → reconciler restarts workers. The term never lives in type paths, so updates cannot touch it.
+- **Migrations are append-only from the first release.** (Pre-release, in-place editing + `dev.sh reset` is fine — that era ends at packaging.)
+- **The fork test is the packaging acceptance test**: a senior dev must find using-and-term-building strictly easier than forking. Every "I had to fork to do X" is filed as a type defect.
+- **This repo, today**, is the dev checkout with Sam's term co-resident; the milestone splits them (type repo + Sam's private term repo). Until then: term-building sessions (e.g. the custom dashboard) run in their own repos against L1 — never inside this checkout.
+
 ## Standing gates (from `docs/honesty-audit.md`)
 
 1. **P2 in two weeks** of first DDL, or shrink before continuing.

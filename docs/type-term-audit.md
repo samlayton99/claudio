@@ -43,9 +43,11 @@ The type must be robust to **different terms** (independence) and to **the same 
 
 ## Packaging path (how this ships)
 
-1. **Now (directive)** — constitution principle P11 + this audit; every future decision states its side of the line. New-user story, stated as the target: *clone the type → run the elicitation (produces the purpose contract + roles) → register windows (role_map, semantics, filters per their life) → done.* Onboarding IS term-authoring; there is no other setup.
-2. **P2 (while building the daily loop)** — keep the line visible in code review; no restructure mid-loop.
-3. **Packaging milestone (post-P2 gate)** — physical split: `term/` directory (seeds, window instances, Sam corpus, deploy choices) vs type tree (`specs/`, `core/`, contract tests); `0008` roster trimmed to required slots; term components load from `term/seeds/`. Anonymized starter corpus authored from the type's needs, not Sam's data.
+Sam's distribution directive (2026-06-12 evening): **installed, never forked.** Users don't clone-and-run-with-it; they install a versioned type they cannot edit and author their term beside it. Maintainers (Sam +, if ever public) edit type upstream; releases propagate to installs without touching any term. Full model: `specs/07 §Distribution`, `specs/00 P11`, `specs/04` install guarantee.
+
+1. **Now (directive)** — P11 + this audit; every future decision states its side of the line. New-user story, stated as the target: *install the type → run the elicitation (produces the purpose contract + roles) → register windows (role_map, semantics, filters per their life) → done.* Onboarding IS term-authoring; there is no other setup.
+2. **P2 (while building the daily loop)** — keep the line visible in code review; no restructure mid-loop. Term-building sessions (the custom dashboard) run in their own repos against L1, never inside this checkout.
+3. **Packaging milestone (post-P2 gate)** — the physical split: type repo (specs/, core/, contract tests, installer, updater) vs Sam's private term repo (seeds, window instances, Sam corpus, dashboards, deploy choices); installed type core-owned read-only to everyone including Sam's login session; `0008` roster trimmed to required slots; migrations go append-only; anonymized starter corpus authored from the type's needs, not Sam's data. Acceptance test = the fork test: using-and-term-building must be strictly easier than forking, even for a senior dev.
 
 ## The standing question for every future decision
 

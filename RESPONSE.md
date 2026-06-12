@@ -3,36 +3,36 @@
 
 Session report for Sam. Rewritten each session; git history keeps prior reports. Explains the most significant moves, what you most need to know, what to do, and points to the details. Open decisions live in `docs/questions-queue.md`, not here.
 
-## Session 2026-06-12 (day, part 3): notable typechecked, P12, backup decided
+## Session 2026-06-12 (evening): the type is installed, never forked
 
-### Your question: how is notable captured?
+### Your directive, integrated
 
-Your instinct found a real gap. The state before today: `notable` was already binary and privilege-gated (boolean column; only the daily pass and you can set it — the filer can only flag `meta.notable_candidate`, and the red-team suite proves agents get rejected). But the *reason* was a comment-level convention stuffed in `meta` jsonb — prose, never validated. Exactly the thing you smelled.
+The distribution model is now law (`specs/00` P11 extension, `specs/07 §Distribution`, `specs/04` install guarantee). Three artifacts:
 
-Now closed, top to bottom:
+| Artifact | Who writes it |
+|---|---|
+| **Type release** — installed at a pinned version, core-owned, read-only to every uid *including your own login session* | nobody locally |
+| **Term workspace** — your repo: windows, dashboards, custom agents, seeds, wiki | you and your agents, freely |
+| **Dev checkout** — a normal clone | maintainers; changes go upstream as PRs |
 
-- **`atoms.notable_reason`** is a real column, CHECK-paired with the boolean (`notable=true` ⇔ reason present — the database makes half-states unrepresentable).
-- The reason must be an **active kind in a closed `notable_reason` vocabulary** — trigger-validated like every other kind. "Felt important" is unwritable; the model selects from a list it didn't write.
-- **Starter list of 8** (seeded, yours to veto — queue 4b): `milestone`, `first_contact`, `purpose_advance`, `rare_event` (frequency claims must survive a COUNT, never model recall), `relationship_beat`, `decision`, `emotional_peak`, `user_asserted` (always wins).
-- **7 new contract tests**: no reason → rejected; junk reason → rejected; valid → stored; unset → reason auto-clears; agents still blocked. **Suites: red-team 51/51, contract 83/83.**
-- Found and fixed a pre-existing bug while testing: the guard blocked `w_brief` (the daily pass itself!) from setting notable — it could never have worked. My new tests caught it; this is your "every function needs test cases" rule paying out on day one.
+Your requirements, mapped:
 
-### Generalized, as you suggested: P12 "Judgments are selections"
+- **"users aren't editing the core files"** → the install guarantee: the type lands core-owned and read-only. Not a convention — file ownership. Even the dumbest dashboard-building agent gets a permission error, not a footgun.
+- **"I MUST ENSURE that I NEVER change or touch the core system"** → the same guarantee protects you from yourself: your interactive sessions can't write an install either. Maintaining the type = editing a dev checkout and shipping a release; building your life = the term workspace. Two different directories, two different permissions, impossible to confuse.
+- **"propagate easily... I'd like the option"** → `claudio update`: fetch tagged release → run new migrations (append-only from first release) → regenerate catalog → restart workers. The term never lives in type paths, so updates structurally can't touch it. The model is identical whether the repo stays private or goes public — the option costs nothing to keep open (queue 11).
+- **"a very strong test... more onerous to fork than to use"** → **the fork test** is now the packaging acceptance test, and its enforcement loop: every "I had to fork to do X" is filed as a type defect. This is just P11's standing question with teeth — if a legitimate customization needs a type edit, the type is wrong.
+- **Your dashboard use case** → specced in `specs/06`: dashboards are term components that may wear **two hats** — surface (data out) and window (data in: the daily-log box writes `capture()`), each hat getting its own narrow grant via the handshake. And **panel views are embeddable**: your FPD-style dashboard mounts the type's approval/registry/intake views inside its own chrome — the term decides the look, the type keeps the commit paths. You wire it all up with your own Claude Code sessions against L1, and none of it can touch core.
 
-Now constitutional (`specs/00`): **any LLM judgment the scaffold acts on is a binary or closed-vocabulary selection, typechecked at write time — never free prose.** Nuance goes in prose fields that drive nothing. If a judgment can't be enumerated, it isn't automated — it becomes a question to you, and recurring answers grow the vocabulary by promotion. Much of the system already obeyed this (atom/link kinds, server-classified proposal classes, sensitivity); notable was the leak. Remaining free-text judgment fields (discard reason, hold reasons) get vocabs as their surfaces are built — queue 14.
+### One interim rule that starts now
 
-### Backup: decided (you delegated)
+Until the physical split (post-P2 packaging milestone), this repo is the dev checkout with your term co-resident. **Term-building sessions — the custom dashboard especially — run in their own repos against L1, never inside this checkout.** That's the line until file permissions enforce it.
 
-Two layers. **Local**: restic repo at `~/.claudio/backup` from day one — zero setup, covers you immediately; moves to the external drive when you buy one. **Offsite**: restic → Backblaze B2, client-side encrypted (B2 only ever sees ciphertext; your data at life scale costs cents per month). The one 5-minute step only you can do — create the B2 account + bucket + key — happens at deploy, guided. Nothing is blocking on this anymore.
+### Carried over
 
-### Housekeeping
-
-Your corpus rename left t03's raw text still saying Emma/Josh while the fixtures bound Ally/Kate — aligned the raw to your names. Walkthrough noted as approved; the other corpus files (`corpus-core`, `corpus-coverage`, `corpus-sam`) still carry `labels_status: proposed` whenever you want the same pass on them.
-
-### Elicitation: you're clear to start
-
-Nothing pending on my side. Say **"run the elicitation"** in a core session — the mirror's prompt is `core/agents/mirror/prompt.md`; it fills the purpose contract + role weights (including the disciple sensitivity default you deferred) and ends with your signature.
+- **Elicitation: still clear to start** — say "run the elicitation" in a core session. Nothing this directive changes blocks it; the purpose contract is term, exactly where it belongs.
+- Corpus: walkthrough approved (your rename applied); `corpus-core/coverage/sam` still `proposed` when you want the same pass.
+- Queue 4b: skim the 8 notable reasons. Queue 11: the only open sub-decision is public-vs-private type repo, no rush.
 
 ### Pointers
 
-P12 + decision map: `specs/00`. Schema: `specs/01` §atoms, `core/l1/migrations/0002/0003/0005/0008`. Tests: `evals/contract/run.sh` (notable section). Queue: 4 (backup, decided), 4b (the 8 reasons — skim), 14 (P12 sweep). Reasoning: `CONTEXT.md`.
+Distribution: `specs/07 §Distribution` (the three artifacts, update path, fork test). Law: `specs/00` P11. Enforcement: `specs/04` install guarantee. Dashboard dual-hat + embeddable panel: `specs/06`. Audit updated: `docs/type-term-audit.md`. Queue: 11.

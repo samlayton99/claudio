@@ -53,3 +53,5 @@ The mechanism (P6): the **handshake agent** — a dedicated internal interviewer
 ## Custom dashboards (disposable surfaces)
 
 (P6.) Provisioned via the pipeline; own DB role (`SELECT` on named views + `propose`/`post_message` only). Tiles read `metrics` + views; **a dashboard may own derived metrics** — tracking a metric that doesn't exist yet is just `upsert_metric` rows under its component id (granted narrowly). Any write action is a proposal. Regenerable; deleting one costs nothing.
+
+Dashboards are **term components** (P11) and may wear two hats: a surface (data out) and, via a second registration, a window (data in — e.g. an FPD-style dashboard whose daily-log entry box writes `capture()`). Each hat gets its own narrow grant; the handshake law covers both. **Panel views are embeddable** (P6, with custom dashboards): the type's approval/registry/intake views mount inside a custom dashboard rather than forcing a second destination — the term decides the chrome, the type keeps the commit paths.

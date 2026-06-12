@@ -34,6 +34,7 @@ OS user = trust tier (same-uid credential theft is macOS reality; cross-tier is 
 ## Filesystem, process, network
 
 - `core/` + `custom/` read-only to all worker uids (code deploys via core; workers never write code paths). Workers write only `wiki/` (w1) and `archive/` (large tier-0 payloads, per-tier subdirs).
+- **At the packaging milestone this hardens into the install guarantee (P11):** the installed type is core-owned and read-only to the user's own login session too — a term-building agent (custom dashboard build, personal Claude Code session) *structurally cannot* modify the type, accidentally or otherwise. Maintainers edit a dev checkout and ship releases; nobody edits an install.
 - launchd plists root/sam-owned, reconciler-generated; per-worker tool allowlists core-owned. No self-modification.
 - Tripwire (hourly): git drift over `core/`+`custom/` from P1; permission audit + worker-uid persistence scan (LaunchAgents, crontabs, login items) from **P3** — before the tier split there are no worker uids to scan.
 - Kill switch `claudio-stop`: bootout + pkill every worker uid + panel banner; drilled quarterly. Red-team-red posts a critical alert; panel/core performs containment.
