@@ -1,9 +1,17 @@
 # RESPONSE
-*Refresh every time, this is not a log. Items not yet addressed carry over to the next response if still applicable*
+*Refresh every time, this is not a log. Items not yet addressed carry over to the next response if still applicable.*
 
-Session report for Sam. Rewritten each session; git history keeps prior reports. Explains the most significant moves, what you most need to know, what to do, and points to the details. Open decisions live in `docs/questions-queue.md`, not here.
+Session report for Sam. Rewritten each session; git history keeps prior reports. Explains the most significant moves, what you most need to know, and points to the details. Open decisions live in `docs/questions-queue.md`, not here.
 
-## Session 2026-06-12 (build): all four P2 components built and green
+**Template (binding — every report ends with these four sections):**
+1. **Your plate** — what Sam needs to do, in priority order, with time estimates where known.
+2. **My plate** — what Claude does next, in order.
+3. **Dependencies / async / blockers** — what runs in parallel, what joins where, what is blocked on whom (reviews count as blockers).
+4. **Why I stopped** — sanity check / clean stopping point vs. a genuine blocker, named.
+
+---
+
+## Session 2026-06-12 (build): P2 daily loop built and green
 
 ### The stdlib clarification, folded in first (your note)
 
@@ -19,22 +27,46 @@ One command proves the whole stack: `./evals/run-all.sh` — **198 tests green a
 - **Brief / daily pass** (`core/agents/brief/`) — the scaffold computes, the model phrases: sections and ordering are fully deterministic (obligations by due, questions batched, yesterday's record), and the skeleton **sends even with the model completely dead** (tested with `CLAUDIO_LLM_CMD=/usr/bin/false`). The model owns exactly two things: optional rewording of the opener line, and the notable judgment — a selection from the closed vocabulary (P12), junk reasons rejected by the trigger. Writes the daily reflection page (wiki file + registered documents row). One brief per day, dedup enforced.
 - **window-imessage** (`core/pipes/windows/imessage/`) — the passive thread-day sweeper: one capture per chat per CLOSED local day (the meme-day capture unit), verbatim transcript with senders and times, edge-watched chats excluded, replay-safe via locator dedup. Stdlib roster row added to `0008` (`watch: ["*"]`, your term sets `exclude`).
 
-### Discoveries flagged while building (none required stopping)
+### Discoveries flagged while building
 
 1. **`w_scanner` clearance raised 0 → 1** (in `0008`, commented): at c0, RLS structurally hid sensitivity-1 obligations from the scanner — a disciple-floor task would *silently never get its reminder*, violating P6's never-false-negative. The c0 rationale doesn't apply to the scanner (pure SQL, no model, output only to your queue).
-2. **The same question stands for `w_brief` (still c0), and it's yours**: as designed, sensitivity-1 obligations will not appear in your morning brief's ledger. That may even be what you want (pastoral content not riding a model-touching workflow) — but it means a disciple task can fire a scanner reminder yet be absent from the brief. Queue item 15.
-3. ~~Group threads need the thread-day window sweeper~~ — built (window-imessage above). One refinement deferred to the J1 eval pass: zero-signal days currently still go through the filer model; the deterministic template path (t02's "no LLM pass at all" bar) lands when the filer is graded against your corpus.
+2. **The same question stands for `w_brief` (still c0), and it's yours**: as designed, sensitivity-1 obligations will not appear in your morning brief's ledger. Maybe right (pastoral content off model-touching workflows), maybe not (your own brief hiding your own ward tasks). Queue item 15.
+3. One refinement deferred to the J1 eval pass: zero-signal thread-days currently still go through the filer model; the deterministic template path (t02's "no LLM pass at all" bar) lands when the filer is graded against your corpus.
 
 ### What I deliberately did NOT do
 
-- **No live model call was made** — all LLM paths are stub-tested. The filer's real-model grading against the corpus is J1, gated on your label confirmation anyway, and I didn't want to spend tokens before the prompt is validated against confirmed labels.
-- **Nothing was loaded into launchd, no OS users created** — system-state changes are Sam-present by rule. That's J3: when you're ready, ~30 min together wires cron/launchd, Full Disk Access for chat.db, your real handles into the edge config, and `CLAUDIO_EDGE_SEND=imessage`.
-- **Didn't touch `core/l1/seeds/`** — your elicitation session owns those files right now.
+- **No live model call was made** — all LLM paths are stub-tested. Real-model grading is J1, gated on your labels, and tokens shouldn't burn before the prompt is validated against confirmed ground truth.
+- **Nothing loaded into launchd, no OS users created** — system-state changes are Sam-present by rule (J3).
+- **Didn't touch `core/l1/seeds/`** — your elicitation session owns those files.
 
-### What's next
+---
 
-Mine: an end-to-end loop smoke test (fixture text → edge → filer → scanner → brief → edge delivers — every hop is individually proven, the chain test is the icing), then J1 (filer vs corpus, real model) once your labels land. Yours, unchanged: elicitation (in progress), corpus labels (core/coverage/sam), notable-reasons skim (4b), brief-clearance call (queue 15), and scheduling J3.
+## 1. Your plate
+
+1. **Elicitation** (in progress, 30–60 min) — produces the purpose contract + role weights.
+2. **Corpus labels** (~30 min): `corpus-core/coverage/sam.json` — confirm or correct, flip `labels_status`. Queue 1 has the explainer.
+3. **Notable-reasons skim** (2 min) — queue 4b, veto any of the 8.
+4. **Brief-clearance call** — queue 15 (c0 as designed vs c1 vs count-only line). Default stands (c0) until you rule.
+5. **Schedule J3** (~30 min together): OS users, launchd, Full Disk Access, real handles into edge config, `CLAUDIO_EDGE_SEND=imessage`, B2 account.
+
+## 2. My plate
+
+1. End-to-end loop smoke test (fixture text → edge → filer → scanner → brief → edge delivers) — every hop is individually proven; the chain test catches contract drift.
+2. J1: grade the filer against your confirmed corpus with a real model; tune the prompt; add the zero-signal template path.
+3. Reconciler/launchd dry-run prep so J3 is genuinely 30 minutes.
+
+## 3. Dependencies / async / blockers
+
+- **Parallel now:** your items 1–4 and my item 1 — no interaction.
+- **J1 (my item 2) is BLOCKED on your item 2** (corpus labels). The filer doesn't meet a real model until the ground truth is yours.
+- **Real brief content needs your item 1** (elicitation seeds) — code-complete on my side either way.
+- **J3 (going live) needs both of us**, after my item 3 and your items 1–2. Everything before it runs in dev harmlessly.
+- **Reviews owed by you that gate nothing else:** items 3 and 4 (small, but they harden defaults I chose for you).
+
+## 4. Why I stopped
+
+**Clean stopping point, not a blocker.** The P2 component set is built, tested (198 green), committed, and pushed; the next meaty item on my side (J1) is blocked on your labels anyway, and the e2e smoke is a fresh-session-sized task. No discovery required stopping; the two clearance findings are flagged above (one fixed, one queued for you).
 
 ### Pointers
 
-Run everything: `./evals/run-all.sh`. Components: `core/pipes/scanner|edge`, `core/agents/filer|brief`, each with `test.sh`. Stdlib: `specs/00` P11. New queue item 15 (brief clearance). Reasoning: `CONTEXT.md`.
+Run everything: `./evals/run-all.sh`. Components: `core/pipes/scanner|edge|windows/imessage`, `core/agents/filer|brief`, each with `test.sh`. Stdlib: `specs/00` P11. Queue: 15 new. Reasoning: `CONTEXT.md`.
