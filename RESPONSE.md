@@ -3,49 +3,37 @@
 
 Session report for Sam. Rewritten each session; git history keeps prior reports. Explains the most significant moves, what you most need to know, what to do, and points to the details. Open decisions live in `docs/questions-queue.md`, not here.
 
-## Session 2026-06-12 (night): simplifications executed — time to build
+## Session 2026-06-12 (build): all four P2 components built and green
 
-### Your calls, executed
+### The stdlib clarification, folded in first (your note)
 
-1. **Spec freeze: in force.** Now a standing rule in the queue: until P2 ships, every new directive gets asked *"does the daily loop need it?"* — if not, it's a queue one-liner, never spec law. Applies to my ideas too.
-2. **Obligations merge: done.** One `obligations` table, `kind in ('task','expectation')` — your naming, no directions. The agent-facing verbs `create_task` / `create_expectation` survive unchanged (clearest for agents; all corpus fixtures still valid), and the four lifecycle functions collapsed into two: `amend_obligation` + `resolve_obligation` (outcome validated against kind, P12-style: a task resolves to done|dropped, an expectation to met|missed|dropped — `resolve_obligation(task_id, 'met')` is unwritable). Link endpoint types stay `task`/`expectation`, now kind-checked against the row. Net: −1 table, −2 functions, one scanner surface, one concept for agents to walk. **Suites: red-team 51/51, contract 84/84** (a new kind-mismatch test included).
-3. **Two-stage noise filtering: kept**, per your rejection. `filters` (pre-capture) and `discard_patterns` (post-capture) stay distinct. Recorded in the queue so it isn't re-litigated.
-4. **Regimes: simplified.** `semantics` is scalar; the audit log already keeps config history; it promotes to a dated regime list at the first real change. Our own grow-by-promotion rule, applied to ourselves.
+P11 now has three shelves: **type** = invariants (schema, functions, protocols); **stdlib** = shipped, term-shaped defaults maintained WITH the type so a fresh install is useful from minute one (default windows/workflows, starter vocabularies, the `general` role, wiki chapters, default parameters); **term** = this user's values and data. The audit's one "found leak" (the `0008` component roster) is hereby reclassified: the adapters are stdlib; only your *values* (like gcal's `commitment_strength: tentative`) are term. → `specs/00` P11, `docs/type-term-audit.md`, `CONTEXT.md` pitfall 9.
 
-### How to run the elicitation (you said right away — here's exactly how)
+### Built: the daily loop, component by component
 
-1. Open a terminal in this repo (`~/Desktop/my-repos/profile/claudio`) and start a fresh session: `claude`
-2. Say: **"You are the mirror. Read core/agents/mirror/prompt.md and CONTEXT.md, then run the elicitation."**
-3. What happens: one question at a time (never a form), starting from faith and family, building the four parts — goals (life/year/quarter horizons), values & beliefs, attributes with observable goalposts, and the priorities document. It reflects your words back before writing its own; it will surface tensions rather than smooth them ("you said X is everything, but Y is what you described protecting") — that tension is the product.
-4. It fills `core/l1/seeds/purpose-contract.md` and your role weights in `core/l1/seeds/roles.json` (your numbers — it asks, never proposes), and ends with your signature. Anything you say that's a directive ("never X in my morning brief") gets noted for staging, not put in the contract.
-5. Budget 30–60 minutes, phone away. Few true rows beat coverage; you can always add later.
+One command proves the whole stack: `./evals/run-all.sh` — **189 tests green across 6 suites** (red-team 51, contract 84, scanner 14, edge 13, filer 14, brief 13). Each component also has its own `test.sh`.
 
-### Who works when: the async map
+- **Scanner** (`core/pipes/scanner/`) — pure SQL, no LLM (P6 critical). Due reminders (24h lead), follow-up firing, auto-task creation, missed nudges (ask, never auto-resolve — P7). Idempotent via meta markers; a moved due date re-arms its reminder on purpose.
+- **Edge** (`core/pipes/edge/`) — capture-first inbound from chat.db (cursor + locator dedup; verbatim text incl. newlines; `verified_user` tagging from your handles), outbound drain of the user queue with resolve-only-on-send-success, on-disk spool + config cache so capture survives a Postgres outage end-to-end, dead-man heartbeat hook. Send modes: `echo` (dev) and `imessage` (deploy, osascript).
+- **Filer** (`core/agents/filer/`) — the first LLM worker. The model judges; the plumbing is code: tier-0 refs are *injected* into every atom (the model cannot forget provenance), parse failures file the honest `kind=unknown` atom after one retry (nothing retries forever, nothing drops silently), file/discard/hold all dispatch deterministically, and `file_intake`'s poison-pill quarantine isolates bad batches per-row. The LLM command is injectable (`CLAUDIO_LLM_CMD`), so the entire plumbing is tested with a stub at zero token cost.
+- **Brief / daily pass** (`core/agents/brief/`) — the scaffold computes, the model phrases: sections and ordering are fully deterministic (obligations by due, questions batched, yesterday's record), and the skeleton **sends even with the model completely dead** (tested with `CLAUDIO_LLM_CMD=/usr/bin/false`). The model owns exactly two things: optional rewording of the opener line, and the notable judgment — a selection from the closed vocabulary (P12), junk reasons rejected by the trigger. Writes the daily reflection page (wiki file + registered documents row). One brief per day, dedup enforced.
 
-**Both tracks start NOW, fully in parallel. Nothing you do blocks my start; nothing I do blocks yours.** Your items gate my work *going live*, not my building it. The whole dependency structure is three join points:
+### Discoveries flagged while building (none required stopping)
 
-**Your track (independent, ~1–2 hours total — do in this order):**
-1. Elicitation (30–60 min) → produces `purpose-contract.md` + role weights
-2. Corpus labels: core/coverage/sam (~30 min) → produces confirmed ground truth
-3. Notable-reasons skim (2 min)
+1. **`w_scanner` clearance raised 0 → 1** (in `0008`, commented): at c0, RLS structurally hid sensitivity-1 obligations from the scanner — a disciple-floor task would *silently never get its reminder*, violating P6's never-false-negative. The c0 rationale doesn't apply to the scanner (pure SQL, no model, output only to your queue).
+2. **The same question stands for `w_brief` (still c0), and it's yours**: as designed, sensitivity-1 obligations will not appear in your morning brief's ledger. That may even be what you want (pastoral content not riding a model-touching workflow) — but it means a disciple task can fire a scanner reminder yet be absent from the brief. Queue item 15.
+3. The filer's per-message capture works for your direct line, but group threads need the **thread-day window sweeper** (one capture per chat-day, per the meme-day fixture) — that's the next build item, not blocking the loop.
 
-**My track (independent, starts now, the long pole to ~06-26):**
-- Scanner (pure SQL) and edge (iMessage in/out) — zero dependencies on your items
-- Filer — built and tested against the walkthrough you already confirmed
-- Brief/daily pass — built against the contract-test seed data
+### What I deliberately did NOT do
 
-**The three join points (where your output plugs into mine):**
+- **No live model call was made** — all LLM paths are stub-tested. The filer's real-model grading against the corpus is J1, gated on your label confirmation anyway, and I didn't want to spend tokens before the prompt is validated against confirmed labels.
+- **Nothing was loaded into launchd, no OS users created** — system-state changes are Sam-present by rule. That's J3: when you're ready, ~30 min together wires cron/launchd, Full Disk Access for chat.db, your real handles into the edge config, and `CLAUDIO_EDGE_SEND=imessage`.
+- **Didn't touch `core/l1/seeds/`** — your elicitation session owns those files right now.
 
-| Join | Needs from you | Needs from me | What unlocks |
-|---|---|---|---|
-| J1: filer trusted on real data | corpus labels confirmed (#2) | filer built | filer graded against YOUR ground truth before it touches your life |
-| J2: brief carries real content | elicitation done (#1) | brief built | scoring/sections use your actual weights + contract, not test seeds |
-| J3: loop runs live on the mini | ~30 min together: `setup-os-users.sh p1`, B2 account, launchd load | everything above | the daily loop, for real |
+### What's next
 
-**Ordering implication:** your #1 and #2 take ~2 hours; my build takes days. As long as your items land within the next ~3–4 days, you are never on the critical path — J1/J2 will be waiting on my code, not your labels. J3 is inherently synchronous (system-state changes are Sam-present by rule): we schedule ~30 minutes when both sides of the table are done.
-
-**During P2 after J3:** your only job is to live with it daily and tell me where it's wrong. That feedback loop is the point of the two-week gate.
+Mine: the thread-day window sweeper, then run-worker LLM wiring polish, then J1 (filer vs corpus, real model) once your labels land. Yours, unchanged: elicitation (in progress), corpus labels (core/coverage/sam), notable-reasons skim (4b), and scheduling J3.
 
 ### Pointers
 
-Obligations: `specs/01` §obligations, `core/l1/migrations/0002/0005` (+ touched 0003/0004/0006/0007/0008), tests in both suites. Regimes: `specs/00` vocab, `specs/06` §semantics. Spec freeze + resolutions: `docs/questions-queue.md`. Mirror: `core/agents/mirror/prompt.md`.
+Run everything: `./evals/run-all.sh`. Components: `core/pipes/scanner|edge`, `core/agents/filer|brief`, each with `test.sh`. Stdlib: `specs/00` P11. New queue item 15 (brief clearance). Reasoning: `CONTEXT.md`.

@@ -22,6 +22,7 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 12. **Regimes** — `semantics` is SCALAR (Occam #4, approved 2026-06-12); the audit log carries config history; promotes to a dated regime list at the first real regime change.
 13. **Window filter defaults** — `filters` (pre-capture, never-recorded) ships empty by default; your term adds patterns as spam shows up. Type guardrails fixed: deterministic only + drop-counter metric.
 14. **P12 sweep** — remaining free-text judgment fields get closed vocabs as their surfaces are built: `discard_intake` reason, hold reasons (P2, with the filer), wiki demotion reasons (P5). The mechanism exists; apply on touch.
+15. **Brief clearance (yours to call)** — `w_brief` stays at clearance 0, so sensitivity-1 obligations (disciple-floor tasks) never appear in the morning brief's ledger, even though the scanner (now c1) reminds about them. Maybe correct (pastoral content off model-touching workflows), maybe not (your own brief hiding your own ward tasks). Options: keep c0; raise to c1; or c0 with a deterministic "+N sensitive items due" count line (no content). Default until you rule: keep c0.
 
 ## Standing rule until P2 ships (Occam #1, approved 2026-06-12)
 
