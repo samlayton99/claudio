@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# THE KILL SWITCH. Stage-aware: stops every claudio worker process and launchd job.
+# Does NOT stop Postgres (data is not the threat; processes are) and does NOT touch files.
+# Drilled quarterly (scripted, calendar-nudged — humans do not drill).
+set -uo pipefail
+
+echo "claudio-stop: $(date)"
+
+# 1. boot out every claudio launchd job (current user + worker uids when the tier split exists)
+for plist in $(launchctl list 2>/dev/null | awk '/com\.claudio\./ {print $3}'); do
+  echo "  bootout $plist"
+  launchctl bootout "gui/$(id -u)/$plist" 2>/dev/null || launchctl remove "$plist" 2>/dev/null || true
+done
+
+# 2. kill worker-uid processes (P3+ tier split; no-ops before that)
+for u in claudio-w0 claudio-w1 claudio-p; do
+  if id "$u" >/dev/null 2>&1; then
+    echo "  pkill -u $u"
+    sudo pkill -u "$u" 2>/dev/null || true
+  fi
+done
+
+# 3. kill any stray run-worker processes under the current user
+pkill -f "core/deploy/run-worker.sh" 2>/dev/null || true
+
+# 4. leave a containment marker the panel renders as a banner and the reconciler refuses to cross
+marker="$HOME/.claudio/STOPPED"
+date > "$marker"
+echo "  containment marker: $marker (reconciler will not start workers while it exists)"
+echo "claudio-stop: done. Recovery: investigate, remove the marker, re-run the reconciler from a core session."

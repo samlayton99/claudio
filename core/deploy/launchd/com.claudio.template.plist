@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Template the reconciler renders per component from the registry. Placeholders: __ID__,
+     __INTERVAL__ (StartInterval seconds) or __CALENDAR__ block, __DB_ROLE__.
+     Plists are root/sam-owned, reconciler-generated; workers never write code paths. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.claudio.__ID__</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__REPO__/core/deploy/run-worker.sh</string>
+    <string>__ID__</string>
+    <string>__DB_ROLE__</string>
+  </array>
+  <key>StartInterval</key><integer>__INTERVAL__</integer>
+  <key>StandardOutPath</key><string>__HOME__/.claudio/logs/__ID__.log</string>
+  <key>StandardErrorPath</key><string>__HOME__/.claudio/logs/__ID__.err</string>
+  <key>ProcessType</key><string>Background</string>
+  <key>Nice</key><integer>5</integer>
+</dict>
+</plist>
