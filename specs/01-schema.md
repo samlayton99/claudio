@@ -32,7 +32,7 @@ erDiagram
 - `id`: uuid for volume tables; human-readable slugs for `roles`, `purpose`, `components` (semantic identifiers measurably beat bare UUIDs for agent precision — research-traversal §1).
 - Every table: `created_at`, `updated_at` (trigger), `meta jsonb not null default '{}'`.
 - `sensitivity smallint not null default 0` — 0 normal, 1 sensitive, 2 restricted. RLS: `sensitivity <= l1.clearance()` (STABLE SECURITY DEFINER lookup of `role_clearances` by **`session_user`**; no GUC). `FORCE ROW LEVEL SECURITY` everywhere labeled; all worker-facing views `security_invoker = true`. Write floor server-clamped: `greatest(passed, window_default, role_default)`; only panel/core may lower.
-- **Nothing exists without a typecheck**: statuses = CHECK; kinds = `kinds` rows, trigger-validated; every jsonb payload (refs, batch shapes, packet, trigger configs) validated against a JSON Schema by trigger/function; TS/Python types generated from schema; contract tests on every L1 function.
+- **Nothing exists without a typecheck**: statuses = CHECK; kinds = `kinds` rows, trigger-validated; every jsonb payload (refs, batch shapes, packet, trigger configs) validated against a JSON Schema by trigger/function; contract tests on every L1 function. (Generated TS types arrive with their first consumer, the P3 panel; no Python consumer is specced.)
 - **Kind/flag discipline** (taste rule): vocabularies are deliberately small, OS-edited only (core sessions), each kind documents exactly what it applies to, and every domain carries a default `unknown` that agents are instructed to bias toward. Filterable flags are expensive to maintain — create them reluctantly.
 - Provenance: `created_by` trigger-set to `session_user`; `source_ref jsonb` shape `{"source","locator","tool"}`, schema-checked.
 - **Deletion & supersedence**: entity tables soft-delete via `status`. Inferred links and amended facts are **invalidated, not erased** (`invalidated_at`, `superseded_by`) — point-in-time queries survive (research-traversal §3.6). `person_handles` may hard-delete via L1 (audited). `purge()` (core-only) is the privacy override.
@@ -80,7 +80,7 @@ create table purpose_versions (
 - **Write access**: user-set functions only (dictation gate / panel / mirror elicitation sessions, `02`/`03`). No agent, gardener, or workflow can modify the contract. Nothing in the system overrides it.
 - **Lived-vs-proclaimed is derived, never stored mutable**: `v_purpose_alignment` (purpose row → linked-activity share, last-advanced, drift flags from `metrics`) is computed; discrepancy history is recorded as observation atoms + the wiki purpose/progress chapters. (P9: a derived view cannot go stale independently.)
 - What flows into everyday packets is the distilled slice (priorities list, goal/value statements via `advances`); the raw source document is mirror/core/panel-readable only.
-- **Absent/stale degraded mode**: packets are valid with empty `taste.purpose`; the alignment gardener no-ops with a `contract_missing_or_stale` metric; `v_purpose_alignment` surfaces `purpose_versions` age so contract staleness is itself a drift flag the mirror consumes.
+- **Absent/stale degraded mode**: packets are valid with empty `taste.purpose`; `v_purpose_alignment` surfaces `purpose_versions` age, so an empty or stale contract is itself the first finding the mirror's observational mode reports.
 
 ## Life plane
 
@@ -250,7 +250,7 @@ One human-meaningful episode: bounded time × coherent purpose × stable partici
 | Agent action with side effects | 1 atom per run |
 
 - **Never per-message**; per-message stats are window-computed `metrics`.
-- **Flood days don't change the rules**: 200 texts is still N conversation atoms. The nightly **pulse** (tier-2 digest re-derived from the day's atoms, absolute dates) gives consolidation; packet scoring keeps low-importance volume one pointer away. Live state of unclosed windows is visible via intake, not atoms.
+- **Flood days don't change the rules**: 200 texts is still N conversation atoms. The morning brief's daily digest page (re-derived from the day's atoms, absolute dates) gives consolidation; packet scoring keeps low-importance volume one pointer away. Live state of unclosed windows is visible via intake, not atoms.
 - **Quotes discipline (P8)**: load-bearing facts land in `quotes` verbatim at filing time. Workflows re-ground from `refs` before any irreversible/external action — never act off a summary alone.
 - Cross-source merges: gardener proposes; auto-merge only ≥ 0.9 with identical time+participants. `merge_atoms` invariants: target canonical, duplicates not targets, no self/cycles. Thresholds live in `parameters`.
 
@@ -264,7 +264,7 @@ create table components (
   status          text not null default 'enabled' check (status in ('enabled','disabled','retired')),
   definition_path text,
   trigger         jsonb not null default '{"type":"manual"}',   -- cron | queue | query(+cursor) | manual (schema-validated)
-  config          jsonb not null default '{}',                  -- role_map, semantics, model tier, cost ceiling, batch caps
+  config          jsonb not null default '{}',                  -- role_map, semantics, model tier, batch caps (budget = ONE global ceiling, not per-component)
   reliability     text not null default 'standard' check (reliability in ('standard','critical')),
   ...conventions
 );
@@ -277,7 +277,8 @@ create table parameters (
   description text not null,
   ...conventions
 );
--- THE unified knob registry. Components read parameters at run start; nothing hardcodes a threshold.
+-- THE unified knob registry, seeded minimally: knobs migrate here on first tuning, not by foresight
+-- (over-engineering pass). The core ring is the protected home of the fn→class map + arg-predicates.
 
 create table role_clearances (
   role_name text primary key,
@@ -295,9 +296,9 @@ create table runs (
   meta         jsonb not null default '{}'       -- query-trigger cursors live here
 );
 
-create table metrics (
-  component_id text not null references components(id),
-  day          date not null,
+create table metrics (                    -- BUILT AT P5 (first consumers: reply-lag drift, dashboards).
+  component_id text not null references components(id),   -- intake/atoms are durable, so P5 backfills by query;
+  day          date not null,                             -- nothing in P1-P4 writes or reads this.
   scope        text not null,
   key          text not null,            -- vocab 'metric'
   value        numeric not null,

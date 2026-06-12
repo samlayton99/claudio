@@ -8,7 +8,7 @@
 
 | Set | Granted to | Functions |
 |---|---|---|
-| **agent** | `claudio_agent` (NOLOGIN base; all `w_*` inherit) | `capture`, `file_intake`, `hold_intake`, `discard_intake`, `create_person`, `add_handle`, `update_person` (rejects `verified_fields`), `create_task`, `complete_task`, `drop_task`, `amend_task`, `create_expectation`, `resolve_expectation`, `record_atom`, `amend_atom`, `add_link` (inferred), `invalidate_link` (inferred), `register_page`, `move_page`, `upsert_metric`, `post_message`, `claim_message`, `read_message`, `resolve_message`, `propose`, `start_run`, `finish_run`, all reads |
+| **agent** | `claudio_agent` (NOLOGIN base; all `w_*` inherit) | `capture`, `file_intake`, `hold_intake`, `discard_intake`, `create_person`, `add_handle`, `update_person` (rejects `verified_fields`), `create_task`, `complete_task`, `drop_task`, `amend_task`, `create_expectation`, `resolve_expectation`, `record_atom`, `amend_atom`, `add_link` (inferred), `invalidate_link` (inferred), `register_page`, `move_page`, `upsert_metric` (P5, with the metrics table), `post_message`, `claim_message`, `read_message`, `resolve_message`, `propose`, `start_run`, `finish_run`, all reads |
 | **user** (dictation-gated + intent-bound) | mirror, panel (orchestrator: stages only, via confirm flow) | `set_directive`, `retire_directive`, `add_link`/`invalidate_link` (asserted), `upsert_purpose`, `new_purpose_version`, `upsert_role`, `update_person` (may touch `verified_fields`), `retire_role`, `resolve_held_intake` |
 | **edge confirm** | `w_edge` only | `confirm_taste_write(pending_id, confirming_intake_id)` — commits a staged taste write after verifying the confirming message; deterministic code, no LLM in the commit path. Also: dictation-gated `approve_message` for **low-risk classes only** (never core, write-capable registrations, or taste) — the edge renders the server-generated what-will-execute text; reply approves. Phone-native approvals keep the proposal economy alive (ux-rings cascade A) |
 | **panel** | `claudio_panel`, `claudio_core` (panel also holds agent + user sets) | `approve_message`, `reject_message`, `apply_actions`, `merge_people`, `merge_atoms`, `set_component_status` |
@@ -46,7 +46,7 @@ The panel satisfies both bindings by role (its writes are physically the user's)
 | `retire_role(role_id) → proposal_id` | Cascade-preview proposal (suspend scoped components, close windows, re-home open tasks). **Never touches wiki pages or atoms** — active-roles is a filter, not an eraser. |
 | `register_page(path, kind, title, chapter, entity, read_moment)` / `move_page(old, new)` | Page creation demands its chapter and its read-moment (anti-accretion, `05`); move rewrites inbound links atomically (wiki-tool). |
 | `propose(summary, actions, evidence, quoted)` | `privilege_class` derived server-side **per action**; propose-time check: every `fn` ∈ proposer's own set. Sensitivity = max of cited rows. **Regeneration dedup**: key `(from_actor, privilege_class, content_hash)` suppresses re-proposal while a matching pending/recently-expired proposal exists — user absence never produces a duplicate pile. |
-| `approve_message(id)` | Panel-set (+ edge for low-risk classes). Approval binds to the **server-rendered "what will execute" view**, never the agent summary: every action with `$ref`s resolved to concrete `{id, name}`, in-batch creations shown with field values, names NFKC-normalized with confusable-script flags, privilege class per action. L1 actions apply synchronously in-transaction. External halves: approval posts a `handoff` (with `expires_at`, per-class parameter — a stale approval must not fire weeks later; expiry requires re-proposal) to the owning workflow's queue. **Standing approvals**: applied by `w_approver` (03), and a class gates on `fn` **plus a validated arg-predicate including external-handoff args** (e.g. `gcal_solo_block` ⇒ `attendees == [] and no_external_links`) — fn-class alone never auto-approves. Bootstrap: after N manual approvals of one class, the system proposes the standing approval (one tap, revocable). Core- and taste-class never auto-approve. |
+| `approve_message(id)` | Panel-set (+ edge for low-risk classes). Approval binds to the **server-rendered "what will execute" view**, never the agent summary: every action with `$ref`s resolved to concrete `{id, name}`, in-batch creations shown with field values, names NFKC-normalized with confusable-script flags, privilege class per action. L1 actions apply synchronously in-transaction. External halves: approval posts a `handoff` (with `expires_at`, per-class parameter — a stale approval must not fire weeks later; expiry requires re-proposal) to the owning workflow's queue. **Standing approvals are a P5 feature** (built with `w_approver` when S1 creates approval volume; until then all approvals are manual — panel + phone, cheap by design). The laws bind now, before the machinery exists: a class gates on `fn` **plus a validated arg-predicate including external-handoff args** (`gcal_solo_block` ⇒ `attendees == [] and no_external_links`); fn-class alone never auto-approves; core- and taste-class never auto-approve; the map is core-ring. |
 | `set_component_status(id, status)` | Panel-set; registry is truth; reconciler converges plists. |
 | `purge(table, row_id, reason)` | Core-only; fact audited; backups age out ≤ retention. |
 
@@ -54,7 +54,7 @@ The panel satisfies both bindings by role (its writes are physically the user's)
 
 ## Read surface
 
-Ergonomics (research-validated): every read takes `response_format: concise|detailed` (concise ≈ ⅓ tokens) + pagination with token-cap defaults from `parameters`; **no bare UUIDs in any response** — always `{id, name}` pairs; every item renders its event timestamp and age inline (temporal reasoning is memory systems' measured weak spot).
+Ergonomics (research-validated, trimmed to what's evidenced): **no bare UUIDs in any response** — always `{id, name}` pairs; every item renders its event timestamp and age inline (temporal reasoning is memory systems' measured weak spot); token-cap defaults on every read. Responses ship concise-only — the two-phase protocol (packet → drill-down) *is* the detailed path; a `detailed` format and pagination get built when an agent measurably loops because concise lacks a field, not before.
 
 | Surface | Notes |
 |---|---|
@@ -72,7 +72,7 @@ Ergonomics (research-validated): every read takes `response_format: concise|deta
   "anchor":      { "type": "role", "id": "prod", "name": "PROD", "summary": "...", "page": "wiki/professional/prod.md" },
   "taste":       { "directives": [...], "purpose": [...via advances: goals/values in scope...] },
   "obligations": { "tasks_due": [...], "expectations_pending": [...], "time_sensitive": [...] },
-  "state":       { "recent_atoms": [...], "pulse": "wiki/digests/2026-06-11.md", "rollups": [paths] },
+  "state":       { "recent_atoms": [...], "daily_digest": "wiki/digests/2026-06-11.md", "rollups": [paths] },
   "capabilities":{ "workflows": [...], "tools": [...] },
   "people":      [...],
   "budget":      { "requested": 3000, "spent_estimate": 2410 }
@@ -80,9 +80,8 @@ Ergonomics (research-validated): every read takes `response_format: concise|deta
 ```
 
 - Every item: `{id, name}`, event timestamp + age inline, `source_ref`.
-- **Scoring is a weighted sum, not a product**: `score = w_r·exp_decay(recency) + w_d·dueness + w_i·importance` (weights in `parameters`) — a product zeroes old-but-critical items (Generative Agents).
-- Default budget ~3k tokens (measured optimum band 2–4k; context rot beyond). Truncation order: capabilities → people → state → obligations; **taste never truncates**. Rollup paths, not contents (progressive disclosure).
-- `opts.verbosity: skeleton|standard|verbose`; clearance already enforces need-to-know.
+- **Scoring is a weighted sum, not a product**: `score = w_r·exp_decay(recency) + w_d·dueness + w_i·importance` — a product zeroes old-but-critical items (Generative Agents). Weight values are deliberately unspecced: first real packets tune them.
+- Default budget ~3k tokens (measured optimum band 2–4k; context rot beyond). Truncation order: capabilities → people → state → obligations; **taste never truncates**. Rollup paths, not contents (progressive disclosure). Budget is the one dial — there is no separate verbosity knob; drill-down covers depth.
 
 ## MCP front door
 

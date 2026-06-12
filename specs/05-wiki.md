@@ -18,15 +18,15 @@ Rules: **every page reachable from a chapter in ≤ 2 hops**; every page names i
 
 - **The scarce resource is the owner's reading appetite, not storage.** Page creation requires: the chapter that links it AND `read_moment` — the future moment it gets read ("before PROD demo day", "when planning Q3"). Can't name one ⇒ no page.
 - Entity thresholds: people get pages at ≥ 3 atoms or user flag; same gate for topics/events. **No pages for routine DB events** — an investor meeting is an atom + a line (with pointer) on the relevant page; a wedding or a death is a `significant_event` page.
-- **Demotion cron** (hygiene): pages unread and uncited by digests for N months (parameter) merge back into their parent; page count must grow sublinearly with atoms.
+- **Demotion sweep** (hygiene, P5+ — pages must age before they can demote; the P4 gate measures sublinearity, the sweep enforces it later): pages unread and uncited by digests for N months merge back into their parent; page count must grow sublinearly with atoms.
 - Atoms can be cited by multiple pages; ≤ 1,500-word soft cap; the first three sentences of every page must stand alone (the lede is what actually gets read).
 
 ## Writing discipline (P8 made mechanical)
 
 - **Raw atoms always in context**: any page update is prompted with the update reason, the previous version, and the full relevant atom list — never from another summary.
 - **Delta edits only**: patch sections, append cited lines; full-page regeneration only via proposal (full rewrites cause documented "context collapse").
-- **Digests re-derive from atoms every time** — weekly/monthly/biannual state-of-life pages and the nightly pulse never read prior digests. Absolute dates only.
-- **Citations are load-bearing**: factual claims carry dated `[[atom:uuid]]` refs. Lint verifies cited atoms *exist*; the **verifier** (weekly cron from P4; fresh context; never the author) samples that atoms *support* claims — fabricated/mis-anchored citations are the single most documented AI-wiki defect.
+- **Digests re-derive from atoms every time** — the brief's daily digest page and the weekly state-of-life page never read prior digests. Absolute dates only.
+- **Citations are load-bearing**: factual claims carry dated `[[atom:uuid]]` refs. Lint verifies cited atoms *exist*; the **verifier step** (chained on the wiki gardener's run in a fresh context that is never the author) samples that atoms *support* claims — fabricated/mis-anchored citations are the single most documented AI-wiki defect. It becomes a separately-scheduled component only if scale demands it.
 - **Judgment attribution**: characterizations of people/feelings are user-authored or user-approved, cited to the user's own statements. Agents propose; never assert the moral ledger.
 - **Human corrections are immutable spans**: user-asserted text (panel edits, dictated corrections — marked, e.g. cited to `[[user:date]]`) may be *moved* but never *reworded* by any gardener. On correction, walk the citation graph and flag dependent claims (poisoned facts propagate one-to-many).
 - **Anti-slop gate in lint**: Wikipedia's "signs of AI writing" heuristics (puffery, stock phrases); voice drift is fatal because the human is the error-correction loop and people only correct what they read.
@@ -49,4 +49,4 @@ Frontmatter v0 (few, composable keys — resist growth): `title, kind, chapter, 
 
 ## Proposal economy
 
-The proposal queue is the owner's weekly review, and the weekly review is the first habit humans drop: proposals are budgeted (parameter), ranked by impact, and auto-expire stale. Wiki-related proposals (splits, judgment claims, demotions) compete inside the same budget.
+The proposal queue is the owner's weekly review, and the weekly review is the first habit humans drop: proposals **dedup** (no re-proposal piles) and **auto-expire** stale. That's the whole mechanism — a cap parameter gets added if observed volume ever exceeds what one phone session clears; impact-ranking requires an impact model nobody has (over-engineering pass).

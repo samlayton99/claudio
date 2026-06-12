@@ -13,8 +13,8 @@ The apex of the system is the **purpose contract**: the user's stated goals, val
 1. **Ingest** — windows bring every data stream of the life into the scaffold. Capture is durable before anything judges it. (`06`, `01 intake`)
 2. **Distill** — gardeners maintain skinny typed rows + a clean, cited biography (the wiki). Raw becomes atoms; atoms become narrative. (`01 atoms`, `05`)
 3. **Serve** — *the context is the API.* `get_context` hands any agent the right slice — state, taste, obligations, capabilities — cited, clearance-bounded, token-budgeted. (`02`)
-4. **Align** — everything maps to the purpose contract through roles and `advances` edges. Claudio is the **system of record and the system of alignment, not the system of engagement** — todo-list UX and execution surfaces are outsourceable adapters. Drift between proclaimed and lived becomes questions. (`01 purpose`, `03 alignment`, `03 mirror`)
-5. **Maintain** — self-maintaining and proactive: hygiene, watchdog, catalog, scouting (new tools *and* new windows), promote/demote. The system helps you use the system better. (`03`, `04`)
+4. **Align** — everything maps to the purpose contract through roles and `advances` edges. Claudio is the **system of record and the system of alignment, not the system of engagement** — todo-list UX and execution surfaces are outsourceable adapters. Drift between proclaimed and lived becomes the mirror's questions. (`01 purpose`, `03 mirror`)
+5. **Maintain** — self-maintaining and proactive: hygiene (which also proposes new tools and windows from usage signals), watchdog, catalog, promote/demote. The system helps you use the system better. (`03`, `04`)
 
 Every spec section serves one of these; anything serving none is cut.
 
@@ -41,7 +41,7 @@ External agents get the same property via the **handshake protocol** (`06`): rea
 | Decision | Principles |
 |---|---|
 | Postgres scaffold; schema + `COMMENT ON` (with example calls) + generated catalog (with sample rows) | P1, research |
-| **The type system is the skeleton; the purpose contract is its apex.** Nothing exists without a typecheck: statuses CHECKed, kinds vocab-validated, jsonb payloads schema-validated by trigger, refs shape-checked, generated TS/Python types, contract tests | P1, P2 |
+| **The type system is the skeleton; the purpose contract is its apex.** Nothing exists without a typecheck: statuses CHECKed, kinds vocab-validated, jsonb payloads schema-validated by trigger, refs shape-checked, contract tests (generated TS types arrive with the panel, P3) | P1, P2 |
 | L1 typed functions as the only write surface; free reads only via invoker views (raw SQL agents: 21% solve rate + injection incidents — research) | P6, security |
 | One registry, one message fabric, one links table, one parameters registry (core/outer) | P2 |
 | Pipes vs judgment; deterministic skeleton fallback when an LLM step fails | P6, P2 |
@@ -62,7 +62,7 @@ External agents get the same property via the **handshake protocol** (`06`): rea
 - **Purpose plane** — the apex contract: goals, values, attributes (+goalposts), priorities, and the versioned source document. **The mirror** — the one taste-modeling agent: elicits/maintains the contract, monitors actual usage and life against it.
 - **Plane** — life (content) vs system (the system's model of itself) vs purpose (the contract above both).
 - **Tier** — compaction: 0 raw (stays at source), 1 atoms, 2 rollups. Depth capped by P8.
-- **Atom** — one human-meaningful episode in `atoms` (`01`). **Pulse** — the nightly tier-2 rollup of the day, re-derived from atoms.
+- **Atom** — one human-meaningful episode in `atoms` (`01`). The morning brief doubles as the daily rollup (one reflect-organ, not four — over-engineering pass).
 - **Window** — a data-ingesting adapter with role mappings. **Surface** — an outbound adapter. **Edge** — the required, claudio-owned ground-zero channel (TCC-bound pipe in the user's session).
 - **L1** — the syscall layer; function sets: agent, user (dictation-gated), panel, core (`02`). **Internal writes** (L1, to the scaffold) vs **external writes** (sends/posts to the world — never claudio's; owned by external agents after handoff).
 - **Circle** — inner (immutable to the system) vs outer (agent-authored, user-approved, core-deployed; starts empty).
