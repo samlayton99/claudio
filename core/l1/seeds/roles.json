@@ -1,0 +1,10 @@
+{
+  "comment": "Seeded into roles at P1. Weights are USER-SET taste — the placeholders below are unset (null), filled during the elicitation session; 'general' is the spec-mandated catch-all at 1.0. default_sensitivity 1 on disciple is Claude's proposal (pastoral content), Sam confirms.",
+  "roles": [
+    { "id": "general", "name": "General", "weight": 1.0, "default_sensitivity": 0 },
+    { "id": "disciple", "name": "Disciple", "weight": null, "default_sensitivity": 1 },
+    { "id": "husband-father", "name": "Husband & Father", "weight": null, "default_sensitivity": 0 },
+    { "id": "prod", "name": "PROD", "weight": null, "default_sensitivity": 0 },
+    { "id": "student", "name": "Student / Research", "weight": null, "default_sensitivity": 0 }
+  ]
+}
