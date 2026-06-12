@@ -1,0 +1,10 @@
+.DS_Store
+*.log
+
+# tier-0 payloads claudio retains: sensitive + large, never in git
+archive/*
+!archive/.gitkeep
+
+# local dev artifacts
+.dev/
+SCHEMA.md.tmp
