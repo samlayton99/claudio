@@ -14,20 +14,33 @@ DRY="${1:-}"
 [ -f "$HOME/.claudio/STOPPED" ] && { echo "kill-switch marker present; reconciler refuses"; exit 1; }
 mkdir -p "$HOME/.claudio/logs"
 
-# desired: enabled cron/queue/query components
-"${PSQL[@]}" -c "select id || '|' || coalesce((trigger->>'interval_min')::int * 60,
+# desired: enabled cron/queue/query components. db_role comes from config (w_<id> fallback);
+# a plain daily cron ("M H * * *") renders StartCalendarInterval, anything else an interval.
+"${PSQL[@]}" -c "select id || '|' || coalesce(config->>'db_role', 'w_' || id) || '|' ||
+                        coalesce(trigger->>'schedule', '') || '|' ||
+                        coalesce((trigger->>'interval_min')::int * 60,
                         case trigger->>'type' when 'queue' then 60 when 'query' then 60 else 900 end)
                  from l1.components
                  where status = 'enabled' and (trigger->>'type') in ('cron','queue','query')" |
-while IFS='|' read -r id interval; do
+while IFS='|' read -r id db_role sched interval; do
+  if [[ "$sched" =~ ^([0-9]{1,2})[[:space:]]([0-9]{1,2})[[:space:]]\*[[:space:]]\*[[:space:]]\*$ ]]; then
+    when="daily at ${BASH_REMATCH[2]}:$(printf '%02d' "${BASH_REMATCH[1]}")"
+    schedule_xml="<key>StartCalendarInterval</key><dict><key>Hour</key><integer>${BASH_REMATCH[2]}</integer><key>Minute</key><integer>${BASH_REMATCH[1]}</integer></dict>"
+  elif [[ "$sched" =~ ^([0-9]{1,2})[[:space:]]\*[[:space:]]\*[[:space:]]\*[[:space:]]\*$ ]]; then
+    when="hourly at :$(printf '%02d' "${BASH_REMATCH[1]}")"
+    schedule_xml="<key>StartCalendarInterval</key><dict><key>Minute</key><integer>${BASH_REMATCH[1]}</integer></dict>"
+  else
+    when="every ${interval}s"
+    schedule_xml="<key>StartInterval</key><integer>$interval</integer>"
+  fi
   plist="$PLIST_DIR/com.claudio.$id.plist"
-  if [ "$DRY" = "--dry-run" ]; then echo "would render+load $plist (every ${interval}s)"; continue; fi
-  sed -e "s|__ID__|$id|g" -e "s|__INTERVAL__|$interval|g" -e "s|__REPO__|$REPO|g" \
-      -e "s|__HOME__|$HOME|g" -e "s|__DB_ROLE__|w_$id|g" \
+  if [ "$DRY" = "--dry-run" ]; then echo "would render+load $plist as $db_role ($when)"; continue; fi
+  sed -e "s|__ID__|$id|g" -e "s|__SCHEDULE__|$schedule_xml|g" -e "s|__REPO__|$REPO|g" \
+      -e "s|__HOME__|$HOME|g" -e "s|__DB_ROLE__|$db_role|g" \
       "$REPO/core/deploy/launchd/com.claudio.template.plist" > "$plist"
   launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || true
   launchctl bootstrap "gui/$(id -u)" "$plist"
-  echo "loaded com.claudio.$id (every ${interval}s)"
+  echo "loaded com.claudio.$id as $db_role ($when)"
 done
 
 # undesired: loaded com.claudio.* jobs with no enabled registry row

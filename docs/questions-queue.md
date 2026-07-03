@@ -5,8 +5,8 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 ## Needs Sam (P0/P1 gate items)
 
 1. **Corpus labels — plain version.** The eval corpus (`evals/filer/*.json`) is ~40 fixtures; each one is: a *raw input from your life* (a text, a Slack message, a thread-day) plus the **proposed correct answer** — `expected` (the exact L1 calls the filer should make: which atoms, tasks, people), `must_not` (what it must never do with this input), and `tolerances` (acceptable wiggle). The "label" is that proposed answer. **Confirming = reading each fixture and saying "yes, that's what I'd want claudio to do with this input" or correcting it.** They become the ground truth the filer is graded against before it touches your real data — wrong labels = a filer trained to your wrong taste. How: open the files, edit any `expected`/`must_not` you disagree with, flip `labels_status: proposed` → `confirmed`. Highest-leverage 15 minutes: `corpus-walkthrough.json` (Thiel/meme/split trio) and every `must_not`.
-2. **The elicitation session** — the one P0 item only you can do. Say "run the elicitation" in a core session (the mirror's prompt is `core/agents/mirror/prompt.md`); it fills `core/l1/seeds/purpose-contract.md` + `roles.json` weights and ends with your signature.
-3. **Role weights + disciple sensitivity** — per your note: these are **term** seeds (P11), set during the elicitation (item 2), not before. Standing default until then: `default_sensitivity: 1` on disciple (pastoral content).
+2. **Role weight magnitudes + ward-exec-sec slot** (~2 min) — your ordering is recorded; magnitudes are still null, so every role seeds at weight 1.0 and the brief's section ordering is a tie until you type numbers into `core/l1/seeds/roles.json` and re-run `core/l1/seeds/seed.sh`. Also open: where ward-exec-sec slots vs research/prod/student, and how the brief should treat disciple-as-frame (not a competing section).
+2b. **Three-row veto skim** (~30 sec) — the elicitation notes say `love-of-math-and-building`, `outcomes-not-status`, `workout-daily` "remain DRAFT", but the signed contract tags all three [APPROVE]. The signed file won: they are seeded as approved. Veto = retag in the file, re-run the seeder.
 4. **Backup destination — DECIDED (you delegated 2026-06-12).** Two layers: (a) local restic repo at `~/.claudio/backup` from day one (moves to the external drive when bought); (b) offsite restic -> Backblaze B2, client-side encrypted (B2 never sees plaintext; ~cents/month at life-data scale). The one step only you can do, at deploy, ~5 min guided: create the B2 account + bucket + app key. Until then layer (a) covers you.
 4b. **Notable-reason starter vocabulary** — 8 reasons seeded (P12): milestone, first_contact, purpose_advance, rare_event, relationship_beat, decision, emotional_peak, user_asserted (`0008_seeds_grants.sql`). Type default; your term extends by promotion. Skim and veto any.
 
@@ -28,6 +28,10 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 
 New directives get one question first — *does the daily loop need it?* If not: a queue one-liner, never spec law. Applies to Claude's ideas too.
 
+## Resolved by Sam (2026-06-13)
+
+- **Elicitation done; purpose contract v1 SIGNED and seeded** (2026-07-03): 22 rows + priorities v1 + 7 roles live in the db via `core/l1/seeds/seed.sh` (idempotent, refuses unsigned, skips DRAFT, reports drift). Deferred to a future version, not a re-sign: directives (none yet — highest-leverage remaining input for the brief), year-horizon goals, prune/merge calls.
+
 ## Resolved by Sam (2026-06-12)
 
 - **Raw retention: keep everything forever.** 512 GB local; external drive when needed; revisit only when storage actually bites.
@@ -41,3 +45,4 @@ New directives get one question first — *does the daily loop need it?* If not:
 - **Homebrew install**: `postgresql@17` (binaries only — no service registered). Dev cluster lives at `~/.claudio/pg`, socket-only on port 5433, outside iCloud. `./core/deploy/dev.sh start|stop|reset|test`.
 - **The P2-in-two-weeks clock started**: first DDL committed 2026-06-12 (the honesty-gate condition). P2 = the daily loop (edge, filer, brief, scanner) by ~2026-06-26 or shrink.
 - **OS users NOT created, crons/launchd NOT loaded, no backups configured** — system-state changes wait for you (scripts exist: `setup-os-users.sh p1`, `reconcile.sh --dry-run`).
+- **Edge stdlib trigger changed resident -> 60s interval** (2026-07-03, reversible): the v0 edge is a oneshot sweep+drain, and the reconciler only schedules cron/queue/query — as `resident` it would never have been loaded. The spec's fast-resident mode stays the P3 upgrade path. Same pass: components' `config.db_role` now maps component id -> db role (edge-imessage and window-imessage run as `w_edge`), and daily/hourly crons render real `StartCalendarInterval` blocks instead of a 900s poll. All rehearsed by `core/deploy/test-reconcile.sh` (dry-run only).

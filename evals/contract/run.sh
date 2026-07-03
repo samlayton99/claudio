@@ -21,9 +21,12 @@ expect_ok "seed-handle"         claudio_panel "select l1.add_handle('$JAMIE'::uu
 echo "== contract: capture -> file_intake with \$refs (the filer's day job) =="
 CID=$(sql w_edge "select (l1.capture('edge-imessage', 'Chatted with Daniel Cho at the ICME mixer...', '{\"source\":\"imessage\",\"handle\":\"+16505550999\"}', 'msg-f02'))->>'id'")
 expect_eq "capture-dedup"       w_edge "select (l1.capture('edge-imessage', 'dupe', null, 'msg-f02'))->>'deduped'" "true"
+# fixture timestamps are RELATIVE to now — pinned dates rot as the wall clock moves
+# (this atom aged out of the packet's recency lane 25 days after it was written)
+ATOM_TS=$(date -u -v-2d '+%Y-%m-%dT19:00:00Z')
 FILED=$(sql w_filer "select l1.file_intake('$CID'::uuid, '[
   {\"fn\":\"create_person\",\"args\":{\"name\":\"Daniel Cho\",\"primary_role_id\":\"prod\"}},
-  {\"fn\":\"record_atom\",\"args\":{\"ts\":\"2026-06-08T19:00:00-07:00\",\"kind\":\"meeting\",\"summary\":\"Met Daniel Cho at the ICME mixer — wants a PROD intro; deck this week.\",\"quotes\":[\"He will email me his deck this week\"],\"primary_role_id\":\"prod\",\"links\":[{\"to_type\":\"person\",\"to_id\":{\"\$ref\":0},\"kind\":\"participant\"}]}},
+  {\"fn\":\"record_atom\",\"args\":{\"ts\":\"$ATOM_TS\",\"kind\":\"meeting\",\"summary\":\"Met Daniel Cho at the ICME mixer — wants a PROD intro; deck this week.\",\"quotes\":[\"He will email me his deck this week\"],\"primary_role_id\":\"prod\",\"links\":[{\"to_type\":\"person\",\"to_id\":{\"\$ref\":0},\"kind\":\"participant\"}]}},
   {\"fn\":\"create_expectation\",\"args\":{\"description\":\"Daniel Cho to email his deck\",\"person_id\":{\"\$ref\":0},\"due\":\"2026-06-12T23:59:00-07:00\",\"follow_up\":\"remind\",\"primary_role_id\":\"prod\"}},
   {\"fn\":\"create_task\",\"args\":{\"description\":\"Review Daniel deck; intro to Ankit if good\",\"person_id\":\"$ANKIT\",\"primary_role_id\":\"prod\"}},
   {\"fn\":\"add_link\",\"args\":{\"from_type\":\"task\",\"from_id\":{\"\$ref\":3},\"to_type\":\"expectation\",\"to_id\":{\"\$ref\":2},\"kind\":\"blocks\",\"origin\":\"inferred\",\"confidence\":0.95}}

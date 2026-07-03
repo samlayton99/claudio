@@ -67,7 +67,7 @@ fi
 #    Until then: pipes implement main.sh in their folder; LLM workers are not yet wired.
 OUTCOME="ok"; ERR=""
 if [ -n "$DEF_PATH" ] && [ -x "$REPO/$DEF_PATH/main.sh" ]; then
-  if ! CLAUDIO_CONTEXT="$CONTEXT" CLAUDIO_RUN_ID="$RUN_ID" "$REPO/$DEF_PATH/main.sh"; then
+  if ! CLAUDIO_CONTEXT="$CONTEXT" CLAUDIO_RUN_ID="$RUN_ID" CLAUDIO_DB_ROLE="$DB_ROLE" "$REPO/$DEF_PATH/main.sh"; then
     OUTCOME="failed"; ERR="main.sh exited nonzero"
   fi
 else

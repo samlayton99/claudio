@@ -122,12 +122,15 @@ insert into l1.roles (id, name, summary, weight) values
 on conflict (id) do nothing;
 
 insert into l1.components (id, kind, circle, status, definition_path, trigger, config, reliability) values
+  -- v0 edge is a oneshot sweep+drain on a 60s interval (registry tells the truth about the
+  -- implementation); the spec's fast-resident mode is the P3 upgrade path. db_role: the db
+  -- role is w_edge, not w_<component-id> — config carries the mapping the reconciler reads.
   ('edge-imessage', 'pipe', 'inner', 'disabled', 'core/pipes/edge',
-   '{"type":"resident"}', '{"role_map":["general"],"replayable":false,"default_sensitivity":0}', 'critical'),
+   '{"type":"cron","interval_min":1}', '{"role_map":["general"],"replayable":false,"default_sensitivity":0,"db_role":"w_edge"}', 'critical'),
   ('window-gcal', 'window', 'inner', 'disabled', 'core/pipes/windows/gcal',
    '{"type":"cron","schedule":"*/15 * * * *"}', '{"role_map":["general"],"replayable":true,"semantics":{"commitment_strength":"tentative"}}', 'standard'),
   ('window-imessage', 'window', 'inner', 'disabled', 'core/pipes/windows/imessage',
-   '{"type":"cron","schedule":"15 5 * * *"}', '{"role_map":["general"],"replayable":true,"mode":"passive","watch":["*"],"exclude":[],"days_back":3}', 'standard'),
+   '{"type":"cron","schedule":"15 5 * * *"}', '{"role_map":["general"],"replayable":true,"mode":"passive","watch":["*"],"exclude":[],"days_back":3,"db_role":"w_edge"}', 'standard'),
   ('filer', 'gardener', 'inner', 'disabled', 'core/agents/filer',
    '{"type":"query","interval_min":1}', '{"model_tier":"frontier"}', 'critical'),
   ('brief', 'workflow', 'inner', 'disabled', 'core/agents/brief',

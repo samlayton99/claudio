@@ -5,11 +5,14 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 SUITES=(
   "core/pipes/red-team/run.sh"
   "evals/contract/run.sh"
+  "core/l1/seeds/test.sh"
   "core/pipes/scanner/test.sh"
   "core/pipes/edge/test.sh"
   "core/pipes/windows/imessage/test.sh"
   "core/agents/filer/test.sh"
   "core/agents/brief/test.sh"
+  "core/deploy/test-reconcile.sh"
+  "evals/e2e/run.sh"
 )
 FAILED=()
 for s in "${SUITES[@]}"; do
