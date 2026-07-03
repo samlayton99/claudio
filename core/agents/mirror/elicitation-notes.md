@@ -33,7 +33,7 @@ The lifelong assignment: **tighten the loop** (diagnose the pride faster) *while
 ## Locked contract rows (drafted + Sam-approved this session)
 
 - **value: the-covenant** — covenant at 18, unbroken 8 yrs: scriptures daily, pray daily, church weekly; "I will never fall away." Comes before anything else in his life. Watchable markers: scriptures daily / prayer daily / church weekly.
-- **value: truth-and-good** — truth and good are axioms; proved one theorem from experience: God ≡ those two values. To seek all that is true and all that is good is to seek God.
+- **value: truth** / **value: good** — split into two standalone values (Sam's instruction). Each is an axiom he searches for; both carry the same theorem proved from experience: God ≡ truth and good, so to seek all truth / all good is to seek God.
 - **value: exaltation-paradox** — to become like God means holding two apparent opposites at once: pure submission to His will AND growing capability/agency/clear thinking. Richest lessons live inside the paradox.
 - **attribute: anchored-to-christ** — striving to be anchored, not perfect: genuinely submitted, relying on the Lord's strength not only his own. Goalposts: daily connection with God; studying scriptures not just reading; "study it out and ask" as genuine submission not a token approval gate; less swayed by fear/doubt; dependable.
 
@@ -83,9 +83,23 @@ Sam's words: claudio/the mirror "should not be replacing God. You are not an aut
 - Per Sam's instruction ("pull a lot more... don't want to spend much more time"), rounded out the purpose plane in `purpose-contract.md`: 3 goals, 9 values, 6 attributes, priorities prose. 4 rows APPROVED verbatim; rest DRAFT pending his word-by-word. Merge candidates flagged in-file for fast pruning.
 - He will revisit and update later. Do not treat drafts as his words.
 
-## Outstanding for next session
+## Session 1b additions (2026-06-13) — temporal ambition, roles, health
 
-- Role weights (`roles.json`) — HIS numbers, propose none.
-- Year-horizon goals (everything captured is life/quarter).
-- Directives heard → stage separately (none captured yet).
-- Signature still unchecked — contract is a working draft.
+- **Temporal ambition cluster wired into priority 3 (Service), concentric rings:** serve locally -> serve in callings -> serve the world & prepare His kingdom. Goals `build-zion`, `do-good-at-scale`, `make-family-great-again` (Sam renamed family-as-equilibrium) are the OUTER ring — NOT a crown above the nine. Career (#5) is the lever (capital, influence, tech, social norms), not the home of the ambition. Sam: "I care about outcomes, not status, wealth, or popularity" -> `outcomes-not-status` value.
+- Full-voltage statement Sam gave (vibe/scope, he knows he must walk the line): "fundamentally change society... social engineering at scale for the Lord... make the devil shake." He OWNS the worth/pride line himself — declined a monitoring hook on build-zion. Leave the mirror's hands off it.
+- **ROLE ORDERING (Sam's, 2026-06-13), magnitudes still null:** disciple (FRAME — a state of being, "becoming like Christ in all I do", ranks infinite/highest, NOT a competing brief section) >> husband-father > research > prod-admin > student. `ward-exec-sec` is a SEPARATE role (the calling — an ACT, not a state), lower than disciple, exact slot vs research/prod/student TBD. `research` split from `student` (research high, student low). disciple + ward-exec-sec default_sensitivity 1 (pastoral). Written to `roles.json`.
+- Health gap filled: `workout-daily` quarter goal (1 hr/day, watchable). Math/research gap filled: `love-of-math-and-building` value (agency side of the paradox).
+- Organization priority dropped by Sam ON PURPOSE — do not re-add. Priorities list is now 7 + hobbies = 8.
+
+## Outstanding (Sam will revisit — he ended the session here, NOT signed)
+
+- **Directives** — Sam deferred ("I don't know for now, I'll come back"). None captured. Highest-leverage remaining input for the brief. Stage separately when given, not contract rows.
+- **Role magnitudes** + **ward-exec-sec slot** — Sam deferred. Ordering done; numbers his.
+- **Year-horizon goals** — still zero (all life + 2 quarter).
+- **Prune/merge calls** still open: `do-good-at-scale` vs `make-family-great-again` absorb; `outcomes-not-status` vs `worth-not-from-accomplishment` merge; `love-of-math-and-building` is DRAFT.
+- **SIGNED 2026-06-13** ("signature given, good enough for now"). v1 is live for P1 seeding -> `purpose` rows + `purpose_versions` v1. Future changes go through `new_purpose_version`, not by editing the signed file silently. NOTE for seeding: row tags read `[APPROVE]` (Sam's hand), legend says `[APPROVED]` — treat as approved; normalize at parse. Deferred items above ride a future version, not a re-sign.
+- Most rows Sam promoted to APPROVE himself this session; `love-of-math-and-building`, `outcomes-not-status`, `workout-daily` remain DRAFT.
+
+## Seeded (2026-07-03)
+
+v1 is in the database: 22 purpose rows (6 goals, 10 values, 6 attributes; ids prefixed `goal-`/`value-`/`attr-`), priorities as `purpose_versions` v1, 7 roles. Seeder: `core/l1/seeds/seed.sh` (idempotent; refuses unsigned; skips DRAFT loudly; reports drift). DISCREPANCY at seed time: the line above says `love-of-math-and-building`, `outcomes-not-status`, `workout-daily` "remain DRAFT", but the signed file tags all three [APPROVE] — the signed file won (they seeded as approved). Sam vetoes by retagging in the file and re-running the seeder.

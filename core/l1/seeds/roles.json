@@ -1,10 +1,12 @@
 {
-  "comment": "Seeded into roles at P1. Weights are USER-SET taste — the placeholders below are unset (null), filled during the elicitation session; 'general' is the spec-mandated catch-all at 1.0. default_sensitivity 1 on disciple is Claude's proposal (pastoral content), Sam confirms.",
+  "comment": "Weights are USER-SET taste. The ORDERING is Sam's (2026-06-13); magnitudes are left null because Sam has not rated them yet ('I don't know how to rate it') — the mirror proposes no numbers. general=1.0 is the spec-mandated catch-all. KEY DISTINCTION Sam drew: 'disciple' is a STATE OF BEING ('becoming like Christ in all I do') he ranks as infinite/highest — it is the FRAME over every other role, not a section competing for brief space; treat its weight as the apex/frame when the brief is built, not as a loud section. The calling 'ward-exec-sec' is a DISTINCT role: an ACT with tasks, not a state — lower than disciple. Ordinal: disciple(frame) >> husband-father > research > prod-admin > student; ward-exec-sec separate, lower than disciple, exact slot TBD. default_sensitivity 1 on disciple and ward-exec-sec = pastoral/ward content (third parties never consented; stays out of low-clearance packets).",
   "roles": [
     { "id": "general", "name": "General", "weight": 1.0, "default_sensitivity": 0 },
-    { "id": "disciple", "name": "Disciple", "weight": null, "default_sensitivity": 1 },
+    { "id": "disciple", "name": "Disciple (state of being / frame)", "weight": null, "default_sensitivity": 1 },
     { "id": "husband-father", "name": "Husband & Father", "weight": null, "default_sensitivity": 0 },
-    { "id": "prod", "name": "PROD", "weight": null, "default_sensitivity": 0 },
-    { "id": "student", "name": "Student / Research", "weight": null, "default_sensitivity": 0 }
+    { "id": "ward-exec-sec", "name": "Ward Executive Secretary (calling)", "weight": null, "default_sensitivity": 1 },
+    { "id": "research", "name": "Research (math / ML / Hazy)", "weight": null, "default_sensitivity": 0 },
+    { "id": "prod", "name": "PROD (admin)", "weight": null, "default_sensitivity": 0 },
+    { "id": "student", "name": "Student (ICME coursework)", "weight": null, "default_sensitivity": 0 }
   ]
 }
