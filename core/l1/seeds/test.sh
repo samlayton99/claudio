@@ -26,7 +26,7 @@ expect_eq "statement-verbatim" claudio_core \
 expect_eq "roles-count"      claudio_core "select count(*) from l1.roles" "7"
 expect_eq "disciple-s1"      claudio_core "select default_sensitivity from l1.roles where id = 'disciple'" "1"
 expect_eq "ward-s1"          claudio_core "select default_sensitivity from l1.roles where id = 'ward-exec-sec'" "1"
-expect_eq "weights-unset"    claudio_core "select count(*) from l1.roles where weight = 1.0" "7"
+expect_eq "weights-are-sams" claudio_core "select weight || '/' || (select weight from l1.roles where id='student') from l1.roles where id = 'disciple'" "10/0.5"
 
 echo "== seed: re-run is a no-op (idempotent) =="
 "$HERE/seed.sh" >"$TMP/out2" 2>&1

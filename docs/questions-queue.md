@@ -4,7 +4,7 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 
 ## Needs Sam (P0/P1 gate items)
 
-2. **Role weight magnitudes + ward-exec-sec slot** (~2 min) — your ordering is recorded; magnitudes are still null, so every role seeds at weight 1.0 and the brief's section ordering is a tie until you type numbers into `core/l1/seeds/roles.json` and re-run `core/l1/seeds/seed.sh`. Also open: where ward-exec-sec slots vs research/prod/student, and how the brief should treat disciple-as-frame (not a competing section). (2026-07-03: you approved the current state without numbers — ties stand until you supply them.)
+2. **RESOLVED (2026-07-03, your hand): role weights set** — disciple 10, husband-father 5, research 2.5, ward-exec-sec 2, prod 2, general 1, student 0.5 — seeded and pinned by test. Still open, smaller: how the brief should treat disciple-as-frame (weight 10 as apex/frame, not a 10x-loud section) — decide when the first real briefs land.
 4. **Backup destination — DECIDED (you delegated 2026-06-12).** Two layers: (a) local restic repo at `~/.claudio/backup` from day one (moves to the external drive when bought); (b) offsite restic -> Backblaze B2, client-side encrypted (B2 never sees plaintext; ~cents/month at life-data scale). The one step only you can do, at deploy, ~5 min guided: create the B2 account + bucket + app key. Until then layer (a) covers you.
 
 ## Standing defaults (no action until their trigger)

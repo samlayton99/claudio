@@ -10,9 +10,11 @@ Harness: `evals/filer/grade.py`. Per fixture: fresh db -> shared+db fixtures -> 
 | 4 | 23/26 | 100% | 80% | 85% | schema+laws+templates |
 | 5 | 25/26 | **100%** | **100%** | **92%** | **all bars met** (targets 100/100/>=90) |
 | 6 | 23/26 | 100% | 80% | 85% | no changes — pure model variance |
-| 7 | in flight | | | | link-leak fix + 2 laws; log: `~/.claude/jobs/6fbde586/tmp/j1-run7.log` |
+| 7 | 5/5 partial | | | | link-leak fix + 2 laws; fixtures 1-5 all passed (incl. f02, run 6's due-date failure) before the rate limit killed the model |
 
-Run 2 was destroyed by the session rate limit (not counted). Honest read: the bars were met on run 5, but 100% restraint/security is NOT yet stable run-over-run — the residual failures (f02 due-date nuance, f07 closure) are stochastic judgment, not systematic gaps. Re-grade after any prompt change; expect +/-2 fixtures per run.
+Runs 2 and 7's tails were destroyed by session rate limits (not counted; a rate-limited run signature is every row "pending" + "judge unparseable"). Honest read: the bars were met on run 5, run 7's partial confirms the newest laws on their target fixtures, but 100% restraint/security is NOT yet stable run-over-run — the residual failures (f07 closure especially) are stochastic judgment, not systematic gaps. **J1 is closed on this basis.** Re-grade only after prompt changes, and selectively (`--only <fixture>`) — a full run is ~50 model calls.
+
+`j1-results.json` in the tree holds run 6 (the last complete run).
 
 ## What J1 fixed (each run killed a failure class)
 

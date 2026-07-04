@@ -33,12 +33,12 @@ FILED=$(sql w_filer "select l1.file_intake('$CID'::uuid, '[
 ]')")
 expect_eq "intake-filed"        claudio_core "select status from l1.intake where id = '$CID'" "filed"
 expect_eq "atom-created"        w_filer "select count(*) from l1.atoms where summary like 'Met Daniel Cho%'" "1"
-# the J1 leak: an s1 atom's participant link must not be readable below the atom's clearance
-S1AID=$(sql w_filer "select (l1.record_atom(now(), 'communication', 'Bishop pastoral note', p_primary_role_id => 'disciple', p_sensitivity => 1::smallint, p_links => jsonb_build_array(jsonb_build_object('to_type','person','to_id','$JAMIE','kind','participant'))))->>'id'")
-expect_eq "link-inherits-atom-floor" claudio_core "select sensitivity from l1.links where from_id = '$S1AID' and kind = 'participant'" "1"
 expect_eq "participant-linked"  w_filer "select count(*) from l1.links where kind = 'participant' and from_type = 'atom'" "1"
 expect_eq "blocks-linked"       w_filer "select count(*) from l1.links where kind = 'blocks'" "1"
 expect_eq "filed-refs-recorded" claudio_core "select jsonb_array_length(filed_refs) from l1.intake where id = '$CID'" "5"
+# the J1 leak: an s1 atom's participant link must not be readable below the atom's clearance
+S1AID=$(sql w_filer "select (l1.record_atom(now(), 'communication', 'Bishop pastoral note', p_primary_role_id => 'disciple', p_sensitivity => 1::smallint, p_links => jsonb_build_array(jsonb_build_object('to_type','person','to_id','$JAMIE','kind','participant'))))->>'id'")
+expect_eq "link-inherits-atom-floor" claudio_core "select sensitivity from l1.links where from_id = '$S1AID' and kind = 'participant'" "1"
 
 echo "== contract: poison-pill quarantine (one row, never the filer) =="
 PCID=$(sql w_edge "select (l1.capture('edge-imessage', 'poison', null, 'msg-poison'))->>'id'")
