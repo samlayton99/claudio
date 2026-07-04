@@ -200,7 +200,7 @@ create or replace function l1.record_atom(p_ts timestamptz, p_kind text, p_summa
                                           p_primary_role_id text default null, p_links jsonb default '[]',
                                           p_sensitivity smallint default 0, p_meta jsonb default '{}')
 returns jsonb language plpgsql security definer set search_path = pg_catalog, l1, pg_temp as $$
-declare v_id uuid; lk jsonb; v_sens smallint;
+declare v_id uuid; lk jsonb; v_sens smallint; v_lk jsonb;
 begin
   perform l1._rate_check();
   v_sens := l1._clamp_sensitivity(p_sensitivity, p_primary_role_id, null);
@@ -208,12 +208,15 @@ begin
   values (p_ts, p_ts_end, p_kind, p_summary, p_detail, p_quotes, p_refs, p_primary_role_id, v_sens, p_meta)
   returning id into v_id;
   for lk in select * from jsonb_array_elements(p_links) loop
-    perform l1.add_link(coalesce(lk->>'from_type','atom'),
+    v_lk := l1.add_link(coalesce(lk->>'from_type','atom'),
                         coalesce(lk->>'from_id', v_id::text),
                         lk->>'to_type', lk->>'to_id', lk->>'kind',
                         coalesce(lk->>'origin','inferred'),
                         coalesce((lk->>'confidence')::real, 0.9),
                         lk->>'description');
+    -- links born of a sensitive atom inherit its floor: the pastoral EDGE (who was in the
+    -- room) must not be readable below the atom's own clearance (J1 finding, 2026-07-03)
+    update l1.links set sensitivity = greatest(sensitivity, v_sens) where id = (v_lk->>'id')::uuid;
   end loop;
   perform l1._audit('record_atom', 'atoms', v_id::text, 'insert', jsonb_build_object('kind', p_kind, 'ts', p_ts));
   return jsonb_build_object('id', v_id, 'name', left(p_summary, 80));

@@ -125,10 +125,14 @@ insert into l1.components (id, kind, circle, status, definition_path, trigger, c
   -- v0 edge is a oneshot sweep+drain on a 60s interval (registry tells the truth about the
   -- implementation); the spec's fast-resident mode is the P3 upgrade path. db_role: the db
   -- role is w_edge, not w_<component-id> — config carries the mapping the reconciler reads.
+  -- semantics.discard_patterns: stdlib deterministic discards (OTP shapes never reach a model);
+  -- the user's term extends the list. Raw stays in intake either way (discard != filter).
   ('edge-imessage', 'pipe', 'inner', 'disabled', 'core/pipes/edge',
-   '{"type":"cron","interval_min":1}', '{"role_map":["general"],"replayable":false,"default_sensitivity":0,"db_role":"w_edge"}', 'critical'),
+   '{"type":"cron","interval_min":1}', '{"role_map":["general"],"replayable":false,"default_sensitivity":0,"db_role":"w_edge","semantics":{"discard_patterns":[{"name":"otp","regex":"\\b(verification|security|one[- ]time|2fa) code\\b.*\\b\\d{4,8}\\b"}]}}', 'critical'),
+  -- template: names the filer's deterministic converter for this structured window (ended
+  -- events file with no LLM pass); user term overrides default_role/semantics.
   ('window-gcal', 'window', 'inner', 'disabled', 'core/pipes/windows/gcal',
-   '{"type":"cron","schedule":"*/15 * * * *"}', '{"role_map":["general"],"replayable":true,"semantics":{"commitment_strength":"tentative"}}', 'standard'),
+   '{"type":"cron","schedule":"*/15 * * * *"}', '{"role_map":["general"],"replayable":true,"semantics":{"commitment_strength":"tentative"},"template":"gcal-event"}', 'standard'),
   ('window-imessage', 'window', 'inner', 'disabled', 'core/pipes/windows/imessage',
    '{"type":"cron","schedule":"15 5 * * *"}', '{"role_map":["general"],"replayable":true,"mode":"passive","watch":["*"],"exclude":[],"days_back":3,"db_role":"w_edge"}', 'standard'),
   ('filer', 'gardener', 'inner', 'disabled', 'core/agents/filer',

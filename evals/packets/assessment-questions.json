@@ -1,6 +1,6 @@
 {
   "source": "Sam's three assessment questions — METHOD evals: they score how an answer is derived, not its wording. The anti-cherry-picking protocol is the contract: candidates-from-summaries, verdicts-from-atoms; aggregate first; cite the number AND the atoms; impressions labeled as impressions.",
-  "labels_status": "proposed",
+  "labels_status": "confirmed (Sam, 2026-07-03)",
   "fixtures": [
     {
       "id": "q1-family-coverage",

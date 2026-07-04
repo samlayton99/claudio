@@ -1,6 +1,6 @@
 {
   "source": "docs/claude-examples.md, normalized",
-  "labels_status": "proposed",
+  "labels_status": "confirmed (Sam, 2026-07-03)",
   "fixtures": [
     {
       "id": "f01-quick-capture-task",

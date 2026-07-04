@@ -65,6 +65,42 @@ N=$(sql claudio_core "select count(*) from l1.atoms")
 python3 "$DIR/main.py" >/dev/null 2>&1
 expect_eq "idempotent" claudio_core "select count(*) from l1.atoms" "$N"
 
+echo "== filer: deterministic paths — model completely dead, rows still handled =="
+# a known participant for the zero-signal day
+ALLY=$(sql w_filer "select (l1.create_person('Ally Layton', 'general'))->>'id'")
+sql w_filer "select l1.add_handle('$ALLY'::uuid, 'imessage', '+18015550301', false)" >/dev/null
+sql w_edge "select l1.capture('edge-imessage', 'Your Chase verification code is 519204. Do not share it.', '{\"source\":\"imessage\",\"handle\":\"+900\"}', 'msg-otp2')" >/dev/null
+RAW_ZERO='[thread-day window: 42 messages in group:layton-sibs on 2026-06-14]
+[09:12] +18015550301: [non-text message]
+[09:13] me: [non-text message]
+[09:15] +18015550301: hahahaha'
+sql w_edge "select l1.capture('window-imessage', '$(echo "$RAW_ZERO" | sed "s/'/''/g")', '{\"source\":\"imessage\",\"handle\":\"group:layton-sibs\",\"thread_day\":\"2026-06-14\"}', 'imsg-day-zero')" >/dev/null
+RAW_SIGNAL='[thread-day window: 3 messages in group:layton-sibs on 2026-06-14]
+[09:12] +18015550301: can you book the steakhouse for Friday?'
+sql w_edge "select l1.capture('window-imessage', '$(echo "$RAW_SIGNAL" | sed "s/'/''/g")', '{\"source\":\"imessage\",\"handle\":\"group:layton-sibs\",\"thread_day\":\"2026-06-14\"}', 'imsg-day-signal')" >/dev/null
+CLAUDIO_LLM_CMD=/usr/bin/false python3 "$DIR/main.py" >/dev/null 2>&1
+expect_eq "otp-pattern-discarded" claudio_core "select status from l1.intake where locator = 'msg-otp2'" "discarded"
+expect_eq "otp-no-model-needed"   claudio_core "select meta->>'discard_reason' from l1.intake where locator = 'msg-otp2'" "pattern:otp"
+expect_eq "zero-signal-templated" claudio_core "select status from l1.intake where locator = 'imsg-day-zero'" "filed"
+expect_eq "template-one-atom"     claudio_core "select count(*) from l1.atoms where (meta->>'template')::boolean and summary like 'Active day in group:layton-sibs (42 messages)%'" "1"
+expect_eq "template-participant"  claudio_core "select count(*) from l1.links where kind = 'participant' and to_id = '$ALLY' and from_type = 'atom'" "1"
+expect_eq "template-ref-injected" claudio_core "select refs->0->>'locator' from l1.atoms where (meta->>'template')::boolean" "imsg-day-zero"
+expect_eq "signal-goes-to-model"  claudio_core "select status from l1.intake where locator = 'imsg-day-signal'" "pending"
+
+echo "== filer: structured-window templates (gcal-event, day-log) — still no model =="
+sql claudio_core "select l1.register_component('window-dashboard', 'window', 'inner', null, '{\"type\":\"manual\"}', '{\"role_map\":[\"general\"],\"template\":\"day-log\",\"entry_roles\":{\"deep_work\":\"general\"}}')" >/dev/null
+sql claudio_core "update l1.components set status = 'enabled' where id = 'window-dashboard'" >/dev/null
+sql w_edge "select l1.capture('window-gcal', '{\"event\":\"Lab meeting\",\"started\":\"2026-06-15T15:00:00-07:00\",\"ended\":\"2026-06-15T16:00:00-07:00\",\"attendees\":6,\"id\":\"gcal-evt-1\"}', null, 'gcal-1')" >/dev/null
+sql w_edge "select l1.capture('window-dashboard', '{\"date\":\"2026-06-15\",\"entries\":[{\"type\":\"deep_work\",\"note\":\"ablations\",\"start\":\"09:00\",\"mins\":90}]}', null, 'dash-1')" >/dev/null
+sql w_edge "select l1.capture('window-gcal', 'not json at all — model should see this', null, 'gcal-2')" >/dev/null
+CLAUDIO_LLM_CMD=/usr/bin/false python3 "$DIR/main.py" >/dev/null 2>&1
+expect_eq "gcal-templated"      claudio_core "select status from l1.intake where locator = 'gcal-1'" "filed"
+expect_eq "gcal-atom"           claudio_core "select kind || '|' || (meta->>'tentative') from l1.atoms where summary = 'Lab meeting (6 attendees).'" "meeting|true"
+expect_eq "gcal-ref-pointer"    claudio_core "select refs->0->>'locator' from l1.atoms where summary = 'Lab meeting (6 attendees).'" "gcal-evt-1"
+expect_eq "daylog-templated"    claudio_core "select status from l1.intake where locator = 'dash-1'" "filed"
+expect_eq "daylog-atom"         claudio_core "select kind || '|' || summary from l1.atoms where refs->0->>'locator' = '2026-06-15#deep_work-0900'" "session|Deep work: ablations (90 min)."
+expect_eq "malformed-to-model"  claudio_core "select status from l1.intake where locator = 'gcal-2'" "pending"
+
 echo ""
 echo "==== $PASS passed, $FAIL failed ===="
 [ "$FAIL" -eq 0 ]

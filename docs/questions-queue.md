@@ -4,11 +4,8 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 
 ## Needs Sam (P0/P1 gate items)
 
-1. **Corpus labels — plain version.** The eval corpus (`evals/filer/*.json`) is ~40 fixtures; each one is: a *raw input from your life* (a text, a Slack message, a thread-day) plus the **proposed correct answer** — `expected` (the exact L1 calls the filer should make: which atoms, tasks, people), `must_not` (what it must never do with this input), and `tolerances` (acceptable wiggle). The "label" is that proposed answer. **Confirming = reading each fixture and saying "yes, that's what I'd want claudio to do with this input" or correcting it.** They become the ground truth the filer is graded against before it touches your real data — wrong labels = a filer trained to your wrong taste. How: open the files, edit any `expected`/`must_not` you disagree with, flip `labels_status: proposed` → `confirmed`. Highest-leverage 15 minutes: `corpus-walkthrough.json` (Thiel/meme/split trio) and every `must_not`.
-2. **Role weight magnitudes + ward-exec-sec slot** (~2 min) — your ordering is recorded; magnitudes are still null, so every role seeds at weight 1.0 and the brief's section ordering is a tie until you type numbers into `core/l1/seeds/roles.json` and re-run `core/l1/seeds/seed.sh`. Also open: where ward-exec-sec slots vs research/prod/student, and how the brief should treat disciple-as-frame (not a competing section).
-2b. **Three-row veto skim** (~30 sec) — the elicitation notes say `love-of-math-and-building`, `outcomes-not-status`, `workout-daily` "remain DRAFT", but the signed contract tags all three [APPROVE]. The signed file won: they are seeded as approved. Veto = retag in the file, re-run the seeder.
+2. **Role weight magnitudes + ward-exec-sec slot** (~2 min) — your ordering is recorded; magnitudes are still null, so every role seeds at weight 1.0 and the brief's section ordering is a tie until you type numbers into `core/l1/seeds/roles.json` and re-run `core/l1/seeds/seed.sh`. Also open: where ward-exec-sec slots vs research/prod/student, and how the brief should treat disciple-as-frame (not a competing section). (2026-07-03: you approved the current state without numbers — ties stand until you supply them.)
 4. **Backup destination — DECIDED (you delegated 2026-06-12).** Two layers: (a) local restic repo at `~/.claudio/backup` from day one (moves to the external drive when bought); (b) offsite restic -> Backblaze B2, client-side encrypted (B2 never sees plaintext; ~cents/month at life-data scale). The one step only you can do, at deploy, ~5 min guided: create the B2 account + bucket + app key. Until then layer (a) covers you.
-4b. **Notable-reason starter vocabulary** — 8 reasons seeded (P12): milestone, first_contact, purpose_advance, rare_event, relationship_beat, decision, emotional_peak, user_asserted (`0008_seeds_grants.sql`). Type default; your term extends by promotion. Skim and veto any.
 
 ## Standing defaults (no action until their trigger)
 
@@ -22,11 +19,18 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 12. **Regimes** — `semantics` is SCALAR (Occam #4, approved 2026-06-12); the audit log carries config history; promotes to a dated regime list at the first real regime change.
 13. **Window filter defaults** — `filters` (pre-capture, never-recorded) ships empty by default; your term adds patterns as spam shows up. Type guardrails fixed: deterministic only + drop-counter metric.
 14. **P12 sweep** — remaining free-text judgment fields get closed vocabs as their surfaces are built: `discard_intake` reason, hold reasons (P2, with the filer), wiki demotion reasons (P5). The mechanism exists; apply on touch.
-15. **Brief clearance (yours to call)** — `w_brief` stays at clearance 0, so sensitivity-1 obligations (disciple-floor tasks) never appear in the morning brief's ledger, even though the scanner (now c1) reminds about them. Maybe correct (pastoral content off model-touching workflows), maybe not (your own brief hiding your own ward tasks). Options: keep c0; raise to c1; or c0 with a deterministic "+N sensitive items due" count line (no content). Default until you rule: keep c0.
 
 ## Standing rule until P2 ships (Occam #1, approved 2026-06-12)
 
 New directives get one question first — *does the daily loop need it?* If not: a queue one-liner, never spec law. Applies to Claude's ideas too.
+
+## Resolved by Sam (2026-07-03) — blanket approval ("I approve everything")
+
+- **Corpus labels CONFIRMED** — all 43 fixtures approved verbatim; `labels_status` flipped to `confirmed (Sam, 2026-07-03)` across `evals/`. The corpus is ground truth for J1. P0 gate closed.
+- **Three-row veto skim (was 2b)** — no veto; `love-of-math-and-building`, `outcomes-not-status`, `workout-daily` stand as approved/seeded.
+- **Notable-reason vocabulary (was 4b)** — all 8 reasons stand.
+- **Brief clearance (was 15)** — `w_brief` stays at c0: sensitivity-1 obligations never appear in the brief's ledger (the scanner at c1 still reminds about them). Revisit only if a real ward task goes unseen in practice.
+- **"All nine" wording in the signed priorities prose** — approved as-is; left untouched.
 
 ## Resolved by Sam (2026-06-13)
 

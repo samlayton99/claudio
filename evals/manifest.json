@@ -6,7 +6,7 @@
       "security": "100% — injection, sensitivity, world-obligation vs system-instruction",
       "extraction": ">=90%"
     },
-    "labels_status": "proposed — every label below is Claude's proposal; Sam confirms or corrects, then status flips to confirmed (P0 gate: labeled together)",
+    "labels_status": "confirmed — Sam approved every label verbatim, 2026-07-03 (P0 gate closed)",
     "dates": "absolute only (P8); fixture 'today' is context_date, week of 2026-06-08"
   },
   "shared_fixture": {
@@ -49,17 +49,17 @@
     ]
   },
   "files": {
-    "filer/corpus-core.json": { "fixtures": 15, "source": "docs/claude-examples.md", "labels_status": "proposed" },
-    "filer/corpus-sam.json": { "fixtures": 6, "source": "docs/sam-examples.md filer-level slices", "labels_status": "proposed" },
-    "filer/corpus-walkthrough.json": { "fixtures": 3, "source": "the atoms walkthrough (gate-critical: Thiel day, meme day, two-episode thread)", "labels_status": "proposed" },
-    "filer/corpus-coverage.json": { "fixtures": 6, "source": "coverage gaps vs specs (obligation direction, OTP discard, world-vs-system, window inheritance, sensitivity clamp, hold TTL)", "labels_status": "proposed" },
-    "scenarios/scenarios.json": { "fixtures": 10, "source": "docs/sam-examples.md end-to-end, phase-tagged", "labels_status": "proposed" },
-    "packets/assessment-questions.json": { "fixtures": 3, "source": "the three assessment questions (method evals)", "labels_status": "proposed" }
+    "filer/corpus-core.json": { "fixtures": 15, "source": "docs/claude-examples.md", "labels_status": "confirmed (Sam, 2026-07-03)" },
+    "filer/corpus-sam.json": { "fixtures": 6, "source": "docs/sam-examples.md filer-level slices", "labels_status": "confirmed (Sam, 2026-07-03)" },
+    "filer/corpus-walkthrough.json": { "fixtures": 3, "source": "the atoms walkthrough (gate-critical: Thiel day, meme day, two-episode thread)", "labels_status": "confirmed (Sam, 2026-07-03)" },
+    "filer/corpus-coverage.json": { "fixtures": 6, "source": "coverage gaps vs specs (obligation direction, OTP discard, world-vs-system, window inheritance, sensitivity clamp, hold TTL)", "labels_status": "confirmed (Sam, 2026-07-03)" },
+    "scenarios/scenarios.json": { "fixtures": 10, "source": "docs/sam-examples.md end-to-end, phase-tagged", "labels_status": "confirmed (Sam, 2026-07-03)" },
+    "packets/assessment-questions.json": { "fixtures": 3, "source": "the three assessment questions (method evals)", "labels_status": "confirmed (Sam, 2026-07-03)" }
   },
   "p0_gate": {
     "required": "25+ labeled fixtures incl. Thiel/meme day, a two-episode thread, the three assessment-question scenarios; every example expressible in L1 calls",
     "fixture_count": 30,
     "expressibility": "verified during P1 — every expected fn exists in the L1 surface (see core/l1/)",
-    "remaining": "Sam confirms/corrects labels; flip labels_status to confirmed"
+    "remaining": "none — labels confirmed by Sam 2026-07-03; corpus is ground truth for J1"
   }
 }

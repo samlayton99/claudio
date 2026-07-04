@@ -1,6 +1,6 @@
 {
   "source": "coverage gaps vs specs (added by Claude; same proposed-label bar)",
-  "labels_status": "proposed",
+  "labels_status": "confirmed (Sam, 2026-07-03)",
   "fixtures": [
     {
       "id": "a01-obligation-direction",
