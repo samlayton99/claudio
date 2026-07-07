@@ -1,5 +1,5 @@
 {
-  "source": "docs/sam-examples.md, filer-level slices (full chains live in scenarios/scenarios.json)",
+  "source": "docs/archive/sam-examples.md, filer-level slices (full chains live in scenarios/scenarios.json)",
   "labels_status": "confirmed (Sam, 2026-07-03)",
   "fixtures": [
     {

@@ -6,12 +6,12 @@
 
 ## State: what is DONE and committed
 
-1. **Honesty audit** → `docs/honesty-audit.md` (verdict: build, 3 conditions; conditions are now standing gates in `specs/07`).
-2. **Both research passes** → `docs/research-traversal.md`, `docs/research-wiki.md` (sourced; both largely validate the design; their deltas are already applied).
+1. **Honesty audit** → `docs/archive/honesty-audit.md` (verdict: build, 3 conditions; conditions are now standing gates in `specs/07`).
+2. **Both research passes** → `docs/archive/research-traversal.md`, `docs/archive/research-wiki.md` (sourced; both largely validate the design; their deltas are already applied).
 3. **Sam's line-by-line review** (`docs/sam-spec-review.md`) **fully incorporated** into spec v3: purpose plane (apex contract + mirror agent), wiki-as-biography with his 10 chapters, windows first-class, parameters registry (core/outer rings), expectations/atoms renames (`log`→`atoms`, `log_entry`→`record_atom`), P8 fundamental-law + P9 gardener-minimax principles, internal-vs-external write boundary, handshake protocol, hosting portability, descriptive-naming rule, flags discipline, budget controls, role-retirement-≠-wiki fix, atom pulse, equal-clearance chat/panel with panel supremacy.
 4. **Consolidated Q&A** → `docs/questions-queue.md` (Section A: his 11 questions answered; Section B: 6 open for him — purpose sensitivity, elicitation timing, kill criterion, budget ceiling, wiki bar, DesignSync noted).
 5. **Three audit passes run and ALL findings applied (v3.1, commit 065dcc1)**:
-   - UX rings → `docs/ux-rings.md`: phone approvals, neglect mode, Ring-0 collapse (2 OS users at P1 → full tiers P3; gcal via read-only ICS; elicitation as core session), held-intake TTL → unknown atoms, standing-approval bootstrap, automated drills.
+   - UX rings → `docs/archive/ux-rings.md`: phone approvals, neglect mode, Ring-0 collapse (2 OS users at P1 → full tiers P3; gcal via read-only ICS; elicitation as core session), held-intake TTL → unknown atoms, standing-approval bootstrap, automated drills.
    - Dependency sweep (in transcript, applied): filer critical + poison-row quarantine, `w_approver` extracted from panel, handoff `expires_at`, proposal regeneration dedup, claim-time lease reaping, query-trigger cycle guard (exclude `agent_action` + chain_depth cap), edge spool + `replayable` flags, purpose absent/stale degraded mode, FileVault/UPS availability honesty, move_page crash order (DB first), dependency sweep added to 07 audits.
    - Malicious-superintelligence red-team (in transcript, applied): **the intent binding** (dictation gate = channel proof only; taste writes need verbatim-in-raw OR edge read-back-confirm via `confirm_taste_write`; orchestrator stages taste, never writes), taste-class non-bundlable + non-standing-approvable + core-ring fn→class map, propose-time own-set validation, server-rendered what-will-execute approval view (per-action class, $ref resolution, confusable flags), arg-predicates on standing approvals (fn-class never gates alone; merge_people never standing), injection fence (`suspected_injection` renders inert everywhere; content tripwire; quarantine-since-T rollback), `how-to-work-with-sam` chapter = taste-plane (rendered from directives, no free gardener deltas), mirror purpose writes read-back with diff, tool pinning + probation for new components, no caller-controlled URLs for ≥c1 workers, taste-write provenance review (monthly).
 
@@ -31,5 +31,5 @@
 - Sam reviews ONLY the diff log for the final version — it must point into specs and stand alone.
 - His standing instructions: brainstorm in `docs/`, law in `specs/`; commit each round (audit trail); never sycophantic; over-engineering is HIS stated failure mode — bias to cut; P7 false-positive-aversion; reliability absolute; all taste belongs to the user.
 - Open questions he still owes answers on: `docs/questions-queue.md` §B (purpose sensitivity, elicitation session timing/format, kill-criterion agreement, budget ceiling, wiki default-no bar).
-- After the spec ships: next milestones are corpus labeling (P0) — `docs/claude-examples.md` + `docs/sam-examples.md` are the raw corpus — then the build per `specs/07`.
+- After the spec ships: next milestones are corpus labeling (P0) — `docs/archive/claude-examples.md` + `docs/archive/sam-examples.md` are the raw corpus — then the build per `specs/07`.
 - Repo: all work on `main`, commits small and descriptive, no Claude attribution, no emojis.

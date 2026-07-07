@@ -1,5 +1,5 @@
 {
-  "source": "docs/claude-examples.md, normalized",
+  "source": "docs/archive/claude-examples.md, normalized",
   "labels_status": "confirmed (Sam, 2026-07-03)",
   "fixtures": [
     {

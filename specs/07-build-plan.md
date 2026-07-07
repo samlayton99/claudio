@@ -42,7 +42,7 @@ Three artifacts:
 - **The fork test is the packaging acceptance test**: forking is permitted, but a senior dev must find using-and-term-building strictly easier than forking. Every "I had to fork to do X" is filed as a type defect.
 - **This repo, today**, is the dev checkout with Sam's term co-resident; the milestone splits them (type repo + Sam's private term repo). Until then: term-building sessions (e.g. the custom dashboard) run in their own repos against L1 — never inside this checkout.
 
-## Standing gates (from `docs/honesty-audit.md`)
+## Standing gates (from `docs/archive/honesty-audit.md`)
 
 1. **P2 in two weeks** of first DDL, or shrink before continuing.
 2. **Value at every stopping point** — every phase leaves the user better off if work stops forever.
@@ -60,7 +60,7 @@ Three artifacts:
 
 ## Eval suites (built first, run forever)
 
-- **Filer evals**: corpus from `docs/claude-examples.md` + filer-level slices of `docs/sam-examples.md`, normalized `{id, adapter, sender, raw, db_fixture, expected: [batch], tolerances}` (implicit thread-day atoms tolerated). Bar: 100% restraint/security (no-extract, no-guess, injection, sensitivity, world-obligation vs system-instruction), ≥90% extraction.
+- **Filer evals**: corpus from `docs/archive/claude-examples.md` + filer-level slices of `docs/archive/sam-examples.md`, normalized `{id, adapter, sender, raw, db_fixture, expected: [batch], tolerances}` (implicit thread-day atoms tolerated). Bar: 100% restraint/security (no-extract, no-guess, injection, sensitivity, world-obligation vs system-instruction), ≥90% extraction.
 - **Scenario evals**: Sam's 10 workflow scenarios end-to-end, activated per traceability (autonomy encoded: S2 merge via proposal; S1 calendar via standing approval).
 - **Packet evals** (new): context-assembly scenarios (brief assembly, meeting prep, "what's going on with X") scored for citation correctness + budget discipline.
 - **Red-team suite**: merge gate from P1.
@@ -103,4 +103,4 @@ gmail/slack/transcript/notion/folder windows, old-dashboard window, custom dashb
 | 9 | custom dashboard tiles | P6 |
 | 10 | meeting scanner → enrich → propose connection | P6 |
 
-UX setup/maintenance burden per ring: `docs/ux-rings.md` (the sins list — every required user action is a debt to shrink).
+UX setup/maintenance burden per ring: `docs/archive/ux-rings.md` (the sins list — every required user action is a debt to shrink).

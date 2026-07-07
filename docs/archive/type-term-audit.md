@@ -27,7 +27,7 @@ Sam's directive (2026-06-12): **the life-harness is the type; a life is the term
 | `evals/filer/corpus-*.json` (Thiel day, meme day, Jamie, Brother Hansen) | Term test data exercising type functions. Ship the harness + an anonymized starter corpus; Sam's corpus stays his. |
 | Window instances + config: `role_map`, `semantics` values, `filters` patterns, allowlisted handles | Term (the user's VALUES). The adapters themselves and the `0008` roster rows (edge slot, gcal window, brief, scanner, ...) are **stdlib** — shipped defaults, not a leak; Sam's `commitment_strength: tentative` is his term override riding the stdlib gcal adapter. |
 | Directives, role_clearances rows, tuned parameter values, all DB life-plane data, `wiki/` content | Term. |
-| `docs/sam-examples.md`, CONTEXT.md "Who Sam is" | Term documentation. |
+| `docs/archive/sam-examples.md`, CONTEXT.md "Who Sam is" | Term documentation. |
 | Sam's deploy choices (Mac mini, launchd, backup destination) | Term deployment; type stays POSIX-portable (00 §Portability). |
 
 ### Gray calls, ruled

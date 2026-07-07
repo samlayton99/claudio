@@ -40,7 +40,7 @@ New directives get one question first — *does the daily loop need it?* If not:
 
 - **Raw retention: keep everything forever.** 512 GB local; external drive when needed; revisit only when storage actually bites.
 - **Spam pre-filtering exists** — as window `filters`, term config (`specs/06`).
-- **Type/term split is law** — P11 (`specs/00`), audit in `docs/type-term-audit.md`.
+- **Type/term split is law** — P11 (`specs/00`), audit in `docs/archive/type-term-audit.md`.
 - **Obligations merge done** (Occam #2): one `obligations` table, kind task|expectation; `create_task`/`create_expectation` survive as verbs; lifecycle = `amend_obligation` + `resolve_obligation`. Suites 51 + 84 green.
 - **Two-stage noise filtering kept** (Occam #3 rejected by Sam): `filters` (pre-capture) and `discard_patterns` (post-capture) stay distinct.
 

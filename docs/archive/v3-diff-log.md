@@ -66,7 +66,7 @@ Wiki (`research-wiki.md`): chapters as fixed MOCs, ≤2-hop rule · page budget 
 
 ## C. Audit-driven changes (the four passes you commissioned)
 
-**UX rings** (`docs/ux-rings.md` — the sins list): phone-native approvals for low-risk classes · neglect mode (silence sensor, coalesced alerts, "while you were gone" rollup; 3-week-neglect eval at P5 gate) · Ring-0 collapsed (2 OS users at P1, full tiers P3; gcal via read-only ICS, no OAuth; elicitation as core session) · held-intake TTL → `unknown` atoms, hold-questions ride the brief · drills automated.
+**UX rings** (`docs/archive/ux-rings.md` — the sins list): phone-native approvals for low-risk classes · neglect mode (silence sensor, coalesced alerts, "while you were gone" rollup; 3-week-neglect eval at P5 gate) · Ring-0 collapsed (2 OS users at P1, full tiers P3; gcal via read-only ICS, no OAuth; elicitation as core session) · held-intake TTL → `unknown` atoms, hold-questions ride the brief · drills automated.
 
 **Dependency sweep**: filer marked critical + per-row poison quarantine · `w_approver` extracted from the panel process · handoff `expires_at` (stale approvals never fire late) · proposal regeneration dedup · claim-time lease reaping · query-trigger cycle guard (agent_action excluded by default + chain-depth cap) · edge on-disk spool + `replayable` declarations · purpose-contract absent/stale degraded mode · FileVault/UPS availability honesty · move_page crash order (DB first, lint reconciles).
 

@@ -49,11 +49,11 @@
     ]
   },
   "files": {
-    "filer/corpus-core.json": { "fixtures": 15, "source": "docs/claude-examples.md", "labels_status": "confirmed (Sam, 2026-07-03)" },
-    "filer/corpus-sam.json": { "fixtures": 6, "source": "docs/sam-examples.md filer-level slices", "labels_status": "confirmed (Sam, 2026-07-03)" },
+    "filer/corpus-core.json": { "fixtures": 15, "source": "docs/archive/claude-examples.md", "labels_status": "confirmed (Sam, 2026-07-03)" },
+    "filer/corpus-sam.json": { "fixtures": 6, "source": "docs/archive/sam-examples.md filer-level slices", "labels_status": "confirmed (Sam, 2026-07-03)" },
     "filer/corpus-walkthrough.json": { "fixtures": 3, "source": "the atoms walkthrough (gate-critical: Thiel day, meme day, two-episode thread)", "labels_status": "confirmed (Sam, 2026-07-03)" },
     "filer/corpus-coverage.json": { "fixtures": 6, "source": "coverage gaps vs specs (obligation direction, OTP discard, world-vs-system, window inheritance, sensitivity clamp, hold TTL)", "labels_status": "confirmed (Sam, 2026-07-03)" },
-    "scenarios/scenarios.json": { "fixtures": 10, "source": "docs/sam-examples.md end-to-end, phase-tagged", "labels_status": "confirmed (Sam, 2026-07-03)" },
+    "scenarios/scenarios.json": { "fixtures": 10, "source": "docs/archive/sam-examples.md end-to-end, phase-tagged", "labels_status": "confirmed (Sam, 2026-07-03)" },
     "packets/assessment-questions.json": { "fixtures": 3, "source": "the three assessment questions (method evals)", "labels_status": "confirmed (Sam, 2026-07-03)" }
   },
   "p0_gate": {

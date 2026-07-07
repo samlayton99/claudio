@@ -26,7 +26,7 @@ Per your instruction: a full audit (three independent reviews: doc drift, code c
 
 ### Orientation for the next agent
 
-Root `CLAUDE.md` added (auto-loaded; orientation order, the two clusters, credits rule, session conventions). `CONTEXT.md` de-rotted: the resolved gates (labels, weights) no longer read as open; the live cluster and the new J3 command are narrated; hardcoded test counts replaced by "run `./evals/run-all.sh`". Six finished docs in `docs/` stamped *Historical* so authority is per-file obvious. Convention stragglers annotated (brief has inline prompts by design; mirror not yet built; run-worker's `w_<id>` role fallback documented).
+Root `CLAUDE.md` added (auto-loaded; orientation order, the two clusters, credits rule, session conventions). `CONTEXT.md` de-rotted: the resolved gates (labels, weights) no longer read as open; the live cluster and the new J3 command are narrated; hardcoded test counts replaced by "run `./evals/run-all.sh`". Convention stragglers annotated (brief has inline prompts by design; mirror not yet built; run-worker's `w_<id>` role fallback documented). Stale-doc sweep (your call, same day): `docs/` now holds only the live pair — `questions-queue.md` + `j1-report.md`; the seven finished rationale docs (claude/sam-examples, honesty-audit, research x2, ux-rings, type-term-audit) moved to `docs/archive/` with every cross-reference in specs/CONTEXT/evals updated — nothing deleted, since they are signed-label provenance and spec-cited evidence. `elicitation-notes.md` stays with the mirror: it is working memory for future purpose-version sessions.
 
 ### For future Claude (compaction pointers)
 
