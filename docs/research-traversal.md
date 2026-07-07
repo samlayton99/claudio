@@ -1,5 +1,7 @@
 # Research: agent traversal & retrieval over a personal knowledge graph
 
+*Historical (2026-06-11) — findings folded into specs v4; kept for rationale only.*
+
 2026-06-11. Method: 5 parallel search threads (tool-surface design; memory products; graph-RAG papers; production agent retrieval; personal-scale mechanics); ~30 primary sources; 12 load-bearing claims adversarially re-verified against primaries (11 confirmed, 1 corrected). Vendor-run benchmarks flagged as such.
 
 ## 1. What works (evidence + adoption)

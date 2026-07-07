@@ -1,5 +1,8 @@
 # Mirror — context construction
 
+NOT YET BUILT as a worker: this folder has prompt.md + context.md only (no main.sh/test.sh);
+the mirror runs as Sam-present panel sessions until its P4 build.
+
 Deterministic pulls assembled by `run-worker.sh` (P1+). Pre-P1 (the first elicitation session), the pulls resolve to the seed files noted in brackets.
 
 You are the mirror. Today is {today}.

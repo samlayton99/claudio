@@ -11,50 +11,46 @@ Session report for Sam. Rewritten each session; git history keeps prior reports.
 
 ---
 
-## Checkpoint 2026-07-04: J1 closed, ten suites green (273), everything before J3 is done
+## Checkpoint 2026-07-07: robustness pass — the repo is now safe to hand to any agent
 
-### Where the project stands, in one paragraph
+Per your instruction: a full audit (three independent reviews: doc drift, code complexity, deploy bugs) plus fixes, so future agents — and the mac mini deploy — can't be misled or do damage. Ten suites still green (274 tests). Everything is in the working tree, **uncommitted** pending your look.
 
-The purpose contract v1 is signed and seeded (22 rows, priorities v1, 7 roles — now with YOUR weight magnitudes: disciple 10, husband-father 5, research 2.5, ward-exec-sec 2, prod 2, general 1, student 0.5). The corpus labels are confirmed (your blanket approval, flipped in `evals/`). The daily loop is built, chain-proven end to end, and J1-graded against your ground truth with a real model: **bars met at run 5 — restraint 100%, security 100%, extraction 92%** (`docs/j1-report.md`). The J3 deploy rehearsal is green. `./evals/run-all.sh` = ten suites, 273 tests, all green. Committed and pushed.
+### The guards that now exist (each was a real hole)
 
-### J1, closed with judgment (per your credits note)
+- **Live cluster is fenced.** `live.sh reset` would have dropped the live db with zero confirmation, and `live.sh test` would have run fixture suites into it. Both now refuse (`reset` needs `CLAUDIO_LIVE_CONFIRM=DROP-LIVE`); `dev.sh reset|test` also refuse if live env leaked in. `live.sh autostart` now refuses before `init` (was: launchd crash-loop) and `live.sh stop` boots out the KeepAlive agent (was: postgres silently restarting after "stopped").
+- **Reconcile can't misdeploy.** Bare `./reconcile.sh` used to be the real run, defaulting to the dev cluster and `echo` send — workers permanently wired to dev, outbound messages dropped, looking green. Now: `--dry-run|--apply` only, target banner printed, `--apply` against dev refuses. **The J3 command is `./core/deploy/live.sh reconcile --apply`.** Also: unparseable cron now errors instead of silently running every 15 min; sed values escaped; rendered plists linted before load; unchanged plists not reloaded (no more killing in-flight workers on every reconcile); run-worker's lock now survives SIGTERM.
+- **The kill switch now actually contains.** `claudio-stop` missed `com.claudio-backup` (label outside its pattern) — a compromised box would keep exporting the full db nightly. Now booted out; the backup and restore-test entrypoints also honor the STOPPED marker.
+- **First backup on the mini can't fail silently.** `run-live.sh` now bootstraps: generates `~/.claudio/restic.pass` (0600) if absent, `restic init`s the repo, and leaves `~/.claudio/backup-FAILED` on any failure (watchdog food). Before: every 02:30 run died in `backup.err` forever, zero snapshots.
+- **Credits can't be burned by accident.** `grade.py` now refuses without `--spend` and prints your standing rule (~50 calls, only after prompt.md changes, prefer `--only`).
+- **Tests no longer dirty git.** SCHEMA.md regeneration is byte-deterministic (timestamps normalized, unaligned rows) and refuses to run from a non-dev cluster — regenerating from live would have committed real life rows into git.
 
-Six-plus runs took the filer 16/26 -> 25/26. Every failure class got a structural fix (exact arg schemas + pre-dispatch validation with pointed retry; closed vocabularies + people roster injected into context; split-batch ref numbering; deterministic no-LLM lanes: OTP discard patterns, zero-signal thread-day template, `gcal-event`/`day-log` converters; nine prompt laws tuned against your labels). Run 7 confirmed the newest fixes 5/5 before a rate limit killed it. Residual imperfection is run-to-run model variance on judgment nuances (expectation closure is the flakiest), not a systematic gap. **Standing rule going forward: no full grading runs (~50 model calls) unless `prompt.md` changes; re-grade selectively with `--only <fixture>`.**
+### Orientation for the next agent
 
-Best single find: a real L1 leak — links born of a sensitivity-1 atom were readable at clearance 0 (the pastoral edge). Fixed in `0005`, pinned by contract test `link-inherits-atom-floor`.
-
-### What I think is next (my recommendation, in order)
-
-1. **J3 — go live.** The only thing between this repo and the loop running on your real texts is the ~30-min Sam-present session: `setup-os-users.sh p1`, per-uid `.pgpass`, `reconcile.sh` for real, Full Disk Access for the edge, your real handles into edge config, `CLAUDIO_EDGE_SEND=imessage`, B2 backup account. Everything is rehearsed (`core/deploy/test-reconcile.sh`); the dry-run already caught and fixed the three blockers that would have eaten the session.
-2. **Watchdog before (or at) J3** — my build, free, deterministic. It is on the roster as `critical` with NO code: P6's dead-man depends on it (reap expired claims, component-health sweep, alert if the edge heartbeat goes stale). The loop should not go live guarded by nothing.
-3. **Directives** (yours, deferred from elicitation, any time): the highest-leverage remaining input for the brief — "never schedule before 9am"-class rules. Give them in a core/panel session whenever they occur to you.
-4. **First real week after J3**: scoring tuning against real packets (queue 5), disciple-as-frame treatment in the brief (queue 2 residue), and whatever the first live briefs teach us.
+Root `CLAUDE.md` added (auto-loaded; orientation order, the two clusters, credits rule, session conventions). `CONTEXT.md` de-rotted: the resolved gates (labels, weights) no longer read as open; the live cluster and the new J3 command are narrated; hardcoded test counts replaced by "run `./evals/run-all.sh`". Six finished docs in `docs/` stamped *Historical* so authority is per-file obvious. Convention stragglers annotated (brief has inline prompts by design; mirror not yet built; run-worker's `w_<id>` role fallback documented).
 
 ### For future Claude (compaction pointers)
 
-- Orientation: `CONTEXT.md` -> `specs/00-07` -> `docs/questions-queue.md` -> this file. J1 detail: `docs/j1-report.md`. Run everything free: `./evals/run-all.sh`.
-- `evals/filer/j1-results.json` = run 6 (last complete). Rate-limited runs look like: every fixture "pending" + "judge unparseable" — do not read those as regressions.
-- Be judicious with credits (Sam's standing instruction 2026-07-04): prefer the free suites; model calls only where a prompt change demands a targeted re-grade.
-- Sam edits seed jsons directly; his hand beats the notes when they disagree (precedent: APPROVE tags, weights).
+- Orientation: `CLAUDE.md` -> `CONTEXT.md` -> `specs/00-07` -> `docs/questions-queue.md` -> this file. Run everything free: `./evals/run-all.sh`.
+- Deferred by judgment (small, non-blocking): unifying the five hand-rolled test epilogues onto lib.sh `summary` (run-all now dumps full output on failure, which covers the diagnostic need); per-suite clean-db assertions; a `CLAUDIO_PGHOST` env var for symmetry.
 
 ## 1. Your plate
 
-1. **Schedule J3** (~30 min together) — the go-live. Everything on my side is ready.
-2. **Directives** (optional, rolling) — see item 3 above.
-3. Nothing else. Queue items 1, 2, 2b, 4b, 15 all resolved by your approvals + weights.
+1. **Mac mini bring-up** (~30 min before the J3 session proper): install Homebrew + `postgresql@17` + `restic` + the claude CLI; clone the repo; **copy `archive/` from this machine — it is gitignored, tier-0 payloads do not travel with git**; then `./core/deploy/dev.sh init && ./core/deploy/dev.sh start && ./evals/run-all.sh` must print ALL SUITES GREEN before anything live.
+2. **J3 on the mini** (~30 min together): `./core/deploy/live.sh init|start` (+ `createdb`, `migrate`, seed), `setup-os-users.sh p1`, per-uid `.pgpass`, Full Disk Access + signed-in iMessage for the edge, real handles into edge config, then `./core/deploy/live.sh reconcile --apply`, `./core/deploy/live.sh autostart`. First backup self-bootstraps `~/.claudio/restic.pass` — **copy that file off the machine; no password, no restore**. B2 account when you're ready (queue item 4).
+3. **Review + commit this pass** — the whole robustness pass is uncommitted in the working tree for your skim (or tell Claude to commit it).
 
 ## 2. My plate
 
-1. **Build the watchdog** (`core/pipes/watchdog/`) — free, deterministic, tested like the scanner; closes the last `critical` roster gap before go-live.
+1. **Build the watchdog** (`core/pipes/watchdog/`) — unchanged from last checkpoint: free, deterministic, the last `critical` roster gap; now also has `backup-FAILED` to sweep.
 2. J3 support when you schedule it.
 3. Post-J3: scoring tuning + brief frame treatment, driven by real packets.
 
 ## 3. Dependencies / async / blockers
 
-- **J3 needs you present** (system-state rule) — the only blocker anywhere, and it gates the whole live loop.
-- My watchdog build is independent and free; it should land before J3 but doesn't block scheduling it.
-- No credit-burning work is queued anywhere.
+- **J3 needs you present** (system-state rule) — still the only true blocker, now with the mini bring-up in front of it.
+- The uncommitted tree is a soft blocker on any parallel session — commit (item 3, yours) before other work lands.
+- Watchdog build is independent and free.
 
 ## 4. Why I stopped
 
-**Clean checkpoint, named.** J1 closed on met bars + judgment (not on a ceremonial re-run); the tree is verified green (273) after every edit including the L1 leak fix; docs and queue reflect reality; committed and pushed. The next meaty item on my side (watchdog) is a fresh-session-sized build, and the next milestone (J3) is yours to schedule.
+**Clean checkpoint, named.** The requested robustness pass is done and verified: every review finding either fixed or explicitly deferred with the reason above; all guards exercised by hand (each refuses with a pointed message); ten suites green after every edit; SCHEMA.md determinism proven by back-to-back resets. Committing is yours to trigger since it bundles your uncommitted J3 prep from before this session.

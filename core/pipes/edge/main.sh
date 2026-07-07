@@ -39,6 +39,8 @@ cycle() {
     [ -n "$line" ] || break
     id="${line%%$'\x1f'*}"; text="${line#*$'\x1f'}"
     if send_one "$to" "$text"; then
+      # known window: if resolve fails after a successful send, the lease re-arms the
+      # message and the user gets it twice — duplicate delivery beats silent drop (P6)
       "${PSQL[@]}" -c "select l1.resolve_message('$id'::uuid, jsonb_build_object('delivered', true, 'via', '$SEND_MODE'))" >/dev/null || true
     else
       echo "edge outbound: send failed; message stays claimed (lease re-arms it)"

@@ -1,3 +1,7 @@
+# Sam's Eval Examples (verbatim, 2026-06-11)
+
+*Historical — Sam's raw words, folded into `evals/` fixtures and specs v4; never edit below this line.*
+
 one guiding principle, a lot of these things could be bad if there are false positives. false negatives are better, and the user will tell claudio the most important things. so we don't want to swing too far and not let claudio be useless, but stopping false positives is better than missing proactive false negatives. although reminders, jobs, etc. need to be the absolute most reliable ever. reliability is a core design principle
 
 My ideas (a lot of these are automations that a person would have to set up, but this is how the system would work with the custom automations.)

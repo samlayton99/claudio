@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Run every suite from a clean db, each in isolation. The one command that proves the stack.
+# Free — no model calls anywhere in these suites. Needs the dev cluster: ./core/deploy/dev.sh start
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 SUITES=(
@@ -15,10 +16,20 @@ SUITES=(
   "evals/e2e/run.sh"
 )
 FAILED=()
+LOG="$(mktemp)"
+trap 'rm -f "$LOG"' EXIT
 for s in "${SUITES[@]}"; do
   echo "=== $s ==="
-  "$REPO/core/deploy/dev.sh" reset >/dev/null 2>&1 || { echo "reset failed"; exit 1; }
-  if ! "$REPO/$s" 2>&1 | tail -1; then FAILED+=("$s"); fi
+  if ! "$REPO/core/deploy/dev.sh" reset >"$LOG" 2>&1; then
+    echo "reset failed — is the dev cluster running? (./core/deploy/dev.sh start)"
+    tail -3 "$LOG"; exit 1
+  fi
+  if "$REPO/$s" >"$LOG" 2>&1; then
+    tail -1 "$LOG"
+  else
+    FAILED+=("$s")
+    cat "$LOG"   # full output only for the failing suite
+  fi
 done
 echo ""
 if [ "${#FAILED[@]}" -gt 0 ]; then

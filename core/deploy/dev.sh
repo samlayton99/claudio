@@ -14,6 +14,17 @@ REPO="$(cd "$(dirname "$0")/../.." && pwd)"
 export PGHOST="$SOCKDIR" PGPORT="$PORT"
 
 cmd="${1:-status}"
+
+# destructive verbs refuse when env points at the live cluster (leaked live.sh exports);
+# the same CLAUDIO_LIVE_CONFIRM=DROP-LIVE that live.sh requires overrides here too
+if [ "$cmd" = "reset" ] || [ "$cmd" = "test" ]; then
+  if { [ "$PORT" = "5434" ] || [[ "$PGDATA" == *-live* ]] || [[ "$SOCKDIR" == *-live* ]]; } \
+     && [ "${CLAUDIO_LIVE_CONFIRM:-}" != "DROP-LIVE" ]; then
+    echo "refusing '$cmd': env points at the LIVE cluster ($PGDATA, port $PORT — real life data)"
+    exit 1
+  fi
+fi
+
 case "$cmd" in
   init)
     [ -d "$PGDATA/base" ] && { echo "cluster exists at $PGDATA"; exit 0; }
@@ -38,7 +49,9 @@ case "$cmd" in
     "$PG_BIN/pg_ctl" -D "$PGDATA" status || true
     ;;
   createdb)
-    "$PG_BIN/createdb" -U postgres "$DB" 2>/dev/null && echo "created db $DB" || echo "db $DB exists"
+    if err="$("$PG_BIN/createdb" -U postgres "$DB" 2>&1)"; then echo "created db $DB"
+    elif [[ "$err" == *"already exists"* ]]; then echo "db $DB exists"
+    else echo "createdb failed: $err (is the cluster running? $0 start)"; exit 1; fi
     ;;
   migrate)
     "$REPO/core/l1/migrate.sh"
@@ -56,6 +69,6 @@ case "$cmd" in
     "$PG_BIN/psql" -U "${PGUSER_OVERRIDE:-postgres}" -d "$DB" "$@"
     ;;
   *)
-    echo "usage: dev.sh {init|start|stop|status|createdb|migrate|test|reset|psql}"; exit 1
+    echo "usage: dev.sh {init|start|stop|status|createdb|migrate|test|reset|psql}  (psql honors PGUSER_OVERRIDE)"; exit 1
     ;;
 esac

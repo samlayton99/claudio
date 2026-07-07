@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!-- Template the reconciler renders per component from the registry. Placeholders: __ID__,
-     __SCHEDULE__ (a StartInterval or StartCalendarInterval element), __DB_ROLE__, __REPO__, __HOME__.
+     __SCHEDULE__ (a StartInterval or StartCalendarInterval element), __DB_ROLE__, __REPO__, __HOME__,
+     __PGHOST__/__PGPORT__ (which cluster: reconcile against live renders live), __EDGE_SEND__.
+     PATH: launchd's default lacks ~/.local/bin (claude) and /opt/homebrew/bin.
      Plists are root/sam-owned, reconciler-generated; workers never write code paths. -->
 <plist version="1.0">
 <dict>
@@ -13,6 +15,13 @@
     <string>__DB_ROLE__</string>
   </array>
   __SCHEDULE__
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PGHOST</key><string>__PGHOST__</string>
+    <key>CLAUDIO_PGPORT</key><string>__PGPORT__</string>
+    <key>CLAUDIO_EDGE_SEND</key><string>__EDGE_SEND__</string>
+    <key>PATH</key><string>__HOME__/.local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
   <key>StandardOutPath</key><string>__HOME__/.claudio/logs/__ID__.log</string>
   <key>StandardErrorPath</key><string>__HOME__/.claudio/logs/__ID__.err</string>
   <key>ProcessType</key><string>Background</string>

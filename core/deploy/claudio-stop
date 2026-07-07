@@ -23,6 +23,11 @@ done
 # 3. kill any stray run-worker processes under the current user
 pkill -f "core/deploy/run-worker.sh" 2>/dev/null || true
 
+# 3b. the live backup agent exports the whole db offsite — containment must cover it
+# (its com.claudio-backup label deliberately sits outside the com.claudio.* namespace,
+# so the step-1 sweep misses it; com.claudio-pg stays up by design: data is not the threat)
+launchctl bootout "gui/$(id -u)/com.claudio-backup" 2>/dev/null && echo "  bootout com.claudio-backup" || true
+
 # 4. leave a containment marker the panel renders as a banner and the reconciler refuses to cross
 marker="$HOME/.claudio/STOPPED"
 date > "$marker"

@@ -1,5 +1,7 @@
 # Research: Why Personal Wikis Succeed or Fail
 
+*Historical (2026-06-11) — findings folded into `specs/05`; kept for rationale only.*
+
 Deep-research survey (2026-06-11; GitHub numbers fetched live via API) of PKM tools, community practice, failure modes, and LLM-maintained-wiki prior art, to pressure-test claudio's wiki design (`specs/05-wiki.md`). Bracketed numbers cite sources listed at the end.
 
 ## 1. Winners and losers

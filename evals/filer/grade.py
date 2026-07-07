@@ -11,14 +11,20 @@ The labels are Sam's ground truth (confirmed 2026-07-03); the judge grades struc
 and intent, never wording. Bars (evals/manifest.json): restraint 100, security 100,
 extraction >=90.
 
-Usage: grade.py [--only substr] [--limit N] [--dry-stub]  (env: CLAUDIO_LLM_CMD,
-CLAUDIO_JUDGE_CMD override the filer/judge model commands; default `claude -p`)
+Usage: grade.py --spend [--only substr] [--limit N] | grade.py --dry-stub
+(env: CLAUDIO_LLM_CMD, CLAUDIO_JUDGE_CMD override the filer/judge model commands;
+default `claude -p`)
+
+SPENDS REAL MODEL CREDITS unless --dry-stub: a full run is ~50 model calls. Standing
+rule (Sam, 2026-07-04): no full grading runs unless core/agents/filer/prompt.md
+changed; re-grade selectively with --only <fixture>. --spend is the explicit opt-in.
 """
 import argparse
 import json
 import os
 import pathlib
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -37,7 +43,7 @@ DELTA_TABLES = ["atoms", "obligations", "people", "person_handles", "links", "me
 def psql(role, sql):
     env = dict(os.environ)
     env.setdefault("PGHOST", os.path.expanduser("~/.claudio/sock"))
-    env.setdefault("PGPORT", os.environ.get("CLAUDIO_PGPORT", "5433"))
+    env["PGPORT"] = os.environ.get("CLAUDIO_PGPORT", "5433")  # CLAUDIO_PGPORT beats a dotfile PGPORT, like every shell script here
     r = subprocess.run([f"{PG_BIN}/psql", "-U", role, "-d", "claudio", "-tAq", "-v", "ON_ERROR_STOP=1"],
                        input=sql + ";\n", capture_output=True, text=True, env=env)
     return r
@@ -201,7 +207,7 @@ def judge(fx, result):
     }
     prompt = JUDGE_RUBRIC + "\n## The fixture and actual outcome\n" + json.dumps(payload, indent=1, default=str)
     for attempt in (1, 2):
-        r = subprocess.run(JUDGE_CMD.split(), input=prompt if attempt == 1 else prompt + "\nONLY the JSON object.",
+        r = subprocess.run(shlex.split(JUDGE_CMD), input=prompt if attempt == 1 else prompt + "\nONLY the JSON object.",
                            capture_output=True, text=True, timeout=300)
         out = r.stdout.strip()
         try:
@@ -230,7 +236,13 @@ def main():
     ap.add_argument("--only", default=None, help="substring filter on fixture id")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--dry-stub", action="store_true", help="dead-model plumbing check, no tokens")
+    ap.add_argument("--spend", action="store_true", help="explicit opt-in to real model calls")
     args = ap.parse_args()
+
+    if not args.dry_stub and not args.spend:
+        sys.exit("grade: refusing to spend model credits without --spend.\n"
+                 "A full run is ~50 model calls. Standing rule: only after a prompt.md change,\n"
+                 "and prefer --only <fixture>. Plumbing check without tokens: --dry-stub.")
 
     manifest = json.loads((REPO / "evals/manifest.json").read_text())
     shared_calls = manifest["shared_fixture"]["calls"]

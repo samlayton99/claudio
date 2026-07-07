@@ -9,6 +9,10 @@ the closed notable_reason vocabulary, P12).
 
 Also writes the daily reflection page (documents row + wiki file) and rides the open
 hold-questions as a batch. Dedup: one brief per local day.
+
+No prompt.md/context.md in this folder BY DESIGN: the two tiny model prompts are inline
+below (the skeleton is deterministic; there is no big prompt to tune). "Tune the brief"
+means editing this file, role weights, or directives — not a prompt file.
 """
 import datetime
 import json

@@ -5,6 +5,8 @@
 #
 # P1 STATUS: the contract is real (context assembly + run accounting work end-to-end);
 # the harness exec is wired at P2 with the first LLM worker (filer). Pipes (no-LLM) run now.
+# db_role defaults to w_<component-id>; overrides come from the registry (config.db_role,
+# seeded in core/l1/migrations/0008); the role roster itself lives in 0001_roles.sql.
 set -euo pipefail
 
 PG_BIN="${PG_BIN:-/opt/homebrew/opt/postgresql@17/bin}"
@@ -27,7 +29,7 @@ if ! mkdir "$LOCK" 2>/dev/null; then
   fi
 fi
 echo $$ > "$LOCK/pid"
-trap 'rm -rf "$LOCK"' EXIT
+trap 'rm -rf "$LOCK"' EXIT INT TERM  # EXIT alone misses SIGTERM (reconcile bootout mid-run)
 
 # 1. resolve the component (registry is truth)
 ROW="$("${PSQL[@]}" -c "select status || '|' || coalesce(definition_path,'') || '|' || (trigger->>'type') from l1.components where id = '$COMPONENT'")"
@@ -42,7 +44,10 @@ case "$("${PSQL[@]}" -c "select trigger->>'type' from l1.components where id = '
     N="$("${PSQL[@]}" -c "select count(*) from l1.messages where queue = '$COMPONENT' and status = 'posted'")"
     [ "$N" -gt 0 ] || exit 0 ;;
   query)
-    N="$("${PSQL[@]}" -c "select count(*) from l1.intake where status = 'pending'")"  # v0: the filer predicate; per-component predicates land with their components
+    # v0: only the filer's predicate exists; a new query component must add its own here,
+    # otherwise it would silently wake on the filer's queue
+    [ "$COMPONENT" = "filer" ] || { echo "no query predicate wired for $COMPONENT yet"; exit 1; }
+    N="$("${PSQL[@]}" -c "select count(*) from l1.intake where status = 'pending'")"
     [ "$N" -gt 0 ] || exit 0 ;;
 esac
 

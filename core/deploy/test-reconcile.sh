@@ -33,13 +33,19 @@ expect_ok "disable-window" claudio_panel "select l1.set_component_status('window
 if ! grep -q "com.claudio.window-imessage" "$TMP/dry2"; then PASS=$((PASS+1)); echo "PASS  disabled-dropped"; else
   FAIL=$((FAIL+1)); FAILED_NAMES+=("disabled-dropped"); echo "FAIL  disabled-dropped"; fi
 
-echo "== reconcile: the rendered plist is valid launchd XML =="
+echo "== reconcile: the rendered plist is valid launchd XML and carries the cluster env =="
 schedule_xml="<key>StartCalendarInterval</key><dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>"
 sed -e "s|__ID__|brief|g" -e "s|__SCHEDULE__|$schedule_xml|g" -e "s|__REPO__|$DIR/../..|g" \
     -e "s|__HOME__|$HOME|g" -e "s|__DB_ROLE__|w_brief|g" \
+    -e "s|__PGHOST__|$HOME/.claudio/sock-live|g" -e "s|__PGPORT__|5434|g" -e "s|__EDGE_SEND__|imessage|g" \
     "$DIR/launchd/com.claudio.template.plist" > "$TMP/render.plist"
 if plutil -lint "$TMP/render.plist" >/dev/null 2>&1; then PASS=$((PASS+1)); echo "PASS  plist-lints"; else
   FAIL=$((FAIL+1)); FAILED_NAMES+=("plist-lints"); echo "FAIL  plist-lints"; plutil -lint "$TMP/render.plist"; fi
+if grep -q "<key>CLAUDIO_PGPORT</key><string>5434</string>" "$TMP/render.plist" \
+   && grep -q "$HOME/.local/bin" "$TMP/render.plist" \
+   && ! grep -q "__PGHOST__\|__EDGE_SEND__" "$TMP/render.plist"; then
+  PASS=$((PASS+1)); echo "PASS  plist-env-rendered"; else
+  FAIL=$((FAIL+1)); FAILED_NAMES+=("plist-env-rendered"); echo "FAIL  plist-env-rendered"; fi
 
 echo "== reconcile: kill switch refuses =="
 mkdir -p "$TMP/home/.claudio" && touch "$TMP/home/.claudio/STOPPED"

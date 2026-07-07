@@ -1,5 +1,7 @@
 # Filer Eval Examples (Claude's 15)
 
+*Historical (2026-06-11) — folded into `evals/filer/` fixtures; kept for rationale only.*
+
 Each: raw intake (adapter, sender) → expected typed output. Labels assume the type system in `03` and security rules in `08`.
 
 ---

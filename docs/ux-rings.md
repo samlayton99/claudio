@@ -1,5 +1,7 @@
 # UX Rings — the sins list
 
+*Historical (2026-06-12) — folded into `specs/00` P3 and `specs/07`; kept for rationale only.*
+
 Audit of spec v3 against P3: every required user action, ringed by necessity. Consequence = what happens when skipped (assume it will be). Referenced by `00` P3 and `07`.
 
 ## Ring 0 — setup (one-time; ~12–18 h of user action across P0–P2, excluding build labor — the meta-trap in `docs/honesty-audit.md` owns that)

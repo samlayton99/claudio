@@ -1,5 +1,7 @@
 # Honesty Audit
 
+*Historical (2026-06-11) — verdict recorded in `CONTEXT.md`; the standing gates it set still bind.*
+
 The gate question answered without sycophancy, recorded so future-Sam can't renegotiate with himself. (2026-06-11)
 
 ## Verdict
