@@ -10,6 +10,7 @@ SUITES=(
   "core/pipes/scanner/test.sh"
   "core/pipes/watchdog/test.sh"
   "core/pipes/edge/test.sh"
+  "core/pipes/edge-gv/test.sh"
   "core/pipes/windows/imessage/test.sh"
   "core/agents/filer/test.sh"
   "core/agents/brief/test.sh"

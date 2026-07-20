@@ -31,7 +31,9 @@ echo "== reconcile: a disabled component is not scheduled (and critical refuses 
 expect_fail "critical-panel-disable-refused" claudio_panel "select l1.set_component_status('brief', 'disabled')" "critical_component"
 expect_ok "disable-window" claudio_panel "select l1.set_component_status('window-imessage', 'disabled')"
 "$DIR/reconcile.sh" --dry-run >"$TMP/dry2" 2>&1
-if ! grep -q "com.claudio.window-imessage" "$TMP/dry2"; then PASS=$((PASS+1)); echo "PASS  disabled-dropped"; else
+# absence of a RENDER plan only: on a live-deployed machine the orphan sweep may correctly
+# print "would bootout com.claudio.window-imessage" (launchd is machine-global)
+if ! grep -q "would render+load.*window-imessage" "$TMP/dry2"; then PASS=$((PASS+1)); echo "PASS  disabled-dropped"; else
   FAIL=$((FAIL+1)); FAILED_NAMES+=("disabled-dropped"); echo "FAIL  disabled-dropped"; fi
 
 echo "== reconcile: the rendered plist is valid launchd XML and carries the cluster env =="

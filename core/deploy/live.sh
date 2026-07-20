@@ -40,6 +40,10 @@ case "${1:-}" in
   </array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
+  <!-- launchd has no locale env; macOS locale resolution then spawns a thread and PG17
+       refuses ("postmaster became multithreaded during startup") -->
+  <key>EnvironmentVariables</key>
+  <dict><key>LC_ALL</key><string>en_US.UTF-8</string></dict>
   <key>StandardOutPath</key><string>$HOME/.claudio/logs/pg-live.log</string>
   <key>StandardErrorPath</key><string>$HOME/.claudio/logs/pg-live.err</string>
 </dict>
