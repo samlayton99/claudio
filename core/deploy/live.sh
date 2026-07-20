@@ -70,6 +70,34 @@ EOF
       echo "loaded $(basename "$p")"
     done
     ;;
+  harden)
+    # peer + pg_ident on the live socket (Sam's call, 2026-07-19): the OS uid is the
+    # credential — no passwords, no secret files. Closes the initdb-trust hole where any
+    # local staff-group uid could connect as claudio_core. Dev stays trust (suites need it).
+    # P1-P2: everything runs as the GUI user (LaunchAgents), so it maps to all runtime roles;
+    # claudio-w0 is pre-mapped to the worker roles for the P3 split. Re-runnable.
+    [ -d "$CLAUDIO_PGDATA/base" ] || { echo "live cluster not initialized; run ./live.sh init first"; exit 1; }
+    ME="$(id -un)"
+    W_ROLES="w_filer w_merge w_wiki w_verifier w_lint w_orchestrator w_mirror w_brief w_scanner w_watchdog w_catalog w_hygiene w_approver"
+    {
+      echo "# claudio live — written by live.sh harden; the map IS the auth model"
+      for role in postgres claudio_core claudio_panel w_edge w_reconciler $W_ROLES; do
+        printf 'claudio  %s  %s\n' "$ME" "$role"
+      done
+      for role in $W_ROLES; do
+        printf 'claudio  %s  %s\n' "claudio-w0" "$role"
+      done
+    } > "$CLAUDIO_PGDATA/pg_ident.conf"
+    {
+      echo "# claudio live — peer-only on the local socket (no TCP listener exists; w_test never maps)"
+      echo "local  all  all  peer map=claudio"
+    } > "$CLAUDIO_PGDATA/pg_hba.conf"
+    if "$PG_BIN/pg_ctl" -D "$CLAUDIO_PGDATA" status >/dev/null 2>&1; then
+      "$PG_BIN/pg_ctl" -D "$CLAUDIO_PGDATA" reload >/dev/null && echo "reloaded live auth: peer map=claudio"
+    else
+      echo "written; applies when the live cluster starts"
+    fi
+    ;;
   reconcile)
     shift
     export CLAUDIO_EDGE_SEND="${CLAUDIO_EDGE_SEND:-imessage}"
@@ -102,7 +130,7 @@ EOF
     exec "$HERE/dev.sh" "$@"
     ;;
   *)
-    echo "usage: live.sh {init|start|stop|status|createdb|migrate|psql|reconcile|autostart}"
+    echo "usage: live.sh {init|start|stop|status|createdb|migrate|psql|harden|reconcile|autostart}"
     exit 1
     ;;
 esac

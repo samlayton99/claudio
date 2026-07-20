@@ -1,7 +1,7 @@
 -- 0001: cluster roles + database hardening.
 -- Runs as the cluster superuser; everything after 0001 runs SET ROLE claudio_core so
 -- every object (and every SECURITY DEFINER function) is owned by a NON-superuser that
--- FORCE RLS binds. OS-user/.pgpass mapping arrives with deploy (P1 stage: two OS users).
+-- FORCE RLS binds. OS-user mapping arrives with deploy: peer + pg_ident via live.sh harden.
 
 do $$
 declare r text;

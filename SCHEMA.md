@@ -64,7 +64,7 @@ Sample rows (10 total):
 ```
 id | kind | circle | status | definition_path | trigger | config | reliability | created_by | created_at | updated_at | meta
 edge-imessage | pipe | inner | disabled | core/pipes/edge | {"type": "cron", "interval_min": 1, "max_silence_min": 10} | {"db_role": "w_edge", "role_map": ["general"], "semantics": {"discard_patterns": [{"name": "otp", "regex": "\\b(verification|security|one[- ]time|2fa) code\\b.*\\b\\d{4,8}\\b"}]}, "replayable": false, "default_sensitivity": 0} | critical | postgres | <ts> | <ts> | {}
-window-gcal | window | inner | disabled | core/pipes/windows/gcal | {"type": "cron", "schedule": "*/15 * * * *", "max_silence_min": 60} | {"role_map": ["general"], "template": "gcal-event", "semantics": {"commitment_strength": "tentative"}, "replayable": true} | standard | postgres | <ts> | <ts> | {}
+window-gcal | window | inner | disabled | core/pipes/windows/gcal | {"type": "cron", "interval_min": 15, "max_silence_min": 60} | {"role_map": ["general"], "template": "gcal-event", "semantics": {"commitment_strength": "tentative"}, "replayable": true} | standard | postgres | <ts> | <ts> | {}
 (2 rows)
 ```
 

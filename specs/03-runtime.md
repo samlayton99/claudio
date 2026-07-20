@@ -14,7 +14,7 @@ What runs, where, when, and what happens when it fails. launchd is the scheduler
 | Workers, clearance 1 | `claudio-w1` | filer, merge, wiki (+ verifier step), lint, **orchestrator**, **mirror** | OS user = clearance tier; lint + verifier here because `wiki/` is w1-only. (The mirror needs no special tier now that the purpose plane is readable system-wide; its writes stay user-gated.) |
 | Workers, clearance 0 | `claudio-w0` | brief, scanner, windows (gcal, …), meeting setter, catalog, hygiene, approver (P5), watchdog, tripwire (P3+), red-team, backup | |
 
-DB auth: local socket, per-uid `.pgpass` 0600. `run-worker.sh` (core-owned, flock-guarded): resolve component → read its `parameters` → check for work via psql (claim/cursor peek; exit `skipped` if none — never spawn a model on an empty queue) → `start_run` → exec under the worker's DB role + core-owned settings → `finish_run`.
+DB auth: local socket, peer with a `pg_ident` map — the OS uid is the credential, no passwords at rest (`live.sh harden` writes the map; dev stays trust for suites; amended from per-uid `.pgpass`, Sam 2026-07-19). `run-worker.sh` (core-owned, flock-guarded): resolve component → read its `parameters` → check for work via psql (claim/cursor peek; exit `skipped` if none — never spawn a model on an empty queue) → `start_run` → exec under the worker's DB role + core-owned settings → `finish_run`.
 
 ## Triggers
 

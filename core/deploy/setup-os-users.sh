@@ -25,7 +25,7 @@ make_user() {  # hidden, no-login-window service account
 case "$STAGE" in
   p1)
     make_user claudio-w0 510
-    echo "P1 stage: one worker uid. Per-uid .pgpass (0600) is a manual core-session step."
+    echo "P1 stage: one worker uid. DB auth is peer + pg_ident (./live.sh harden), no .pgpass."
     ;;
   p3)
     make_user claudio-w0 510

@@ -9,7 +9,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
 echo "== reconcile: enable the P2 roster (panel) =="
-for c in edge-imessage window-imessage filer brief scanner; do
+for c in edge-imessage window-imessage filer brief scanner watchdog; do
   expect_ok "enable-$c" claudio_panel "select l1.set_component_status('$c', 'enabled')"
 done
 
@@ -23,6 +23,7 @@ check "window-as-w_edge"    'com.claudio.window-imessage.plist as w_edge (daily 
 check "filer-as-w_filer"    'com.claudio.filer.plist as w_filer (every 60s)'
 check "brief-as-w_brief"    'com.claudio.brief.plist as w_brief (daily at 7:00)'
 check "scanner-as-w_scanner" 'com.claudio.scanner.plist as w_scanner (hourly at :00)'
+check "watchdog-as-w_watchdog" 'com.claudio.watchdog.plist as w_watchdog (every 900s)'
 if ! grep -q "com.claudio.catalog" "$TMP/dry"; then PASS=$((PASS+1)); echo "PASS  manual-not-scheduled"; else
   FAIL=$((FAIL+1)); FAILED_NAMES+=("manual-not-scheduled"); echo "FAIL  manual-not-scheduled"; fi
 

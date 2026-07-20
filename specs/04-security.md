@@ -39,7 +39,7 @@ OS user = trust tier (same-uid credential theft is macOS reality; cross-tier is 
 - Tripwire (hourly): git drift over `core/`+`custom/` from P1; permission audit + worker-uid persistence scan (LaunchAgents, crontabs, login items) from **P3** — before the tier split there are no worker uids to scan.
 - Kill switch `claudio-stop`: bootout + pkill every worker uid + panel banner; drilled quarterly. Red-team-red posts a critical alert; panel/core performs containment.
 - pf: default-deny per worker uid, allowlist (model API, approved connector hosts, dead-man, backup target). Stated honestly as a coarse backstop — allowlisted SaaS is multi-tenant; the operative stop is per-worker tool allowlists; upgrade path is a core-owned forward proxy.
-- Secrets: per-uid `.pgpass` 0600; core secrets in the `sam` login keychain; nothing secret in env or plists. FileVault; encrypted backups; retention bounds purge (90-day parameter).
+- Secrets: DB auth carries none (peer + `pg_ident`, amended from `.pgpass` — Sam 2026-07-19); core secrets in the `sam` login keychain; nothing secret in env or plists. FileVault; encrypted backups; retention bounds purge (90-day parameter).
 
 ## Privacy
 
