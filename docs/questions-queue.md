@@ -46,6 +46,12 @@ New directives get one question first — *does the daily loop need it?* If not:
 - **Obligations merge done** (Occam #2): one `obligations` table, kind task|expectation; `create_task`/`create_expectation` survive as verbs; lifecycle = `amend_obligation` + `resolve_obligation`. Suites 51 + 84 green.
 - **Two-stage noise filtering kept** (Occam #3 rejected by Sam): `filters` (pre-capture) and `discard_patterns` (post-capture) stay distinct.
 
+## Decided by Sam 2026-07-19 (J3 session, live)
+
+- **Live DB auth: peer + pg_ident** (over spec'd .pgpass; specs 03/04 amended). `live.sh harden` writes the map; the OS uid is the credential; dev stays trust.
+- **The channel is a Google Voice number, not iMessage.** Constraints that forced it: no self-thread (his notes space), his Messages/Apple ID stays signed in on the mini (MCP + passive capture), no third-party SaaS in the message path (hosted iMessage APIs disqualified on privacy, not price), Apple ID creation throttled the second-user route (which remains the documented blue-bubble upgrade path — plain Messages.app in a `claudio` macOS user, no BlueBubbles). GV facts verified: inbound MMS images forward to Gmail; outbound is text-only (no design sends images). `edge-gv` built (0009); `edge-imessage` retired as channel; `window-imessage` keeps passive chat.db capture in Sam's session.
+- **Claudio's identity anchor**: `claudio.samlayton99@gmail.com` (Gmail = GV owner = future Apple ID username). GV number pending — Sam's cell was verification-linked to samlayton99's Voice; unlink/transfer, then claim under the claudio account.
+
 ## Disclosures 2026-07-19 (mac mini session; objections reversible)
 
 - **Mini bring-up done by Claude**: Homebrew `postgresql@17` + `restic` installed (binaries only, no services); dev cluster initialized at `~/.claudio/pg`; ALL SUITES GREEN (eleven suites, 290 tests). Still yours: copy `archive/` from the old machine (gitignored, not in the clone).
