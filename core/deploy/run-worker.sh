@@ -18,6 +18,11 @@ PSQL=("$PG_BIN/psql" -U "$DB_ROLE" -d claudio -tAq -v ON_ERROR_STOP=1)
 
 [ -f "$HOME/.claudio/STOPPED" ] && { echo "claudio is STOPPED (kill switch marker); refusing to run"; exit 1; }
 
+# optional machine-local env (dead-man URLs, overrides) — wired without re-rendering plists;
+# CLAUDIO_WORKER marks worker context (the user's personal claude hooks early-exit on it)
+[ -f "$HOME/.claudio/env" ] && . "$HOME/.claudio/env"
+export CLAUDIO_WORKER=1
+
 # atomic mkdir lock (flock is Linux-only; this is the documented POSIX mapping)
 LOCK="$HOME/.claudio/locks/$COMPONENT.lock.d"
 mkdir -p "$(dirname "$LOCK")"

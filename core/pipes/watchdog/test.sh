@@ -49,6 +49,19 @@ expect_eq "stuck-dedup" claudio_core \
 expect_eq "fresh-run-not-stuck" claudio_core \
   "select count(*) from l1.messages where payload->>'check' = 'stuck' and payload->>'component_id' = 'scanner'" "0"
 
+echo "== watchdog: failed runs alert once each; old failures age out =="
+sql claudio_core "insert into l1.runs (component_id, started_at, finished_at, outcome, error) values
+  ('filer', now() - interval '10 minutes', now() - interval '9 minutes', 'failed', 'main.sh exited nonzero'),
+  ('filer', now() - interval '3 days', now() - interval '3 days', 'failed', 'ancient history')" >/dev/null
+"$WD" >/dev/null
+expect_eq "failed-alert" claudio_core \
+  "select count(*) from l1.messages where payload->>'check' = 'failed' and payload->>'component_id' = 'filer'" "1"
+expect_eq "failed-carries-error" claudio_core \
+  "select count(*) from l1.messages where payload->>'check' = 'failed' and payload->>'summary' like '%main.sh exited nonzero%'" "1"
+"$WD" >/dev/null
+expect_eq "failed-dedup" claudio_core \
+  "select count(*) from l1.messages where payload->>'check' = 'failed'" "1"
+
 echo "== watchdog: stale posted messages, per queue =="
 sql w_filer "select l1.post_message('filer', 'handoff', '{\"summary\":\"forgotten\"}')" >/dev/null
 sql claudio_core "update l1.messages set posted_at = now() - interval '3 days' where queue = 'filer'" >/dev/null

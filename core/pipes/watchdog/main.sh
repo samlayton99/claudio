@@ -56,6 +56,22 @@ begin
     end if;
   end loop;
 
+  -- 2b. failed runs, last 24h (P6 failure policy: failures alert, never silently; one alert
+  -- per run — a repeatedly failing critical component alerts on every failed run by design)
+  for r in
+    select id, component_id, started_at, error from l1.runs
+    where outcome = 'failed' and started_at > now() - interval '24 hours'
+  loop
+    k := 'failed:' || r.id;
+    if not exists (select 1 from l1.messages where payload->>'watchdog_key' = k) then
+      perform l1.post_message('user', 'notification', jsonb_build_object(
+        'summary', 'Watchdog: ' || r.component_id || ' run FAILED at ' || to_char(r.started_at, 'Mon DD HH24:MI')
+                   || coalesce(': ' || left(r.error, 120), ''),
+        'component_id', r.component_id, 'run_id', r.id, 'trigger', 'watchdog', 'check', 'failed', 'watchdog_key', k),
+        0::smallint, null);
+    end if;
+  end loop;
+
   -- 3. stale posted messages, per queue (oldest row keys the incident; own alerts excluded)
   for r in
     select queue, count(*) as n, min(posted_at) as oldest_at,
