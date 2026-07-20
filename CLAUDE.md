@@ -11,3 +11,13 @@ Orient in this order: `CONTEXT.md` (reasoning, history, current state) -> `specs
 - **Style.** No emojis. Default git author, no Claude attribution. Docs extremely concise — Sam scans. Direct pushback beats agreement.
 
 Before designing anything, read `CONTEXT.md` §Pitfalls — the list of failures future agents must not reintroduce.
+
+## THE SYSTEM IS LIVE (since 2026-07-19) — rails for every future session
+
+The live cluster on this machine holds real life data and launchd runs real workers every minute. Therefore:
+
+- **Do not invent work.** The open work is exactly `RESPONSE.md` §Your plate / §My plate and `docs/questions-queue.md`. If a task is not there, it needs Sam's ask first.
+- **Live commands only from the documented runbooks** (RESPONSE.md carries them verbatim). Never `reset`, never test suites against live, never experiment on port 5434. When in doubt: dev.
+- **No new design.** No new tables, components, parameters, refactors, or spec edits without Sam's explicit direction — spec freeze holds until the P2 gate (7 green days) closes. Small diffs, one concern per commit.
+- **After every change:** `./evals/run-all.sh` must print ALL SUITES GREEN before commit. If a suite is red and the cause isn't obvious in 15 minutes, stop and write it up in RESPONSE.md instead of thrashing.
+- Deployed workers exec this repo's scripts directly from the working tree — an uncommitted edit to `core/` changes live behavior within a minute. Do not leave the tree dirty.

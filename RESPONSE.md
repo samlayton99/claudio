@@ -25,7 +25,14 @@ Tonight, together: mac mini bring-up (morning), watchdog built, then the live J3
 ## 1. Your plate
 
 1. **Finish GV** (~10 min): unlink your cell from samlayton99's Voice (Settings -> Account -> Linked numbers; delete its GV number) or transfer (408) 475-4724 to `claudio.samlayton99@gmail.com`; enable Settings -> Messages -> "Forward messages to email"; create an app password (2-Step first) and store it: `pbpaste > ~/.claudio/gv-app-pass && chmod 600 ~/.claudio/gv-app-pass`; text the number `gv probe 1`.
-2. **Then the four live commands** (Claude hands them to you, ~3 min): `live.sh migrate` (applies 0009), set account+handles on edge-gv, enable it, `live.sh reconcile --apply`. Then watch the probe land in intake and get Claudio's first text back.
+2. **Then the four live commands, verbatim, in this order** (~3 min):
+```
+./core/deploy/live.sh migrate
+./core/deploy/live.sh psql -c "update l1.components set config = config || '{\"account\":\"claudio.samlayton99@gmail.com\",\"user_handles\":[\"+18018701992\"]}' where id = 'edge-gv'"
+PGUSER_OVERRIDE=claudio_panel ./core/deploy/live.sh psql -c "select l1.set_component_status('edge-gv','enabled')"
+./core/deploy/live.sh reconcile --apply
+```
+Verify: `./core/deploy/live.sh psql -c "select adapter, raw, sender->>'verified_user' from l1.intake order by received_at desc limit 3"` shows the probe within ~2 min; then `./core/deploy/live.sh psql -c "select l1.post_message('user','notification','{\"summary\":\"Claudio is live.\"}')" ` as PGUSER_OVERRIDE=claudio_core and your phone gets the text. If the probe email parses wrong (GV format drift), the fixtures in `core/pipes/edge-gv/test.sh` are the shape the parser expects — adjust `parse_gv()` only, with a new fixture, suites green.
 3. **First backup + restic.pass off-machine** (~5 min, guided): run `core/pipes/backup/run-live.sh` once by hand; copy `~/.claudio/restic.pass` to your password manager. No password, no restore.
 4. **Trailing accounts, no rush** (queue 4 + 15): B2 for offsite backup; healthchecks.io for the two dead-man URLs (needs a small plist-template addition when wired — flagged).
 5. **Skim the queue**: the 2026-07-19 "Decided" block records tonight's calls (auth, channel, identity anchor).
@@ -35,7 +42,7 @@ Tonight, together: mac mini bring-up (morning), watchdog built, then the live J3
 1. Live-deploy support for edge-gv the moment the number exists; verify the real GV email format against the parser with your probe (the reply-address mechanic is the one empirically unverified piece — built tolerant, tested against documented format).
 2. Post-channel smoke: one story end-to-end live (probe -> intake -> filer -> atom+task -> scanner reminder -> edge-gv sends it back to you).
 3. The 7-day P2 gate drills (specs/07): brief 7/7 with a forced-degraded day, induced miss/send-failure alerts, queue properties under induced crash.
-4. Deferred, standing: SessionEnd hook noise in `claude -p` workers (your personal hook fires each worker run; harmless to filer, could suffix the brief's opener — make it exit silently when non-interactive); "chat.db unreadable" edge alert; dead-man env vars in the launchd template.
+4. Deferred, standing (small, none blocking): window-imessage exits 0 when chat.db is unreadable — change to exit 1 so the watchdog's new failed-runs check surfaces it (one line in `sweep.py` + a test); SessionEnd-hook and dead-man env are DONE (`CLAUDIO_WORKER` guard; `~/.claudio/env` sourced by run-worker).
 
 ## 3. Dependencies / async / blockers
 
