@@ -128,23 +128,25 @@ insert into l1.components (id, kind, circle, status, definition_path, trigger, c
   -- semantics.discard_patterns: stdlib deterministic discards (OTP shapes never reach a model);
   -- the user's term extends the list. Raw stays in intake either way (discard != filter).
   ('edge-imessage', 'pipe', 'inner', 'disabled', 'core/pipes/edge',
-   '{"type":"cron","interval_min":1}', '{"role_map":["general"],"replayable":false,"default_sensitivity":0,"db_role":"w_edge","semantics":{"discard_patterns":[{"name":"otp","regex":"\\b(verification|security|one[- ]time|2fa) code\\b.*\\b\\d{4,8}\\b"}]}}', 'critical'),
+   '{"type":"cron","interval_min":1,"max_silence_min":10}', '{"role_map":["general"],"replayable":false,"default_sensitivity":0,"db_role":"w_edge","semantics":{"discard_patterns":[{"name":"otp","regex":"\\b(verification|security|one[- ]time|2fa) code\\b.*\\b\\d{4,8}\\b"}]}}', 'critical'),
   -- template: names the filer's deterministic converter for this structured window (ended
   -- events file with no LLM pass); user term overrides default_role/semantics.
   ('window-gcal', 'window', 'inner', 'disabled', 'core/pipes/windows/gcal',
-   '{"type":"cron","schedule":"*/15 * * * *"}', '{"role_map":["general"],"replayable":true,"semantics":{"commitment_strength":"tentative"},"template":"gcal-event"}', 'standard'),
+   '{"type":"cron","schedule":"*/15 * * * *","max_silence_min":60}', '{"role_map":["general"],"replayable":true,"semantics":{"commitment_strength":"tentative"},"template":"gcal-event"}', 'standard'),
   ('window-imessage', 'window', 'inner', 'disabled', 'core/pipes/windows/imessage',
-   '{"type":"cron","schedule":"15 5 * * *"}', '{"role_map":["general"],"replayable":true,"mode":"passive","watch":["*"],"exclude":[],"days_back":3,"db_role":"w_edge"}', 'standard'),
+   '{"type":"cron","schedule":"15 5 * * *","max_silence_min":1560}', '{"role_map":["general"],"replayable":true,"mode":"passive","watch":["*"],"exclude":[],"days_back":3,"db_role":"w_edge"}', 'standard'),
+  -- max_silence_min is honest per cadence: daily crons get ~26h; query/queue components write
+  -- no run row when idle (run-worker exits before start_run), so they get idle-tolerant 3 days
   ('filer', 'gardener', 'inner', 'disabled', 'core/agents/filer',
-   '{"type":"query","interval_min":1}', '{"model_tier":"frontier"}', 'critical'),
+   '{"type":"query","interval_min":1,"max_silence_min":4320}', '{"model_tier":"frontier"}', 'critical'),
   ('brief', 'workflow', 'inner', 'disabled', 'core/agents/brief',
-   '{"type":"cron","schedule":"0 7 * * *"}', '{"model_tier":"cheap","degraded_mode":"deterministic_skeleton"}', 'critical'),
+   '{"type":"cron","schedule":"0 7 * * *","max_silence_min":1560}', '{"model_tier":"cheap","degraded_mode":"deterministic_skeleton"}', 'critical'),
   ('scanner', 'workflow', 'inner', 'disabled', 'core/pipes/scanner',
-   '{"type":"cron","schedule":"0 * * * *"}', '{"no_llm":true}', 'critical'),
+   '{"type":"cron","schedule":"0 * * * *","max_silence_min":180}', '{"no_llm":true}', 'critical'),
   ('watchdog', 'pipe', 'inner', 'disabled', 'core/pipes/watchdog',
-   '{"type":"cron","schedule":"*/15 * * * *"}', '{}', 'critical'),
+   '{"type":"cron","schedule":"*/15 * * * *","max_silence_min":60}', '{"no_llm":true}', 'critical'),
   ('orchestrator', 'workflow', 'inner', 'disabled', 'core/agents/orchestrator',
-   '{"type":"queue","poll_seconds":10}', '{"harness":"claude -p","model_tier":"frontier","slot":"configurable"}', 'standard'),
+   '{"type":"queue","poll_seconds":10,"max_silence_min":4320}', '{"harness":"claude -p","model_tier":"frontier","slot":"configurable"}', 'standard'),
   ('mirror', 'workflow', 'inner', 'disabled', 'core/agents/mirror',
    '{"type":"manual"}', '{"model_tier":"frontier","isolation":"no connectors, no send, fixed-endpoint model API"}', 'standard'),
   ('catalog', 'pipe', 'inner', 'enabled', 'core/pipes/catalog',

@@ -15,7 +15,7 @@ sql claudio_panel "select l1.create_task('Send the agenda', now() + interval '6 
 sql claudio_panel "select l1.create_task('Review the deck', now() - interval '2 hours')" >/dev/null
 sql claudio_panel "select l1.create_expectation('Deck from Daniel', null, now() + interval '1 day')" >/dev/null
 sql w_filer "select l1.post_message('user', 'question', '{\"summary\":\"Which Mike?\"}')" >/dev/null
-AID=$(sql w_filer "select (l1.record_atom(now() - interval '20 hours', 'meeting', 'Met Nina from the Thiel Fellowship — intro call proposed', p_meta => '{\"notable_candidate\": true}'::jsonb))->>'id'")
+AID=$(sql w_filer "select (l1.record_atom(current_date - interval '12 hours', 'meeting', 'Met Nina from the Thiel Fellowship — intro call proposed', p_meta => '{\"notable_candidate\": true}'::jsonb))->>'id'")
 
 echo "== brief: degraded mode — model totally dead, skeleton still sends (P6) =="
 CLAUDIO_LLM_CMD=/usr/bin/false python3 "$DIR/main.py" >/dev/null 2>&1

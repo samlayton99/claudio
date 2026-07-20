@@ -7,6 +7,8 @@ Live opens only. (Resolved questions: see `CONTEXT.md` and `docs/archive/`.) Def
 2. **RESOLVED (2026-07-03, your hand): role weights set** — disciple 10, husband-father 5, research 2.5, ward-exec-sec 2, prod 2, general 1, student 0.5 — seeded and pinned by test. Still open, smaller: how the brief should treat disciple-as-frame (weight 10 as apex/frame, not a 10x-loud section) — decide when the first real briefs land.
 4. **Backup destination — DECIDED (you delegated 2026-06-12).** Two layers: (a) local restic repo at `~/.claudio/backup` from day one (moves to the external drive when bought); (b) offsite restic -> Backblaze B2, client-side encrypted (B2 never sees plaintext; ~cents/month at life-data scale). The one step only you can do, at deploy, ~5 min guided: create the B2 account + bucket + app key. Until then layer (a) covers you.
 
+15. **External dead-man URLs (J3, ~5 min).** The edge and the watchdog each ping an optional heartbeat URL after a successful cycle (`CLAUDIO_DEADMAN_URL`, `CLAUDIO_WATCHDOG_DEADMAN_URL`) — the alarm that says "the box died" must live off the box. One free healthchecks.io account (or similar) with two checks covers both. Until then: local `~/.claudio/watchdog-heartbeat` + `backup-FAILED` markers exist, but nothing external alarms.
+
 ## Standing defaults (no action until their trigger)
 
 5. **Scoring tuning** — two-lane exponents seeded v0 in `parameters.scoring`; tuned against the first week of real packets (P2).
@@ -43,6 +45,13 @@ New directives get one question first — *does the daily loop need it?* If not:
 - **Type/term split is law** — P11 (`specs/00`), audit in `docs/archive/type-term-audit.md`.
 - **Obligations merge done** (Occam #2): one `obligations` table, kind task|expectation; `create_task`/`create_expectation` survive as verbs; lifecycle = `amend_obligation` + `resolve_obligation`. Suites 51 + 84 green.
 - **Two-stage noise filtering kept** (Occam #3 rejected by Sam): `filters` (pre-capture) and `discard_patterns` (post-capture) stay distinct.
+
+## Disclosures 2026-07-19 (mac mini session; objections reversible)
+
+- **Mini bring-up done by Claude**: Homebrew `postgresql@17` + `restic` installed (binaries only, no services); dev cluster initialized at `~/.claudio/pg`; ALL SUITES GREEN (eleven suites, 290 tests). Still yours: copy `archive/` from the old machine (gitignored, not in the clone).
+- **Watchdog built** (`core/pipes/watchdog/`, 16 tests): the last P2 critical-roster gap. Pure SQL, one alert per incident via `watchdog_key` dedup.
+- **Seeded `max_silence_min` per component trigger** (0008, reversible): without it, `v_run_misses`' 120-min default would false-flag the daily brief every morning and idle query/queue components (filer, orchestrator — they write no run row when idle) after 2h. Values: edge 10m, watchdog 60m, gcal 60m, scanner 3h, brief/imessage ~26h, filer/orchestrator 3 days.
+- **Live-cluster pre-staging attempted, blocked by the permission classifier** — consistent with the Sam-present rule; `live.sh init` stays on your J3 list. Same for a one-call `claude -p` login probe.
 
 ## Disclosures (done while you slept; objections reversible)
 

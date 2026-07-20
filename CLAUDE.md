@@ -6,7 +6,7 @@ Orient in this order: `CONTEXT.md` (reasoning, history, current state) -> `specs
 
 - **Two clusters.** Dev: `~/.claudio/pg`, port 5433 — reset freely. LIVE: `~/.claudio/pg-live`, port 5434 (`core/deploy/live.sh`) — real life data, no undo. Destructive verbs refuse against live without `CLAUDIO_LIVE_CONFIRM=DROP-LIVE`; never set that without Sam.
 - **Credits.** `./evals/run-all.sh` is free — run it after every change. `evals/filer/grade.py` spends ~50 real model calls; only after `core/agents/filer/prompt.md` changes, and prefer `--only <fixture>` (it refuses without `--spend`).
-- **Workflow.** `./core/deploy/dev.sh start`, then `./evals/run-all.sh` (ten suites; resets the dev db per suite). Schema changes only via `core/l1/migrations/`.
+- **Workflow.** `./core/deploy/dev.sh start`, then `./evals/run-all.sh` (eleven suites; resets the dev db per suite). Schema changes only via `core/l1/migrations/`.
 - **Session end.** Rewrite `RESPONSE.md` under its binding four-section template.
 - **Style.** No emojis. Default git author, no Claude attribution. Docs extremely concise — Sam scans. Direct pushback beats agreement.
 

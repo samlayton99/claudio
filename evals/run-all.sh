@@ -8,6 +8,7 @@ SUITES=(
   "evals/contract/run.sh"
   "core/l1/seeds/test.sh"
   "core/pipes/scanner/test.sh"
+  "core/pipes/watchdog/test.sh"
   "core/pipes/edge/test.sh"
   "core/pipes/windows/imessage/test.sh"
   "core/agents/filer/test.sh"
